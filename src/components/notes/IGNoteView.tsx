@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
 import { ArrowLeft, Trash2, Save, History } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
-
-const COLORS = ['#fee2e2', '#ffedd5', '#fef3c7', '#dcfce7', '#e0e7ff', '#fce7f3', '#f3f4f6', '#171412'];
 
 export function IGNoteView() {
   const { id } = useParams();
@@ -18,39 +17,41 @@ export function IGNoteView() {
 
   const existingNote = notes.find(n => n.id === id && n.type === 'ig') as IGNote | undefined;
 
+  const [owner, setOwner] = useState('Xiaomi');
   const [songTitle, setSongTitle] = useState('');
   const [content, setContent] = useState('');
-  const [backgroundColor, setBackgroundColor] = useState(COLORS[0]);
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (existingNote) {
+      setOwner(existingNote.owner || 'Xiaomi');
       setSongTitle(existingNote.songTitle);
       setContent(existingNote.content);
-      setBackgroundColor(existingNote.backgroundColor);
     }
   }, [existingNote]);
 
   const handleSave = () => {
-    if (!content) return;
+    if (!songTitle && !content) return;
     
     if (existingNote) {
       updateNote({
         ...existingNote,
+        owner,
         songTitle,
         content,
-        backgroundColor,
+        backgroundColor: '#171412',
         history: existingNote.content !== content ? [existingNote.content, ...existingNote.history] : existingNote.history
       });
     } else {
       addNote({
         id: uuidv4(),
         type: 'ig',
+        owner,
         createdAt: Date.now(),
         updatedAt: Date.now(),
         songTitle,
         content,
-        backgroundColor,
+        backgroundColor: '#171412',
         history: []
       });
     }
@@ -66,8 +67,6 @@ export function IGNoteView() {
     navigate('/notes');
   };
 
-  const isDarkBg = backgroundColor === '#171412';
-
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between">
@@ -76,7 +75,7 @@ export function IGNoteView() {
         </button>
         <div className="flex gap-2">
           {existingNote && existingNote.history.length > 0 && (
-            <button onClick={() => setShowHistory(!showHistory)} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors">
+            <button onClick={() => setShowHistory(!showHistory)} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors" title="Riwayat Edit">
               <History className="w-5 h-5" />
             </button>
           )}
@@ -86,57 +85,51 @@ export function IGNoteView() {
             </button>
           )}
           <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
-            <Save className="w-5 h-5" /> Save
+            <Save className="w-5 h-5" /> Simpan
           </button>
         </div>
       </div>
 
       <div className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-6">
-        <div>
-          <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Song Title</label>
-          <input
-            type="text"
-            value={songTitle}
-            onChange={(e) => setSongTitle(e.target.value)}
-            placeholder="e.g. Die With A Smile"
-            className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 font-medium"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Pemilik IG</label>
+            <input
+              type="text"
+              value={owner}
+              onChange={(e) => setOwner(e.target.value)}
+              placeholder="Cth. Xiaomi"
+              className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 font-medium"
+            />
+          </div>
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Judul Lagu</label>
+            <input
+              type="text"
+              value={songTitle}
+              onChange={(e) => setSongTitle(e.target.value)}
+              placeholder="Cth. Die With A Smile"
+              className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 font-medium"
+            />
+          </div>
         </div>
 
         <div>
-           <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Background Color</label>
-           <div className="flex gap-2 flex-wrap">
-             {COLORS.map(c => (
-               <button
-                 key={c}
-                 onClick={() => setBackgroundColor(c)}
-                 className={cn("w-10 h-10 rounded-full border-2 transition-transform", backgroundColor === c ? "border-stone-900 scale-110" : "border-transparent")}
-                 style={{ backgroundColor: c }}
-               />
-             ))}
-           </div>
-        </div>
-
-        <div>
-          <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Note Content</label>
+          <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Isi Catatan</label>
           <div 
-            className="rounded-3xl p-8 min-h-[300px] flex items-center justify-center transition-colors"
-            style={{ backgroundColor }}
+            className="rounded-3xl p-8 min-h-[300px] flex items-center justify-center transition-colors bg-stone-900"
           >
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind?"
-              className={cn(
-                "w-full text-center text-xl outline-none placeholder:opacity-50 bg-transparent resize-none font-medium",
-                isDarkBg ? "text-white" : "text-stone-900"
-              )}
+              placeholder="Apa yang ada di pikiranmu?"
+              className="w-full text-center text-xl outline-none placeholder:opacity-50 resize-none font-medium text-white bg-transparent"
               rows={6}
             />
           </div>
           <div className="flex justify-between text-xs text-stone-400 font-mono mt-2 px-2">
-            <span>Created: {existingNote ? format(existingNote.createdAt, 'PPp') : 'Unsaved'}</span>
-            <span>Edited: {existingNote ? format(existingNote.updatedAt, 'PPp') : 'Unsaved'}</span>
+            <span>Dibuat: {existingNote ? format(existingNote.createdAt, 'd MMM yyyy HH:mm', { locale: idLocale }) : 'Belum Disimpan'}</span>
+            <span>Diedit: {existingNote ? format(existingNote.updatedAt, 'd MMM yyyy HH:mm', { locale: idLocale }) : 'Belum Disimpan'}</span>
           </div>
         </div>
       </div>
@@ -144,7 +137,7 @@ export function IGNoteView() {
       {showHistory && existingNote && existingNote.history.length > 0 && (
         <div className="bg-stone-100 rounded-3xl p-6 space-y-4 animate-in slide-in-from-top-4">
           <h3 className="font-bold text-stone-900 flex items-center gap-2">
-            <History className="w-5 h-5"/> Edit History
+            <History className="w-5 h-5"/> Riwayat Edit
           </h3>
           <ul className="space-y-3">
             {existingNote.history.map((past, i) => (

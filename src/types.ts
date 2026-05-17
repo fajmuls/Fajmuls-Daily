@@ -1,4 +1,4 @@
-export type NoteType = 'normal' | 'prayer' | 'ig' | 'personal' | 'workout';
+export type NoteType = 'normal' | 'ig' | 'personal' | 'workout';
 
 export interface BaseNote {
   id: string;
@@ -13,20 +13,9 @@ export interface NormalNote extends BaseNote {
   content: string;
 }
 
-export interface PrayerNote extends BaseNote {
-  type: 'prayer';
-  date: string;
-  prayers: {
-    fajr: boolean;
-    dhuhr: boolean;
-    asr: boolean;
-    maghrib: boolean;
-    isha: boolean;
-  };
-}
-
 export interface IGNote extends BaseNote {
   type: 'ig';
+  owner: string;
   songTitle: string;
   content: string;
   backgroundColor: string;
@@ -51,7 +40,7 @@ export interface WorkoutNote extends BaseNote {
   durationMins: number;
 }
 
-export type Note = NormalNote | PrayerNote | IGNote | PersonalNote | WorkoutNote;
+export type Note = NormalNote | IGNote | PersonalNote | WorkoutNote;
 
 export interface FinanceRecord {
   id: string;
@@ -59,5 +48,22 @@ export interface FinanceRecord {
   type: 'income' | 'expense';
   category: string;
   note: string;
+  createdAt: number;
+}
+
+export type Fardhu = 'Subuh' | 'Dzuhur' | 'Ashar' | 'Maghrib' | 'Isya' | 'Belum Diketahui';
+
+export interface MissedPrayer {
+  id: string;
+  prayer: Fardhu;
+  dateInfo: string;
+  completed: boolean;
+  completedAt?: number;
+}
+
+export interface DailyDoc {
+  id: string;
+  url: string;
+  name: string;
   createdAt: number;
 }

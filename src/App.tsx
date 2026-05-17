@@ -11,22 +11,25 @@ import { Finance } from './pages/Finance';
 import { Notes } from './pages/Notes';
 import { Docs } from './pages/Docs';
 import { Special } from './pages/Special';
+import { AuthWrapper } from './components/AuthWrapper';
 
 export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/finance" element={<Finance />} />
-            <Route path="/notes/*" element={<Notes />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/special" element={<Special />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
+      <AuthWrapper>
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/finance" element={<Finance />} />
+              <Route path="/notes/*" element={<Notes />} />
+              <Route path="/docs" element={<Docs />} />
+              <Route path="/special" element={<Special />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </AuthWrapper>
     </AppProvider>
   );
 }

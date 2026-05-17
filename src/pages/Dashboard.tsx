@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
 import { ArrowRight, Wallet, NotebookPen } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -6,7 +7,7 @@ import { Link } from 'react-router-dom';
 export function Dashboard() {
   const { notes, financeRecords } = useAppContext();
   
-  const todayDate = format(new Date(), 'EEEE, MMMM do, yyyy');
+  const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
 
   const totalFinance = financeRecords.reduce((acc, curr) => {
     return curr.type === 'income' ? acc + curr.amount : acc - curr.amount;
@@ -16,7 +17,7 @@ export function Dashboard() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <header className="space-y-2">
         <h1 className="font-serif text-5xl md:text-7xl font-bold tracking-tight text-stone-900">
-          Good day.
+          Selamat Siang.
         </h1>
         <p className="text-xl text-stone-500 font-medium tracking-wide">
           {todayDate}
@@ -35,11 +36,11 @@ export function Dashboard() {
             </Link>
           </div>
           <div>
-            <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Net Balance</p>
+            <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Saldo Bersih</p>
             <h2 className="text-4xl font-bold font-serif">
-              ${totalFinance.toFixed(2)}
+              Rp {totalFinance.toLocaleString('id-ID')}
             </h2>
-            <p className="text-stone-500 mt-2">{financeRecords.length} records this month</p>
+            <p className="text-stone-500 mt-2">{financeRecords.length} catatan bulan ini</p>
           </div>
         </div>
 
@@ -54,11 +55,11 @@ export function Dashboard() {
             </Link>
           </div>
           <div>
-            <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Total Notes</p>
+            <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Total Catatan</p>
             <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
-              {notes.length} <span className="text-xl text-stone-400 font-sans font-normal">entries</span>
+              {notes.length} <span className="text-xl text-stone-400 font-sans font-normal">entri</span>
             </h2>
-            <p className="text-stone-500 mt-2">Personal, IG, Workout & Prayers</p>
+            <p className="text-stone-500 mt-2">Pribadi, IG, Olahraga & Qadha</p>
           </div>
         </div>
       </section>

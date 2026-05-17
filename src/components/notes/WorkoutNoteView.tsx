@@ -74,7 +74,7 @@ export function WorkoutNoteView() {
             </button>
           )}
           <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
-            <Save className="w-5 h-5" /> Save
+            <Save className="w-5 h-5" /> Simpan
           </button>
         </div>
       </div>
@@ -84,7 +84,7 @@ export function WorkoutNoteView() {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Workout Title (e.g., Upper Body)"
+          placeholder="Judul Olahraga (Cth: Dada & Trisep)"
           className="w-full text-4xl font-serif font-bold text-stone-900 outline-none placeholder:text-stone-300 bg-transparent"
         />
 
@@ -98,14 +98,14 @@ export function WorkoutNoteView() {
                 className="w-16 bg-transparent border-b border-orange-200 outline-none text-center font-bold font-mono text-xl focus:border-orange-500" 
                 placeholder="0"
               />
-              <span className="font-bold uppercase tracking-wider text-sm">Minutes</span>
+              <span className="font-bold uppercase tracking-wider text-sm">Menit</span>
             </div>
         </div>
         
         <textarea
           value={routine}
           onChange={(e) => setRoutine(e.target.value)}
-          placeholder="List your exercises, sets, and reps..."
+          placeholder="Tuliskan rutinitas, set, dan repetisimu di sini..."
           className="w-full flex-1 min-h-[300px] text-lg text-stone-700 outline-none placeholder:text-stone-300 bg-transparent resize-y mt-4"
         />
       </div>

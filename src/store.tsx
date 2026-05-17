@@ -1,22 +1,29 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { Note, FinanceRecord } from './types';
+import { Note, FinanceRecord, MissedPrayer, DailyDoc } from './types';
+import { INITIAL_MISSED_PRAYERS, INITIAL_IG_NOTES } from './data';
 
 interface AppState {
   notes: Note[];
   financeRecords: FinanceRecord[];
+  missedPrayers: MissedPrayer[];
+  docs: DailyDoc[];
   addNote: (note: Note) => void;
   updateNote: (note: Note) => void;
   deleteNote: (id: string) => void;
   addFinanceRecord: (record: FinanceRecord) => void;
   deleteFinanceRecord: (id: string) => void;
+  togglePrayer: (id: string) => void;
+  addDoc: (doc: DailyDoc) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [notes, setNotes] = useLocalStorage<Note[]>('fajmuls-notes', []);
+  const [notes, setNotes] = useLocalStorage<Note[]>('fajmuls-notes', INITIAL_IG_NOTES);
   const [financeRecords, setFinanceRecords] = useLocalStorage<FinanceRecord[]>('fajmuls-finance', []);
+  const [missedPrayers, setMissedPrayers] = useLocalStorage<MissedPrayer[]>('fajmuls-prayers', INITIAL_MISSED_PRAYERS);
+  const [docs, setDocs] = useLocalStorage<DailyDoc[]>('fajmuls-docs', []);
 
   const addNote = (note: Note) => setNotes(prev => [note, ...prev]);
   
@@ -35,9 +42,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addFinanceRecord = (record: FinanceRecord) => setFinanceRecords(prev => [record, ...prev]);
   const deleteFinanceRecord = (id: string) => setFinanceRecords(prev => prev.filter(r => r.id !== id));
 
+  const togglePrayer = (id: string) => {
+    setMissedPrayers(prev => prev.map(p => {
+      if (p.id === id) {
+        return { ...p, completed: !p.completed, completedAt: !p.completed ? Date.now() : undefined };
+      }
+      return p;
+    }));
+  };
+
+  const addDoc = (doc: DailyDoc) => setDocs(prev => [doc, ...prev]);
+
   return (
     <AppContext.Provider value={{
-      notes, financeRecords, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord
+      notes, financeRecords, missedPrayers, docs, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addDoc
     }}>
       {children}
     </AppContext.Provider>

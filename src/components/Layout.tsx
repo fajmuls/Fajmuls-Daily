@@ -4,14 +4,13 @@ import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic } from 'lucid
 import { useAudio } from '../hooks/useAudio';
 import { useVoiceCommand } from '../hooks/useVoiceCommand';
 import { cn } from '../lib/utils';
-import { AppProvider } from '../store';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-  { icon: Wallet, label: 'Finance', path: '/finance' },
-  { icon: NotebookPen, label: 'Daily Notes', path: '/notes' },
-  { icon: FileText, label: 'Docs', path: '/docs' },
-  { icon: Star, label: 'Special', path: '/special' },
+  { icon: LayoutDashboard, label: 'Beranda', path: '/' },
+  { icon: Wallet, label: 'Keuangan', path: '/finance' },
+  { icon: NotebookPen, label: 'Catatan Harian', path: '/notes' },
+  { icon: FileText, label: 'Dokumen', path: '/docs' },
+  { icon: Star, label: 'Spesial', path: '/special' },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -20,19 +19,19 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const handleVoiceCommand = (text: string) => {
     const lower = text.toLowerCase();
-    if (lower.includes('finance') || lower.includes('money')) {
+    if (lower.includes('keuangan') || lower.includes('uang')) {
       navigate('/finance');
       playSuccess();
-    } else if (lower.includes('notes') || lower.includes('note')) {
+    } else if (lower.includes('catatan') || lower.includes('tulis')) {
       navigate('/notes');
       playSuccess();
-    } else if (lower.includes('docs') || lower.includes('document')) {
+    } else if (lower.includes('dokumen') || lower.includes('foto')) {
       navigate('/docs');
       playSuccess();
-    } else if (lower.includes('special')) {
+    } else if (lower.includes('spesial') || lower.includes('khusus')) {
       navigate('/special');
       playSuccess();
-    } else if (lower.includes('dashboard') || lower.includes('home')) {
+    } else if (lower.includes('beranda') || lower.includes('dashboard') || lower.includes('home')) {
       navigate('/');
       playSuccess();
     }
@@ -76,7 +75,7 @@ export function Layout({ children }: { children: ReactNode }) {
             )}
           >
             <Mic className="w-5 h-5" />
-            {isListening ? "Listening..." : "Voice Command"}
+            {isListening ? "Mendengarkan..." : "Perintah Suara"}
           </button>
         </div>
       </aside>
@@ -95,12 +94,12 @@ export function Layout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Dynamic Content */}
-        <div className="flex-1 overflow-y-auto w-full max-w-5xl mx-auto p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto w-full max-w-5xl mx-auto p-4 md:p-8 pb-32 md:pb-8">
           {children}
         </div>
 
         {/* Mobile Bottom Bar */}
-        <nav className="md:hidden flex items-center justify-around bg-paper border-t border-stone-200 pb-safe">
+        <nav className="md:hidden flex items-center justify-around bg-paper border-t border-stone-200 fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom,16px)] pt-2">
           {navItems.map((item) => (
             <NavLink
               key={item.path}

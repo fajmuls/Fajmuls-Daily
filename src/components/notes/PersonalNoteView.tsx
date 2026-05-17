@@ -82,7 +82,7 @@ export function PersonalNoteView() {
             </button>
           )}
           <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
-            <Save className="w-5 h-5" /> Save Data
+            <Save className="w-5 h-5" /> Simpan Data
           </button>
         </div>
       </div>
@@ -93,8 +93,8 @@ export function PersonalNoteView() {
             <ShieldCheck className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-3xl font-serif font-bold text-stone-900">Personal Data</h1>
-            <p className="text-stone-500">Secure record for your sensitive information.</p>
+            <h1 className="text-3xl font-serif font-bold text-stone-900">Data Pribadi</h1>
+            <p className="text-stone-500">Catatan aman untuk informasi sensitif Anda.</p>
           </div>
         </div>
 
@@ -112,19 +112,19 @@ export function PersonalNoteView() {
             <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Account Number</label>
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Nomor Rekening</label>
             <input type="text" name="accountNumber" value={formData.accountNumber} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Address</label>
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Alamat</label>
             <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Postal Code</label>
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Kode Pos</label>
             <input type="text" name="postalCode" value={formData.postalCode} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Other Notes</label>
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Catatan Lainnya</label>
             <textarea name="extraNotes" value={formData.extraNotes} onChange={handleChange} rows={4} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
           </div>
         </div>
