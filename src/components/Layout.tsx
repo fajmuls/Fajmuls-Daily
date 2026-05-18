@@ -127,8 +127,12 @@ export function Layout({ children }: { children: ReactNode }) {
                 isActive ? "text-stone-900 font-bold bg-stone-100" : "text-stone-500 hover:bg-stone-50"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive ? "scale-110" : "")} />
-              <span className="text-[10px] uppercase tracking-wider">{item.label}</span>
+              {({ isActive }) => (
+                <>
+                  <item.icon className={cn("w-5 h-5", isActive ? "scale-110" : "")} />
+                  <span className="text-[10px] uppercase tracking-wider">{item.label}</span>
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
