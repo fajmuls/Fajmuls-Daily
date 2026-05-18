@@ -34,8 +34,7 @@ export function useAudio() {
   }, []);
 
   const playSuccess = useCallback(() => {
-    createBeep(800, 'sine', 0.1, 0.1);
-    setTimeout(() => createBeep(1200, 'sine', 0.15, 0.1), 100);
+    createBeep(1500, 'sine', 0.08, 0.05); // High freq, short duration, low volume "ting"
   }, []);
 
   const playError = useCallback(() => {

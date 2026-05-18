@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './store';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
@@ -38,7 +38,7 @@ export default function App() {
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <AuthWrapper>
         <AppProvider>
-          <HashRouter>
+          <BrowserRouter>
             <Layout>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
@@ -49,7 +49,7 @@ export default function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
-          </HashRouter>
+          </BrowserRouter>
         </AppProvider>
       </AuthWrapper>
     </ErrorBoundary>

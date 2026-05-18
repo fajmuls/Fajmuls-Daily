@@ -1,14 +1,13 @@
-import { useState, FormEvent, useMemo, useEffect } from 'react';
+import { useState, FormEvent, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
 import { FinanceRecord } from '../types';
-import { Plus, Minus, Trash2, ChevronDown, Tag, Save, Mic } from 'lucide-react';
+import { Plus, Minus, Trash2, ChevronDown, Tag, Save } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAudio } from '../hooks/useAudio';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { useVoiceCommand } from '../hooks/useVoiceCommand';
 
 export function Finance() {
   const { financeRecords, addFinanceRecord, deleteFinanceRecord } = useAppContext();
@@ -19,45 +18,6 @@ export function Finance() {
   const [note, setNote] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
-
-  // Voice Form Automation
-  const handleVoiceInput = (text: string) => {
-    const lower = text.toLowerCase();
-    
-    // Keyword detection
-    if (lower.includes('jumlah') || lower.includes('nominal')) {
-      const match = lower.match(/\d+/g);
-      if (match) {
-        setAmount(match.join(''));
-        playSuccess();
-      }
-    } else if (lower.includes('kategori')) {
-      const words = lower.split('kategori');
-      if (words.length > 1) {
-        const cat = words[1].trim();
-        if (cat) {
-           setCategory(cat.charAt(0).toUpperCase() + cat.slice(1));
-           playSuccess();
-        }
-      }
-    } else if (lower.includes('keterangan') || lower.includes('catatan')) {
-      const words = lower.split(/keterangan|catatan/);
-      if (words.length > 1) {
-        setNote(words[1].trim());
-        playSuccess();
-      }
-    } else if (lower.includes('masuk') || lower.includes('pendapatan')) {
-      setType('income');
-      playClick();
-    } else if (lower.includes('keluar') || lower.includes('pengeluaran')) {
-      setType('expense');
-      playClick();
-    } else if (lower.includes('simpan') || lower.includes('selesai')) {
-      document.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-    }
-  };
-
-  const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceInput);
 
   const categorySuggestions = useMemo(() => {
     const categories = new Set<string>();
@@ -176,21 +136,11 @@ export function Finance() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-20 md:pb-0">
-      <header className="flex justify-between items-start">
+      <header>
         <div>
           <h1 className="font-serif text-5xl font-bold text-stone-900">Catatan Keuangan</h1>
           <p className="text-stone-500 text-lg mt-2 font-medium">Lacak pemasukan dan pengeluaran harianmu.</p>
         </div>
-        <button 
-          onClick={isListening ? stopListening : startListening}
-          className={cn(
-            "p-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center gap-3 font-bold",
-            isListening ? "bg-red-500 text-white animate-pulse" : "bg-trip-brown text-white hover:bg-stone-800"
-          )}
-        >
-          <Mic className={cn("w-6 h-6", isListening ? "animate-bounce" : "")} />
-          {isListening ? "Mendengarkan..." : "Gunakan Suara"}
-        </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

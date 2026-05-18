@@ -32,49 +32,101 @@ export function Layout({ children }: { children: ReactNode }) {
     console.log("Mendeteksi suara:", lower);
     
     // 1. Navigation Commands
-    if (lower.includes('keuangan') || lower.includes('uang')) {
-      navigate('/finance');
-      playSuccess();
-      return;
-    } else if (lower.includes('ig') || lower.includes('instagram')) {
-      navigate('/notes/ig-list');
-      playSuccess();
-      return;
-    } else if (lower.includes('spesial') || lower.includes('khusus')) {
-      navigate('/special');
-      playSuccess();
-      return;
-    } else if (lower.includes('dokumen') || lower.includes('foto')) {
-      navigate('/docs');
-      playSuccess();
-      return;
-    } else if (lower.includes('catatan') || lower.includes('tulis')) {
-      navigate('/notes');
-      playSuccess();
-      return;
-    } else if (lower.includes('beranda') || lower.includes('dashboard') || lower.includes('home')) {
-      navigate('/');
-      playSuccess();
+    if (lower.includes('kembali') || lower.includes('balik') || lower.includes('back')) {
+      navigate(-1);
       return;
     }
 
-    // 2. Smart Element Detection (Buttons/Inputs)
-    // Mencari button yang teksnya mirip dengan perintah
-    const buttons = document.querySelectorAll('button, a, label');
-    let found = false;
-    
-    buttons.forEach((el) => {
-       const elText = el.textContent?.toLowerCase() || '';
-       if (elText && lower.includes(elText) && elText.length > 2) {
-          (el as HTMLElement).click();
-          playSuccess();
-          found = true;
+    if (lower.includes('keuangan') || lower.includes('uang')) {
+      navigate('/finance');
+      return;
+    } else if (lower.includes('ig') || lower.includes('instagram')) {
+      navigate('/notes/ig-list');
+      return;
+    } else if (lower.includes('spesial') || lower.includes('khusus')) {
+      navigate('/special');
+      return;
+    } else if (lower.includes('dokumen') || lower.includes('foto')) {
+      navigate('/docs');
+      return;
+    } else if (lower.includes('catatan') || lower.includes('tulis')) {
+      navigate('/notes');
+      return;
+    } else if (lower.includes('beranda') || lower.includes('dashboard') || lower.includes('home')) {
+      navigate('/');
+      return;
+    }
+
+    // 2. Smart Element Detection (Buttons/Inputs/Links/Labels)
+    // We search for elements on screen that match the command
+    const elements = document.querySelectorAll('button, a, label, input[type="button"], input[type="submit"], [role="button"]');
+    let bestMatch: HTMLElement | null = null;
+    let maxMatchLength = 0;
+
+    elements.forEach((el) => {
+       const elText = el.innerText?.toLowerCase().trim() || el.textContent?.toLowerCase().trim() || (el as HTMLInputElement).value?.toLowerCase() || '';
+       if (elText && lower.includes(elText) && elText.length > 1) {
+          // Priority 1: Exact Match (after trimming)
+          if (elText === lower) {
+             bestMatch = el as HTMLElement;
+             maxMatchLength = 999; // Highest priority
+          } else if (elText.length > maxMatchLength && maxMatchLength < 999) {
+             // Priority 2: Longest substring match (handles multi-word buttons)
+             maxMatchLength = elText.length;
+             bestMatch = el as HTMLElement;
+          }
        }
     });
 
-    if (found) return;
+    if (bestMatch) {
+       bestMatch.click();
+       // Only play success on specific confirmation-like commands
+       const confirmKeywords = ['simpan', 'hapus', 'tambah', 'oke', 'selesai', 'save', 'delete'];
+       if (confirmKeywords.some(k => lower.includes(k))) {
+          playSuccess();
+       }
+       return;
+    }
 
-    // 3. Fallback to general search or ignore
+    // 3. Smart Input Detection
+    // If command starts with keywords like "jumlah", "kategory", "keterangan"
+    const inputs = document.querySelectorAll('input, textarea');
+    let inputToFill: HTMLInputElement | HTMLTextAreaElement | null = null;
+    let valueToFill = '';
+
+    if (lower.includes('jumlah') || lower.includes('nominal')) {
+       // Look for amount input
+       inputToFill = document.querySelector('input[type="number"], input[placeholder*="0"]');
+       const match = lower.match(/\d+/g);
+       if (match) valueToFill = match.join('');
+    } else if (lower.includes('kategori')) {
+       inputToFill = document.querySelector('input[placeholder*="Cth. Makanan"], input[placeholder*="Kategori"]');
+       const words = lower.split('kategori');
+       if (words.length > 1) valueToFill = words[1].trim();
+    } else if (lower.includes('keterangan') || lower.includes('catatan')) {
+       inputToFill = document.querySelector('input[placeholder*="Opsional"], textarea[placeholder*="Tulis"]');
+       const words = lower.split(/keterangan|catatan/);
+       if (words.length > 1) valueToFill = words[1].trim();
+    }
+
+    if (inputToFill && valueToFill) {
+       inputToFill.focus();
+       // Use native setter to trigger React state updates
+       const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+       const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+       
+       if (inputToFill instanceof HTMLTextAreaElement && nativeTextAreaValueSetter) {
+          nativeTextAreaValueSetter.call(inputToFill, valueToFill);
+       } else if (inputToFill instanceof HTMLInputElement && nativeInputValueSetter) {
+          nativeInputValueSetter.call(inputToFill, valueToFill);
+       }
+       
+       inputToFill.dispatchEvent(new Event('input', { bubbles: true }));
+       playSuccess();
+       return;
+    }
+
+    // 4. Fallback
     console.log("Perintah tidak dikenali:", lower);
   };
 
