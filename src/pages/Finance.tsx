@@ -21,10 +21,24 @@ export function Finance() {
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [chartMode, setChartMode] = useState<'detail' | 'grouped'>('detail');
   const [showSettings, setShowSettings] = useState(false);
+  const [showNewCatDropdown, setShowNewCatDropdown] = useState(false);
+  const [showNewGroupDropdown, setShowNewGroupDropdown] = useState(false);
 
   // Group mappings management
   const [newGroupCategory, setNewGroupCategory] = useState('');
   const [newGroupName, setNewGroupName] = useState('');
+
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    financeRecords.forEach(r => set.add(r.category));
+    return Array.from(set).sort();
+  }, [financeRecords]);
+
+  const existingGroups = useMemo(() => {
+    const groups = new Set<string>(['Kebutuhan', 'Hiburan', 'Kesehatan', 'Tabungan', 'UTAMA', 'Sampingan', 'Pasif']);
+    Object.values(financeMappings).forEach(g => groups.add(g as string));
+    return Array.from(groups).sort();
+  }, [financeMappings]);
 
   // Vibrant and distinct colors for income (Bright)
   const COLORS_INCOME = [
@@ -110,7 +124,7 @@ export function Finance() {
   const incomeData = useMemo(() => {
     const data: Record<string, number> = {};
     let total = 0;
-    financeRecords.filter(r => r.type === 'income').forEach(r => {
+    financeRecords.filter(r => r.type === 'income' && r.amount > 0).forEach(r => {
       // Map to group if in grouped mode
       const key = chartMode === 'grouped' ? (financeMappings[r.category] || 'Lainnya') : r.category;
       data[key] = (data[key] || 0) + r.amount;
@@ -120,13 +134,13 @@ export function Finance() {
       name, 
       value, 
       displayPercent: total > 0 ? (value / total * 100).toFixed(1) : "0" 
-    })).sort((a,b) => b.value - a.value);
+    })).filter(d => d.value > 0).sort((a,b) => b.value - a.value);
   }, [financeRecords, chartMode, financeMappings]);
 
   const expenseData = useMemo(() => {
     const data: Record<string, number> = {};
     let total = 0;
-    financeRecords.filter(r => r.type === 'expense').forEach(r => {
+    financeRecords.filter(r => r.type === 'expense' && r.amount > 0).forEach(r => {
       const key = chartMode === 'grouped' ? (financeMappings[r.category] || 'Lainnya') : r.category;
       data[key] = (data[key] || 0) + r.amount;
       total += r.amount;
@@ -135,7 +149,7 @@ export function Finance() {
       name, 
       value, 
       displayPercent: total > 0 ? (value / total * 100).toFixed(1) : "0" 
-    })).sort((a,b) => b.value - a.value);
+    })).filter(d => d.value > 0).sort((a,b) => b.value - a.value);
   }, [financeRecords, chartMode, financeMappings]);
 
   // Helper to get color for a category
@@ -195,13 +209,6 @@ export function Finance() {
         </div>
         <div className="flex gap-2">
           <button 
-            onClick={() => { setHideAmounts(!hideAmounts); playClick(); }}
-            className="p-3 bg-paper border border-stone-200 rounded-2xl text-stone-600 hover:bg-stone-50 transition-all flex items-center gap-2 font-bold text-sm"
-          >
-            {hideAmounts ? <Eye className="w-4 h-4"/> : <EyeOff className="w-4 h-4"/>}
-            {hideAmounts ? "Tampilkan" : "Sembunyikan"}
-          </button>
-          <button 
             onClick={() => { setShowSettings(true); playClick(); }}
             className="p-3 bg-stone-900 text-white rounded-2xl hover:brightness-110 transition-all flex items-center gap-2 font-bold text-sm"
           >
@@ -217,8 +224,16 @@ export function Finance() {
             <div className="absolute top-0 right-0 p-6 opacity-10 scale-150 rotate-12 transition-transform group-hover:rotate-0">
                <Wallet className="w-24 h-24" />
             </div>
-            <p className="text-stone-400 uppercase tracking-widest text-[10px] font-bold mb-2">Total Saldo Tersedia</p>
-            <h2 className="text-4xl font-sans font-black tracking-tighter mb-6">
+            <div className="flex justify-between items-start mb-2 relative z-10">
+              <p className="text-stone-400 uppercase tracking-widest text-[10px] font-bold">Total Saldo Tersedia</p>
+              <button 
+                onClick={(e) => { e.preventDefault(); setHideAmounts(!hideAmounts); playClick(); }}
+                className="text-stone-500 hover:text-white transition-colors p-1"
+              >
+                {hideAmounts ? <Eye className="w-3.5 h-3.5"/> : <EyeOff className="w-3.5 h-3.5"/>}
+              </button>
+            </div>
+            <h2 className="text-4xl font-sans font-black tracking-tighter mb-6 relative z-10">
               {hideAmounts ? "Rp •••••••" : `Rp ${balance.toLocaleString('id-ID')}`}
             </h2>
             
@@ -350,23 +365,24 @@ export function Finance() {
                </div>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {incomeData.length > 0 && (
-                    <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col h-[420px]">
+                    <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col h-[420px] min-h-[420px] w-full">
                        <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pendapatan</h3>
-                       <div className="flex-1 w-full min-w-0 min-h-0 relative">
-                          <ResponsiveContainer width="100%" height="100%">
+                       <div className="flex-1 w-full relative">
+                          <ResponsiveContainer width="99%" height="99%">
                           <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                             <Pie
                               data={incomeData}
                               cx="50%"
                               cy="50%"
                               innerRadius="43%"
-                              outerRadius="90%"
-                              paddingAngle={3}
+                              outerRadius="85%"
+                              paddingAngle={2}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
-                              isAnimationActive={false}
-                              key={`pie-income-${chartMode}-${incomeData.length}`}
+                              isAnimationActive={true}
+                              animationDuration={500}
+                              key={`pie-inc-${chartMode}-${incomeData.length}`}
                             >
                               {incomeData.map((_entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} stroke="rgba(255,255,255,0.3)" strokeWidth={1} />
@@ -387,23 +403,24 @@ export function Finance() {
                   </div>
                 )}
                 {expenseData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col h-[420px]">
+                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col h-[420px] min-h-[420px] w-full">
                      <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pengeluaran</h3>
-                     <div className="flex-1 w-full min-w-0 min-h-0 relative">
-                        <ResponsiveContainer width="100%" height="100%">
+                     <div className="flex-1 w-full relative">
+                        <ResponsiveContainer width="99%" height="99%">
                           <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                             <Pie
                               data={expenseData}
                               cx="50%"
                               cy="50%"
                               innerRadius="43%"
-                              outerRadius="90%"
-                              paddingAngle={3}
+                              outerRadius="85%"
+                              paddingAngle={2}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
-                              isAnimationActive={false}
-                              key={`pie-expense-${chartMode}-${expenseData.length}`}
+                              isAnimationActive={true}
+                              animationDuration={500}
+                              key={`pie-exp-${chartMode}-${expenseData.length}`}
                             >
                               {expenseData.map((_entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
@@ -496,25 +513,80 @@ export function Finance() {
                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
                       <h4 className="font-bold text-xs uppercase tracking-widest text-stone-500 mb-4">Tambah Pemetaan Baru</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                         <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-stone-400 uppercase">Nama Kategori</label>
-                            <input 
-                              type="text" 
-                              value={newGroupCategory} 
-                              onChange={e => setNewGroupCategory(e.target.value)}
-                              placeholder="Cth: Makanan"
-                              className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-900"
-                            />
+                         <div className="space-y-1 relative">
+                            <label className="text-[10px] font-bold text-stone-400 uppercase">Kategori Aktif</label>
+                            <div className="relative">
+                               <input 
+                                 type="text" 
+                                 value={newGroupCategory} 
+                                 onChange={e => { setNewGroupCategory(e.target.value); setShowNewCatDropdown(true); }}
+                                 onFocus={() => setShowNewCatDropdown(true)}
+                                 placeholder="Pilih kategori..."
+                                 className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-900 pr-10"
+                               />
+                               <button 
+                                 type="button"
+                                 onClick={(e) => { e.stopPropagation(); setShowNewCatDropdown(!showNewCatDropdown); }} 
+                                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600"
+                               >
+                                  <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showNewCatDropdown ? "rotate-180" : "")} />
+                               </button>
+                            </div>
+                            {showNewCatDropdown && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setShowNewCatDropdown(false)} />
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5 flex flex-col gap-1">
+                                   {allCategories.filter(c => c.toLowerCase().includes(newGroupCategory.toLowerCase())).map((cat, idx) => (
+                                     <button 
+                                       key={idx} 
+                                       type="button"
+                                       onClick={() => { setNewGroupCategory(cat); setShowNewCatDropdown(false); playClick(); }}
+                                       className="text-left px-3 py-2 text-xs hover:bg-stone-50 rounded-lg font-medium"
+                                     >
+                                        {cat}
+                                     </button>
+                                   ))}
+                                   {allCategories.filter(c => c.toLowerCase().includes(newGroupCategory.toLowerCase())).length === 0 && (
+                                     <div className="p-3 text-[10px] text-stone-400 italic text-center">Kategori tidak ditemukan</div>
+                                   )}
+                                </div>
+                              </>
+                            )}
                          </div>
-                         <div className="space-y-1">
+                         <div className="space-y-1 relative">
                             <label className="text-[10px] font-bold text-stone-400 uppercase">Nama Grup</label>
-                            <input 
-                              type="text" 
-                              value={newGroupName} 
-                              onChange={e => setNewGroupName(e.target.value)}
-                              placeholder="Cth: Kebutuhan"
-                              className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-900"
-                            />
+                            <div className="relative">
+                               <input 
+                                 type="text" 
+                                 value={newGroupName} 
+                                 onChange={e => { setNewGroupName(e.target.value); setShowNewGroupDropdown(true); }}
+                                 onFocus={() => setShowNewGroupDropdown(true)}
+                                 placeholder="Ketik atau pilih..."
+                                 className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-900 pr-10"
+                               />
+                               <button 
+                                 type="button"
+                                 onClick={(e) => { e.stopPropagation(); setShowNewGroupDropdown(!showNewGroupDropdown); }} 
+                                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600"
+                               >
+                                  <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showNewGroupDropdown ? "rotate-180" : "")} />
+                               </button>
+                            </div>
+                            {showNewGroupDropdown && (
+                               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5 flex flex-col gap-1">
+                                  {existingGroups.filter(g => g.toLowerCase().includes(newGroupName.toLowerCase())).map((group, idx) => (
+                                    <button 
+                                      key={idx} 
+                                      type="button"
+                                      onClick={() => { setNewGroupName(group); setShowNewGroupDropdown(false); playClick(); }}
+                                      className="text-left px-3 py-2 text-xs hover:bg-stone-50 rounded-lg font-medium"
+                                    >
+                                       {group}
+                                    </button>
+                                  ))}
+                                  <div className="p-2 border-t border-stone-50 text-[10px] text-stone-400 italic text-center">"{newGroupName}" (Tekan Enter untuk baru)</div>
+                               </div>
+                            )}
                          </div>
                       </div>
                       <button 

@@ -128,7 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setFinanceMappings(snapshot.data() as { [key: string]: string });
       }
       setInitialLoaded(prev => ({ ...prev, mappings: true }));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/settings`));
+    }, (err) => handleFirestoreError(err, OperationType.GET, `${userPath}/settings/financeMappings`));
 
     return () => {
       unsubNotes();
