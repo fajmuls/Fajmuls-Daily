@@ -31,40 +31,66 @@ export function Layout({ children }: { children: ReactNode }) {
     const lower = text.toLowerCase();
     console.log("Mendeteksi suara:", lower);
     
+    // 1. Navigation Commands
     if (lower.includes('keuangan') || lower.includes('uang')) {
       navigate('/finance');
       playSuccess();
+      return;
     } else if (lower.includes('ig') || lower.includes('instagram')) {
       navigate('/notes/ig-list');
       playSuccess();
+      return;
     } else if (lower.includes('spesial') || lower.includes('khusus')) {
       navigate('/special');
       playSuccess();
+      return;
     } else if (lower.includes('dokumen') || lower.includes('foto')) {
       navigate('/docs');
       playSuccess();
+      return;
     } else if (lower.includes('catatan') || lower.includes('tulis')) {
       navigate('/notes');
       playSuccess();
+      return;
     } else if (lower.includes('beranda') || lower.includes('dashboard') || lower.includes('home')) {
       navigate('/');
       playSuccess();
+      return;
     }
+
+    // 2. Smart Element Detection (Buttons/Inputs)
+    // Mencari button yang teksnya mirip dengan perintah
+    const buttons = document.querySelectorAll('button, a, label');
+    let found = false;
+    
+    buttons.forEach((el) => {
+       const elText = el.textContent?.toLowerCase() || '';
+       if (elText && lower.includes(elText) && elText.length > 2) {
+          (el as HTMLElement).click();
+          playSuccess();
+          found = true;
+       }
+    });
+
+    if (found) return;
+
+    // 3. Fallback to general search or ignore
+    console.log("Perintah tidak dikenali:", lower);
   };
 
   const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceCommand);
   const [voiceHint, setVoiceHint] = useState<string | null>(null);
 
   const toggleVoice = () => {
-     if (isListening) {
-        stopListening();
-        setVoiceHint(null);
-     } else {
-        setVoiceHint("Sebutkan perintah (Cth: 'Keuangan', 'IG', 'Dashboard')");
-        startListening();
-        setTimeout(() => setVoiceHint(null), 5000);
-     }
-  };
+    if (isListening) {
+       stopListening();
+       setVoiceHint(null);
+    } else {
+       setVoiceHint("Sebutkan perintah (Cth: 'Keuangan', 'IG', 'Dashboard')");
+       startListening();
+       setTimeout(() => setVoiceHint(null), 5000);
+    }
+ };
 
   const UserProfile = ({ compact = false }) => (
     <div className={cn("flex items-center gap-3", compact ? "" : "p-4 mx-4 mb-4 bg-stone-100 rounded-2xl border border-stone-200")}>
