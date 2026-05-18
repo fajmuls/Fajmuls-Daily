@@ -5,19 +5,9 @@ import { cn } from '../lib/utils';
 import { useAudio } from '../hooks/useAudio';
 
 export function CustomDialogs() {
-  const { confirmDialog, alertMessage, setAlert, showConfirm } = useAppContext();
+  const { confirmDialog, alertMessage, setAlert, closeConfirm } = useAppContext();
   const { playClick, playError, playSuccess } = useAudio();
 
-  const handleConfirm = () => {
-    if (confirmDialog?.onConfirm) {
-      confirmDialog.onConfirm();
-    }
-    // @ts-ignore - setConfirmDialog is internal to store but we can assume it's there via context if we exposed it, or just use showConfirm with null
-  };
-
-  // We need to be able to close the dialog. Let's adjust store.tsx to expose a way to close it.
-  // Actually, I'll just use the `confirmDialog` state directly if I can, or I'll add a `closeConfirm` to store.
-  
   return (
     <>
       <AnimatePresence>
@@ -51,7 +41,7 @@ export function CustomDialogs() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => { playClick(); showConfirm('', () => {}); }} // This is a hacky way to close it
+              onClick={() => { playClick(); closeConfirm(); }}
               className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
             />
             <motion.div
@@ -72,7 +62,7 @@ export function CustomDialogs() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <button
-                    onClick={() => { playClick(); showConfirm('', () => {}); }}
+                    onClick={() => { playClick(); closeConfirm(); }}
                     className="py-4 bg-stone-100 text-stone-600 rounded-2xl font-bold hover:bg-stone-200 transition-all"
                   >
                     Batal
@@ -81,7 +71,7 @@ export function CustomDialogs() {
                     onClick={() => {
                       playSuccess();
                       confirmDialog.onConfirm();
-                      showConfirm('', () => {});
+                      closeConfirm();
                     }}
                     className="py-4 bg-red-600 text-white rounded-2xl font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
                   >

@@ -9,7 +9,7 @@ import { db } from '../lib/firebase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export function Dashboard() {
-  const { notes, financeRecords, docs, specials, missedPrayers, loading } = useAppContext();
+  const { notes, financeRecords, docs, specials, missedPrayers, loading, hideAmounts } = useAppContext();
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
 
   const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
@@ -69,7 +69,7 @@ export function Dashboard() {
           <div>
             <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Saldo Bersih</p>
             <h2 className="text-4xl font-bold font-serif">
-              Rp {totalFinance.toLocaleString('id-ID')}
+              {hideAmounts ? "Rp •••••••" : `Rp ${totalFinance.toLocaleString('id-ID')}`}
             </h2>
             <p className="text-stone-500 mt-2">{financeRecords.length} catatan bulan ini</p>
           </div>

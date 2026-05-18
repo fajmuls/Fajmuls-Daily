@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic, LogOut, User as UserIcon } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
@@ -73,23 +74,68 @@ export function Layout({ children }: { children: ReactNode }) {
      }
   };
 
-  const UserProfile = ({ compact = false }) => (
-    <div className={cn("flex items-center gap-3", compact ? "" : "p-4 mx-4 mb-4 bg-stone-100 rounded-2xl border border-stone-200")}>
-      {user?.photoURL ? (
-        <img src={user.photoURL} alt="Profile" className={cn("rounded-full border border-stone-200 object-cover", compact ? "w-8 h-8" : "w-10 h-10")} />
-      ) : (
-        <div className={cn("bg-stone-200 flex items-center justify-center rounded-full text-stone-500", compact ? "w-8 h-8" : "w-10 h-10")}>
-           <UserIcon className={compact ? "w-4 h-4" : "w-5 h-5"} />
-        </div>
-      )}
-      {!compact && (
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-stone-900 truncate">{user?.displayName || 'Pengguna'}</p>
-          <p className="text-xs text-stone-500 truncate">{user?.email}</p>
-        </div>
-      )}
-    </div>
-  );
+  const UserProfile = ({ compact = false }) => {
+    const [showMenu, setShowMenu] = useState(false);
+
+    return (
+      <div className="relative">
+        <button 
+          onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); playClick(); }}
+          className={cn("flex items-center gap-3 transition-all", compact ? "hover:scale-105" : "p-4 mx-4 mb-4 bg-stone-100 rounded-2xl border border-stone-200 hover:bg-stone-200")}
+        >
+          {user?.photoURL ? (
+            <img src={user.photoURL} alt="Profile" className={cn("rounded-full border border-stone-200 object-cover shadow-sm", compact ? "w-8 h-8" : "w-10 h-10")} />
+          ) : (
+            <div className={cn("bg-stone-200 flex items-center justify-center rounded-full text-stone-500", compact ? "w-8 h-8" : "w-10 h-10")}>
+               <UserIcon className={compact ? "w-4 h-4" : "w-5 h-5"} />
+            </div>
+          )}
+          {!compact && (
+            <div className="flex-1 min-w-0 text-left">
+              <p className="font-bold text-sm text-stone-900 truncate">{user?.displayName || 'Pengguna'}</p>
+              <p className="text-xs text-stone-500 truncate">{user?.email}</p>
+            </div>
+          )}
+        </button>
+
+        <AnimatePresence>
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: compact ? 10 : -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: compact ? 10 : -10 }}
+                className={cn(
+                  "absolute z-50 bg-white border border-stone-200 rounded-2xl shadow-xl p-2 w-48 overflow-hidden",
+                  compact ? "top-full right-0 mt-2" : "bottom-full left-4 mb-2"
+                )}
+              >
+                 <div className="px-3 py-2 border-b border-stone-100 md:hidden">
+                    <p className="font-bold text-xs text-stone-900 truncate">{user?.displayName}</p>
+                    <p className="text-[10px] text-stone-500 truncate">{user?.email}</p>
+                 </div>
+                 <button 
+                   onClick={() => { setShowMenu(false); navigate('/finance'); playClick(); }}
+                   className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-stone-600 hover:bg-stone-50 rounded-xl transition-colors"
+                 >
+                    <Wallet className="w-4 h-4" />
+                    Setelan Keuangan
+                 </button>
+                 <button 
+                   onClick={() => { setShowMenu(false); logout(); }}
+                   className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                 >
+                    <LogOut className="w-4 h-4" />
+                    Keluar
+                 </button>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
 
   return (
     <div className="flex h-screen w-full bg-cream font-sans text-stone-900 overflow-hidden">
@@ -119,7 +165,7 @@ export function Layout({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-stone-200 space-y-2">
+        <div className="p-4 border-t border-stone-200">
           <button 
             onClick={toggleVoice}
             className={cn(
@@ -129,14 +175,6 @@ export function Layout({ children }: { children: ReactNode }) {
           >
             <Mic className="w-4 h-4" />
             {isListening ? "Mendengarkan..." : "Perintah Suara"}
-          </button>
-          
-          <button 
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-sm bg-red-50 text-red-600 hover:bg-red-100"
-          >
-            <LogOut className="w-4 h-4" />
-            Keluar
           </button>
         </div>
       </aside>
@@ -158,15 +196,9 @@ export function Layout({ children }: { children: ReactNode }) {
              <UserProfile compact />
              <button 
                onClick={toggleVoice}
-               className={cn("p-2 rounded-full", isListening ? "bg-accent-orange text-white animate-pulse" : "bg-stone-100 text-stone-600")}
+               className={cn("p-2 rounded-full", isListening ? "bg-accent-orange text-white animate-pulse shadow-sm" : "bg-stone-100 text-stone-600")}
              >
                <Mic className="w-5 h-5" />
-             </button>
-             <button 
-               onClick={logout}
-               className="p-2 rounded-full bg-red-50 text-red-600"
-             >
-               <LogOut className="w-5 h-5" />
              </button>
           </div>
         </header>

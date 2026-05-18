@@ -61,9 +61,13 @@ export interface FinanceRecord {
   amount: number;
   type: 'income' | 'expense';
   category: string;
-  parentCategory?: string;
+  parentCategory?: string; // This will now be derived from mappings
   note: string;
   createdAt: number;
+}
+
+export interface FinanceMapping {
+  [category: string]: string; // categoryName -> groupName
 }
 
 export type Fardhu = 'Subuh' | 'Dzuhur' | 'Ashar' | 'Maghrib' | 'Isya' | 'Belum Diketahui';

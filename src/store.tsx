@@ -23,8 +23,14 @@ interface AppState {
   loading: boolean;
   confirmDialog: { isOpen: boolean; message: string; onConfirm: () => void } | null;
   alertMessage: string | null;
+  financeMappings: { [key: string]: string };
+  hideAmounts: boolean;
+  setHideAmounts: (hide: boolean) => void;
   setAlert: (message: string | null) => void;
   showConfirm: (message: string, onConfirm: () => void) => void;
+  closeConfirm: () => void;
+  updateFinanceMapping: (category: string, group: string) => void;
+  deleteFinanceMapping: (category: string) => void;
   addNote: (note: Note) => void;
   updateNote: (note: Note) => void;
   deleteNote: (id: string) => void;
@@ -51,10 +57,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; message: string; onConfirm: () => void } | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [financeMappings, setFinanceMappings] = useState<{ [key: string]: string }>({});
+  const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('fajmus-hide-amounts') === 'true');
 
   const setAlert = (message: string | null) => setAlertMessage(message);
   const showConfirm = (message: string, onConfirm: () => void) => {
     setConfirmDialog({ isOpen: true, message, onConfirm });
+  };
+  const closeConfirm = () => {
+    setConfirmDialog(null);
+  };
+
+  const toggleHideAmounts = (hide: boolean) => {
+    setHideAmounts(hide);
+    localStorage.setItem('fajmus-hide-amounts', hide ? 'true' : 'false');
   };
 
   // Track if initial data has loaded
@@ -63,7 +79,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     finance: false,
     prayers: false,
     docs: false,
-    specials: false
+    specials: false,
+    mappings: false
   });
 
   // Sync with Firestore
@@ -106,18 +123,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setInitialLoaded(prev => ({ ...prev, specials: true }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/specials`));
 
+    const unsubMappings = onSnapshot(doc(db, `${userPath}/settings/financeMappings`), (snapshot) => {
+      if (snapshot.exists()) {
+        setFinanceMappings(snapshot.data() as { [key: string]: string });
+      }
+      setInitialLoaded(prev => ({ ...prev, mappings: true }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/settings`));
+
     return () => {
       unsubNotes();
       unsubFinance();
       unsubPrayers();
       unsubDocs();
       unsubSpecials();
+      unsubMappings();
     };
   }, [user]);
 
   // Update loading state when all initial data is loaded
   useEffect(() => {
-    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials) {
+    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials && initialLoaded.mappings) {
       setLoading(false);
     }
   }, [initialLoaded]);
@@ -304,10 +329,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/specials/${id}`); }
   };
 
+  const updateFinanceMapping = async (category: string, group: string) => {
+    if (!user) return;
+    const newMappings = { ...financeMappings, [category]: group };
+    try {
+      await setDoc(doc(db, `users/${user.uid}/settings`, 'financeMappings'), newMappings);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/settings/financeMappings`); }
+  };
+
+  const deleteFinanceMapping = async (category: string) => {
+    if (!user) return;
+    const newMappings = { ...financeMappings };
+    delete newMappings[category];
+    try {
+      await setDoc(doc(db, `users/${user.uid}/settings`, 'financeMappings'), newMappings);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/settings/financeMappings`); }
+  };
+
   return (
     <AppContext.Provider value={{
       notes, financeRecords, missedPrayers, docs, specials, loading, 
-      confirmDialog, alertMessage, setAlert, showConfirm,
+      confirmDialog, alertMessage, financeMappings, hideAmounts, setHideAmounts: toggleHideAmounts, setAlert, showConfirm, closeConfirm, updateFinanceMapping, deleteFinanceMapping,
       addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial
     }}>
       {children}
