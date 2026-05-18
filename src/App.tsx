@@ -11,6 +11,8 @@ import { Finance } from './pages/Finance';
 import { Notes } from './pages/Notes';
 import { Docs } from './pages/Docs';
 import { Special } from './pages/Special';
+import { Profile } from './pages/Profile';
+import { MissedPrayersView } from './components/notes/MissedPrayersView';
 import { AuthWrapper } from './components/AuthWrapper';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -34,7 +36,7 @@ function ErrorFallback({ error, resetErrorBoundary }: any) {
 }
 
 export default function App() {
-  const basename = import.meta.env.BASE_URL?.replace(/\/$/, '') || '/';
+  const basename = '/Fajmuls-Daily';
   
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
@@ -48,6 +50,13 @@ export default function App() {
                 <Route path="/notes/*" element={<Notes />} />
                 <Route path="/docs" element={<Docs />} />
                 <Route path="/special" element={<Special />} />
+                <Route path="/prayers" element={<MissedPrayersView />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/tasks" element={<Navigate to="/notes/prayers" replace />} />
+                <Route path="/workout" element={<Navigate to="/notes/workout-list" replace />} />
+                <Route path="/stats" element={<Navigate to="/finance" replace />} />
+                <Route path="/calendar" element={<Navigate to="/" replace />} />
+                <Route path="/others" element={<Navigate to="/" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>

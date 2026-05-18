@@ -5,6 +5,20 @@ import { useAuth } from '../components/AuthWrapper';
 import { Wallet, NotebookPen, Dumbbell, Trophy, Calendar, BarChart3, User, Grid, ChevronRight, Plus, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { cn } from '../lib/utils';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1 }
+};
 
 export function Dashboard() {
   const { notes, financeRecords } = useAppContext();
@@ -17,154 +31,168 @@ export function Dashboard() {
     curr.type === 'income' ? acc + curr.amount : acc - curr.amount, 0
   );
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
+  const prevBalance = financeRecords
+    .filter(r => r.createdAt < startOfToday().getTime())
+    .reduce((acc, curr) => curr.type === 'income' ? acc + curr.amount : acc - curr.amount, 0);
+  
+  const balanceChange = prevBalance !== 0 
+    ? ((totalBalance - prevBalance) / Math.abs(prevBalance) * 100).toFixed(0)
+    : '100';
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-  };
+  const notesToday = notes.filter(n => n.createdAt >= startOfToday().getTime()).length;
+  const workoutMins = notes
+    .filter(n => n.type === 'workout')
+    .reduce((acc, curr: any) => acc + (curr.durationMins || 0), 0);
 
   return (
     <motion.div 
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="space-y-8 max-w-4xl mx-auto"
+      className="space-y-8 max-w-4xl mx-auto pb-10"
     >
       {/* Greetings */}
-      <motion.section variants={itemVariants} className="space-y-1">
-        <h2 className="text-3xl font-black text-white tracking-tight">
-          Halo, {profile?.displayName?.split(' ')[0] || 'Fajmuls'}! 👋
-        </h2>
-        <p className="text-slate-500 font-medium">Semangat hari ini, tetap produktif!</p>
+      <motion.section variants={itemVariants} className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h2 className="text-3xl font-black text-white tracking-tight">
+            Halo, {profile?.displayName?.split(' ')[0] || 'Fajmuls'}! 👋
+          </h2>
+          <p className="text-slate-500 font-medium">Semangat hari ini, tetap produktif!</p>
+        </div>
+        <div className="flex items-center gap-2">
+           <button className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5 hover:bg-white/10 transition-all text-slate-400 hover:text-white">
+              <Calendar className="w-5 h-5" />
+           </button>
+        </div>
       </motion.section>
 
       {/* Horizontal Calendar */}
-      <motion.section variants={itemVariants} className="flex justify-between items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <motion.section variants={itemVariants} className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none px-1">
         {days.map((date, i) => {
           const isToday = format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
           return (
             <div 
               key={i} 
               className={cn(
-                "flex flex-col items-center min-w-[60px] py-3 rounded-2xl transition-all",
-                isToday ? "active-nav-bg text-white shadow-lg" : "text-slate-500"
+                "flex flex-col items-center min-w-[65px] py-4 rounded-[1.5rem] transition-all border",
+                isToday 
+                  ? "active-nav-bg text-white shadow-[0_8px_20px_-6px_rgba(59,130,246,0.5)] border-transparent" 
+                  : "text-slate-500 border-white/5 bg-white/2 hover:bg-white/5"
               )}
             >
-              <span className="text-[10px] font-bold uppercase mb-1">{format(date, 'EEE', { locale: id })}</span>
-              <span className="text-lg font-black">{format(date, 'd')}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">{format(date, 'EEE', { locale: id })}</span>
+              <span className="text-xl font-black">{format(date, 'd')}</span>
             </div>
           );
         })}
       </motion.section>
 
       {/* Today's Summary Grid */}
-      <motion.section variants={itemVariants} className="glass-card rounded-[2.5rem] p-6 lg:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-bold text-lg">Ringkasan Hari Ini</h3>
-          <Link to="/reports" className="text-xs font-bold text-slate-500 flex items-center gap-1 hover:text-white transition-colors">
-            Lihat Semua <ChevronRight className="w-3 h-3" />
+      <motion.section variants={itemVariants} className="glass-card rounded-[2.5rem] p-8 border border-white/5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-5">
+           <BarChart3 className="w-32 h-32" />
+        </div>
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <h3 className="font-black text-lg text-white">Ringkasan Hari Ini</h3>
+          <Link to="/finance" className="text-[10px] font-black text-slate-500 flex items-center gap-2 hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-full border border-white/5 uppercase tracking-widest">
+            Lihat Laporan <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
           <SummaryCard 
             icon={Wallet} 
-            label="Keuangan" 
+            label="Finance" 
             value={`Rp ${Math.abs(totalBalance).toLocaleString('id-ID')}`} 
-            change="+12%" 
+            change={`${Number(balanceChange) >= 0 ? '+' : ''}${balanceChange}%`} 
             type="blue" 
           />
           <SummaryCard 
             icon={NotebookPen} 
-            label="Catatan" 
-            value={`${notes.length} Catatan`} 
-            change="+2" 
+            label="Journal" 
+            value={`${notes.length}`} 
+            change={`+${notesToday} Baru`} 
             type="purple" 
           />
           <SummaryCard 
             icon={Trophy} 
-            label="Tugas" 
-            value="5 Selesai" 
-            change="+3" 
+            label="Prayers" 
+            value="Target" 
+            change="5 Shalat" 
             type="yellow" 
           />
           <SummaryCard 
             icon={Dumbbell} 
             label="Workout" 
-            value="45 Menit" 
-            change="+10m" 
+            value={`${workoutMins}m`} 
+            change={`${workoutMins > 0 ? '+ Aktif' : 'Belum'}`} 
             type="green" 
           />
         </div>
       </motion.section>
 
       {/* Main Menu Grid */}
-      <motion.section variants={itemVariants} className="space-y-4">
-        <h3 className="font-bold text-lg">Menu Utama</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <MenuCard icon={Wallet} label="Keuangan" desc="Catatan pemasukan dan pengeluaran" path="/finance" color="blue" />
-          <MenuCard icon={NotebookPen} label="Catatan" desc="Buat dan kelola catatan pribadi" path="/notes" color="purple" />
-          <MenuCard icon={Trophy} label="Tugas" desc="Kelola tugas harianmu" path="/tasks" color="yellow" />
-          <MenuCard icon={Dumbbell} label="Workout" desc="Catat aktivitas workout" path="/workout" color="green" />
-          <MenuCard icon={User} label="Data Pribadi" desc="Informasi dan data dirimu" path="/profile" color="blue" />
-          <MenuCard icon={BarChart3} label="Statistik" desc="Lihat perkembangan dan laporan" path="/stats" color="purple" />
-          <MenuCard icon={Calendar} label="Kalender" desc="Jadwal dan pengingat" path="/calendar" color="yellow" />
-          <MenuCard icon={Grid} label="Lainnya" desc="Fitur lainnya di sini" path="/others" color="slate" />
+      <motion.section variants={itemVariants} className="space-y-6">
+        <div className="flex items-center justify-between">
+           <h3 className="font-black text-lg text-white">Layanan & Menu</h3>
+           <div className="h-px flex-1 bg-white/5 mx-6 hidden md:block" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <MenuCard icon={Wallet} label="Keuangan" desc="Arus kas & laporan" path="/finance" color="blue" />
+          <MenuCard icon={NotebookPen} label="Catatan" desc="Jurnal & memo harian" path="/notes" color="purple" />
+          <MenuCard icon={Trophy} label="Prayers" desc="Tracker qadha shalat" path="/notes/prayers" color="yellow" />
+          <MenuCard icon={Dumbbell} label="Workout" desc="Log latihan fisik" path="/workout" color="green" />
+          <MenuCard icon={User} label="Pribadi" desc="Arsip data rahasia" path="/notes/personal-list" color="blue" />
+          <MenuCard icon={BarChart3} label="Statistik" desc="Analisa data berkala" path="/stats" color="purple" />
+          <MenuCard icon={Calendar} label="Kalender" desc="Pengingat aktifitas" path="/calendar" color="yellow" />
+          <MenuCard icon={Grid} label="Lainnya" desc="Menu tambahan" path="/others" color="slate" />
         </div>
       </motion.section>
 
       {/* Motivational Banner */}
-      <motion.section variants={itemVariants} className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-blue-900 to-indigo-950 p-8 lg:p-10 border border-white/10 shadow-xl group">
-        <div className="absolute right-0 bottom-0 top-0 w-1/2 opacity-20 group-hover:scale-110 transition-transform duration-700">
+      <motion.section variants={itemVariants} className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-900 to-slate-950 p-10 border border-white/5 shadow-2xl group">
+        <div className="absolute right-0 bottom-0 top-0 w-1/2 opacity-30 group-hover:scale-110 transition-transform duration-1000 ease-out pointer-events-none">
            <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" className="w-full h-full object-contain translate-x-1/4 translate-y-1/4 rotate-12" alt="" />
         </div>
         <div className="relative z-10 max-w-sm">
-          <h2 className="text-2xl font-black text-white mb-4 leading-tight">
+          <h2 className="text-3xl font-black text-white mb-6 leading-tight tracking-tight">
             Konsistensi kecil membawa perubahan besar.
           </h2>
-          <p className="text-blue-300 font-bold flex items-center gap-2">
-            Terus tumbuh, setiap hari. ✨
-          </p>
+          <Link to="/notes" className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10">
+            Tumbuh Sekarang <ArrowUpRight className="w-4 h-4" />
+          </Link>
         </div>
-        {/* Abstract steps graphic (stylized) */}
+        
         <div className="absolute bottom-0 right-10 flex items-end gap-1 pointer-events-none opacity-40">
-           <div className="w-8 h-4 bg-white/20 rounded-t-lg" />
-           <div className="w-8 h-8 bg-white/20 rounded-t-lg" />
-           <div className="w-8 h-12 bg-white/20 rounded-t-lg" />
-           <div className="w-8 h-16 bg-white/20 rounded-t-lg" />
-           <div className="w-12 h-20 bg-white/20 rounded-t-lg flex items-center justify-center p-2">
-              <Trophy className="text-yellow-400 w-full h-full" />
+           {[4, 8, 12, 16].map((h, i) => (
+             <div key={i} className={`w-10 rounded-t-xl bg-white/10`} style={{ height: `${h*4}px` }} />
+           ))}
+           <div className="w-14 h-24 bg-accent-blue/30 rounded-t-xl flex items-center justify-center p-3 border-x border-t border-accent-blue/40">
+              <Trophy className="text-yellow-400 w-full h-full drop-shadow-lg" />
            </div>
         </div>
       </motion.section>
 
       {/* Recent Activity */}
-      <motion.section variants={itemVariants} className="space-y-4">
+      <motion.section variants={itemVariants} className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg text-white">Aktivitas Terbaru</h3>
-          <Link to="/finance" className="text-xs font-bold text-slate-500 flex items-center gap-1 hover:text-white transition-colors">
-            Lihat Semua <ChevronRight className="w-3 h-3" />
+          <h3 className="font-black text-lg text-white">Transaksi Terakhir</h3>
+          <Link to="/finance" className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-all">
+            Semua Transaksi
           </Link>
         </div>
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {financeRecords.length === 0 ? (
-            <div className="p-8 text-center glass-card border border-white/5 rounded-3xl text-slate-500 font-medium">
-              Belum ada transaksi terbaru.
+            <div className="p-12 text-center glass-card border border-white/5 rounded-[2rem] text-slate-500 font-bold uppercase tracking-widest text-[10px] md:col-span-2">
+              Belum ada aktivitas.
             </div>
           ) : (
-            financeRecords.slice(0, 3).map((record) => (
+            [...financeRecords].reverse().slice(0, 4).map((record) => (
               <ActivityItem 
                 key={record.id}
                 icon={Wallet} 
                 label={record.category} 
-                desc={record.note || "Transaksi Keuangan"} 
+                desc={record.note || "Transaksi Harian"} 
                 amount={`${record.type === 'income' ? '+ ' : '- '}Rp ${record.amount.toLocaleString('id-ID')}`} 
                 time={format(record.createdAt, 'HH:mm')} 
                 color={record.type === 'income' ? 'green' : 'blue'} 
@@ -221,7 +249,7 @@ function MenuCard({ icon: Icon, label, desc, path, color }: any) {
 
 function ActivityItem({ icon: Icon, label, desc, amount, time, color }: any) {
   return (
-    <div className="glass-card p-4 rounded-3xl flex items-center gap-4 group cursor-pointer hover:bg-white/5 transition-all">
+    <div className="glass-card p-4 rounded-3xl flex items-center gap-4 group cursor-pointer hover:bg-white/5 transition-all mb-3">
       <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner", color === 'green' ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500')}>
         <Icon className="w-5 h-5" />
       </div>
@@ -236,8 +264,4 @@ function ActivityItem({ icon: Icon, label, desc, amount, time, color }: any) {
       <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-slate-400 transition-colors" />
     </div>
   );
-}
-
-function cn(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
 }

@@ -5,9 +5,8 @@ import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
-  const isProd = mode === 'production';
   return {
-    base: isProd ? '/Fajmuls-Daily/' : '/',
+    base: '/Fajmuls-Daily/',
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),

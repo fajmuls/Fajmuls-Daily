@@ -113,8 +113,8 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen bg-dashboard-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl mx-auto mb-6 animate-pulse">
-             <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl mx-auto mb-6 animate-pulse overflow-hidden">
+             <img src="/Fajmuls-Daily/logo.png" alt="Logo" className="w-full h-full object-contain" onError={(e) => e.currentTarget.src = 'https://fajmuls.github.io/Fajmuls-Daily/logo.png'} />
           </div>
           <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Menyiapkan Pengalaman...</p>
         </div>
@@ -130,8 +130,8 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-accent-purple/10 blur-[120px] rounded-full" />
 
         <div className="glass-card p-10 md:p-14 rounded-[3rem] border border-white/10 shadow-2xl max-w-md w-full text-center space-y-8 relative z-10">
-          <div className="w-24 h-24 bg-white/5 rounded-3xl flex items-center justify-center mx-auto border border-white/10 shadow-inner group transition-transform hover:scale-110">
-             <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" alt="Logo" className="w-14 h-14 object-contain shadow-2xl" />
+          <div className="w-24 h-24 bg-white/5 rounded-3xl flex items-center justify-center mx-auto border border-white/10 shadow-inner group transition-transform hover:scale-110 overflow-hidden">
+             <img src="/Fajmuls-Daily/logo.png" alt="Logo" className="w-full h-full object-contain shadow-2xl" onError={(e) => e.currentTarget.src = 'https://fajmuls.github.io/Fajmuls-Daily/logo.png'} />
           </div>
           
           <div className="space-y-2">

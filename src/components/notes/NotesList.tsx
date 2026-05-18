@@ -26,10 +26,6 @@ export function NotesList() {
           <h1 className="text-3xl font-black text-white tracking-tight">Katalog Catatan</h1>
           <p className="text-slate-500 font-medium">Arsip jurnal harian dan data pribadimu.</p>
         </div>
-        <Link to="/notes/normal" className="fab-gradient px-8 py-3 rounded-2xl text-white font-black shadow-lg flex items-center gap-3 active:scale-95 transition-transform">
-           <Plus className="w-5 h-5" />
-           Baru
-        </Link>
       </header>
 
       {/* Templates Grid */}

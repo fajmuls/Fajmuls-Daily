@@ -128,45 +128,49 @@ export function WorkoutNoteView() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
       <div className="flex items-center justify-between">
-        <button onClick={() => { playClick(); navigate('/notes/workout-list'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+        <button onClick={() => { playClick(); navigate('/notes/workout-list'); }} className="w-12 h-12 flex items-center justify-center glass-card rounded-2xl border border-white/10 text-slate-400 hover:text-white transition-all">
+          <ArrowLeft className="w-6 h-6" />
         </button>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {existingNote && (
             <>
-               <button onClick={handleDuplicate} title="Salin Catatan Ini" className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors">
+               <button onClick={handleDuplicate} title="Salin Catatan Ini" className="w-12 h-12 flex items-center justify-center bg-white/5 text-slate-400 rounded-2xl border border-white/10 hover:text-white transition-all">
                  <Copy className="w-5 h-5" />
                </button>
-               <button onClick={handleDelete} className="p-3 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors">
+               <button onClick={handleDelete} className="w-12 h-12 flex items-center justify-center bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20 hover:bg-red-500/20 transition-all">
                  <Trash2 className="w-5 h-5" />
                </button>
             </>
           )}
-          <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
+          <button onClick={handleSave} className="flex items-center gap-2 px-8 py-3 fab-gradient text-white rounded-2xl font-black shadow-lg hover:shadow-[0_10px_25px_-5px_rgba(168,85,247,0.4)] transition-all active:scale-[0.98]">
             <Save className="w-5 h-5" /> Simpan
           </button>
         </div>
       </div>
 
-      <div className="bg-paper rounded-3xl p-8 border border-stone-200 shadow-sm space-y-6 flex flex-col">
-        <div className="flex flex-col md:flex-row gap-4 mb-2">
-           <div className="flex-1">
-              <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Pilih Tanggal</label>
-              <div className="flex items-center gap-2 bg-stone-50 px-4 py-3 rounded-xl focus-within:ring-2 ring-orange-500">
-                 <Calendar className="w-5 h-5 text-stone-400" />
-                 <input type="date" value={dateStr} onChange={e => setDateStr(e.target.value)} className="bg-transparent outline-none flex-1 font-mono font-medium text-stone-700" />
+      <div className="glass-card rounded-[2.5rem] p-8 lg:p-10 border border-white/5 shadow-2xl space-y-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+           <Dumbbell className="w-48 h-48" />
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-6 relative z-10">
+           <div className="flex-1 space-y-2">
+              <label className="block text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">Pilih Tanggal</label>
+              <div className="flex items-center gap-3 bg-white/5 px-5 py-4 rounded-[1.5rem] border border-white/5 focus-within:ring-2 ring-accent-blue transition-all">
+                 <Calendar className="w-5 h-5 text-accent-blue" />
+                 <input type="date" value={dateStr} onChange={e => setDateStr(e.target.value)} className="bg-transparent outline-none flex-1 font-black text-white" />
               </div>
            </div>
-           <div className="flex-1">
-              <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Kategori</label>
+           <div className="flex-1 space-y-2">
+              <label className="block text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">Kategori Latihan</label>
               <div className="flex flex-wrap gap-2">
                  {WORKOUT_CATEGORIES.map(cat => (
                     <button 
                        key={cat}
                        onClick={() => setWorkoutCategory(cat)}
-                       className={cn("px-4 py-2 rounded-xl text-sm font-bold transition-colors", workoutCategory === cat ? "bg-orange-100 text-orange-700 border border-orange-200" : "bg-stone-50 text-stone-500 border border-transparent hover:bg-stone-100")}
+                       className={cn("px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border", workoutCategory === cat ? "active-nav-bg text-white border-transparent" : "bg-white/2 text-slate-500 border-white/5 hover:bg-white/5")}
                     >
                        {cat}
                     </button>
@@ -175,107 +179,107 @@ export function WorkoutNoteView() {
            </div>
         </div>
 
-        <div className="relative group">
+        <div className="relative group z-10">
            <input
              type="text"
              value={title}
              onFocus={() => setShowTitleDropdown(true)}
              onChange={(e) => { setTitle(e.target.value); setShowTitleDropdown(true); }}
-             placeholder="Judul Olahraga (Cth: Dada & Trisep)"
-             className="w-full text-4xl font-serif font-bold text-stone-900 outline-none placeholder:text-stone-300 bg-transparent mt-4 pr-10"
+             placeholder="Nama Latihan (Cth: Dada & Trisep)"
+             className="w-full text-4xl lg:text-5xl font-black text-white outline-none placeholder:text-white/10 bg-transparent tracking-tight pr-12"
            />
-           <button onClick={() => setShowTitleDropdown(!showTitleDropdown)} className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-stone-300">
-              <ChevronDown className={cn("w-6 h-6 transition-transform", showTitleDropdown ? "rotate-180" : "")} />
+           <button onClick={() => setShowTitleDropdown(!showTitleDropdown)} className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-white transition-colors">
+              <ChevronDown className={cn("w-7 h-7 transition-transform", showTitleDropdown ? "rotate-180" : "")} />
            </button>
            
            {showTitleDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-2xl shadow-xl z-20 p-2 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-full left-0 right-0 mt-3 glass-card border border-white/10 rounded-[2rem] shadow-2xl z-[60] p-3 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-4">
                  {titleTemplates.filter(t => t.toLowerCase().includes(title.toLowerCase())).map((t, i) => (
                     <button 
                        key={i}
                        type="button"
                        onClick={() => { setTitle(t); setShowTitleDropdown(false); playClick(); }}
-                       className="w-full text-left px-4 py-3 hover:bg-stone-50 rounded-xl font-medium text-stone-700 transition-colors"
+                       className="w-full text-left px-5 py-4 hover:bg-white/10 rounded-2xl font-black text-white text-sm transition-all"
                     >
                        {t}
                     </button>
                  ))}
                  {titleTemplates.filter(t => t.toLowerCase().includes(title.toLowerCase())).length === 0 && (
-                    <div className="p-4 text-center text-sm text-stone-400">Tekan 'Simpan' untuk menambah template baru</div>
+                    <div className="p-6 text-center text-[10px] text-slate-500 font-black uppercase tracking-widest">Simpan untuk buat template</div>
                  )}
               </div>
            )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-           <div className="flex items-center gap-4 bg-orange-50 text-orange-800 p-4 rounded-2xl w-max">
-               <Timer className="w-6 h-6" />
-               <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-6 z-10 relative">
+           <div className="flex items-center gap-4 bg-accent-blue/10 text-accent-blue p-5 rounded-[2rem] border border-accent-blue/20">
+               <Timer className="w-7 h-7" />
+               <div className="flex items-center gap-3">
                  <input 
                    type="number" 
                    value={durationMins} 
                    onChange={(e) => setDurationMins(e.target.value === '' ? '' : Number(e.target.value))} 
-                   className="w-16 bg-transparent border-b border-orange-200 outline-none text-center font-bold font-mono text-xl focus:border-orange-500" 
+                   className="w-16 bg-transparent border-b border-accent-blue/20 outline-none text-center font-black text-2xl focus:border-accent-blue" 
                    placeholder="0"
                  />
-                 <span className="font-bold uppercase tracking-wider text-sm">Menit</span>
+                 <span className="font-black uppercase tracking-widest text-[10px]">Menit</span>
                </div>
            </div>
            
-           <button onClick={addDetail} className="flex items-center gap-2 px-6 py-4 bg-paper border-2 border-dashed border-stone-200 rounded-2xl text-stone-500 font-bold hover:border-orange-300 hover:text-orange-600 transition-all">
-              <Plus className="w-5 h-5" /> Tambah Gerakan
+           <button onClick={addDetail} className="flex items-center gap-3 px-8 py-5 bg-white/5 border-2 border-dashed border-white/5 rounded-[2rem] text-slate-400 font-black uppercase tracking-widest text-[10px] hover:border-accent-blue hover:text-white transition-all group">
+              <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" /> Tambah Gerakan
            </button>
         </div>
 
         {details.length > 0 && (
-           <div className="space-y-4 pt-4">
-              <h3 className="font-bold uppercase tracking-widest text-stone-400 text-xs pl-2">Detail Gerakan</h3>
+           <div className="space-y-4 pt-6 z-10 relative">
+              <h3 className="font-black uppercase tracking-[0.3em] text-slate-600 text-[10px] pl-4">Daftar Latihan</h3>
               {details.map((detail, index) => (
-                 <div key={detail.id} className="bg-stone-50 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center group">
+                 <div key={detail.id} className="bg-white/2 rounded-[2rem] p-6 flex flex-col lg:flex-row gap-6 items-start lg:items-center group border border-white/5 hover:bg-white/5 transition-all">
                     <div className="flex-1 w-full">
                        <input 
                           type="text" 
                           value={detail.exercise} 
                           onChange={(e) => updateDetail(index, 'exercise', e.target.value)}
-                          placeholder="Nama Gerakan (Cth: Push Up)"
-                          className="w-full bg-transparent border-b border-stone-200 outline-none font-bold text-stone-800 focus:border-stone-900 py-1"
+                          placeholder="Nama Gerakan..."
+                          className="w-full bg-transparent border-b border-white/5 outline-none font-black text-lg text-white focus:border-accent-blue py-2 transition-all"
                        />
                     </div>
                     
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                       <div className="bg-white border border-stone-200 rounded-xl px-3 py-2 flex items-center gap-2">
+                    <div className="flex items-center gap-3 w-full lg:w-auto">
+                       <div className="bg-white/5 border border-white/5 rounded-[1.2rem] px-4 py-3 flex items-center gap-3">
                           <input 
                              type="number" 
                              value={detail.sets} 
                              onChange={(e) => updateDetail(index, 'sets', Number(e.target.value))}
-                             className="w-8 text-center bg-transparent outline-none font-mono font-bold"
+                             className="w-10 text-center bg-transparent outline-none font-black text-white"
                           />
-                          <span className="text-[10px] uppercase font-bold text-stone-400">Sets</span>
+                          <span className="text-[8px] uppercase font-black text-slate-500 tracking-widest">Sets</span>
                        </div>
                        
-                       <div className="bg-white border border-stone-200 rounded-xl px-3 py-2 flex items-center gap-2">
+                       <div className="bg-white/5 border border-white/5 rounded-[1.2rem] px-4 py-3 flex items-center gap-3">
                           <input 
                              type="number" 
                              value={detail.reps} 
                              onChange={(e) => updateDetail(index, 'reps', Number(e.target.value))}
-                             className="w-8 text-center bg-transparent outline-none font-mono font-bold"
+                             className="w-10 text-center bg-transparent outline-none font-black text-white"
                           />
-                          <span className="text-[10px] uppercase font-bold text-stone-400">Reps</span>
+                          <span className="text-[8px] uppercase font-black text-slate-500 tracking-widest">Reps</span>
                        </div>
 
-                       <div className="bg-white border border-stone-200 rounded-xl px-3 py-2 flex items-center gap-2">
+                       <div className="bg-white/5 border border-white/5 rounded-[1.2rem] px-4 py-3 flex items-center gap-3">
                           <input 
                              type="text" 
                              value={detail.weight} 
                              onChange={(e) => updateDetail(index, 'weight', e.target.value)}
                              placeholder="-"
-                             className="w-12 text-center bg-transparent outline-none font-mono font-bold"
+                             className="w-14 text-center bg-transparent outline-none font-black text-white"
                           />
-                          <span className="text-[10px] uppercase font-bold text-stone-400">Kg/Lvl</span>
+                          <span className="text-[8px] uppercase font-black text-slate-500 tracking-widest">Kg</span>
                        </div>
 
-                       <button onClick={() => deleteDetail(index)} className="p-2 text-stone-300 hover:text-red-500 transition-colors md:opacity-0 group-hover:opacity-100">
-                          <Trash2 className="w-4 h-4" />
+                       <button onClick={() => deleteDetail(index)} className="p-3 text-slate-700 hover:text-red-500 transition-colors bg-white/5 rounded-xl border border-white/5 opacity-0 group-hover:opacity-100">
+                          <Trash2 className="w-5 h-5" />
                        </button>
                     </div>
                  </div>
@@ -286,8 +290,8 @@ export function WorkoutNoteView() {
         <textarea
           value={routine}
           onChange={(e) => setRoutine(e.target.value)}
-          placeholder="Catatan tambahan..."
-          className="w-full flex-1 min-h-[150px] text-lg text-stone-700 outline-none placeholder:text-stone-300 bg-transparent resize-y mt-8"
+          placeholder="Catatan tambahan untuk sesi ini..."
+          className="w-full flex-1 min-h-[200px] text-lg text-slate-300 outline-none placeholder:text-white/5 bg-transparent resize-none leading-relaxed transition-all p-4 z-10 relative"
         />
       </div>
     </div>

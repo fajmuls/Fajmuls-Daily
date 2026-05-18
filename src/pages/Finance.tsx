@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
 import { FinanceRecord } from '../types';
-import { Plus, Minus, Trash2, ChevronDown, Tag, Save } from 'lucide-react';
+import { Plus, Minus, Trash2, ChevronDown, Tag, Save, Wallet } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAudio } from '../hooks/useAudio';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -135,62 +135,65 @@ export function Finance() {
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-20 md:pb-0">
+    <div className="space-y-10 animate-in fade-in duration-500 pb-20 md:pb-0 max-w-5xl mx-auto">
       <header>
         <div>
-          <h1 className="font-serif text-5xl font-bold text-stone-900">Catatan Keuangan</h1>
-          <p className="text-stone-500 text-lg mt-2 font-medium">Lacak pemasukan dan pengeluaran harianmu.</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">Manajemen Keuangan</h1>
+          <p className="text-slate-500 font-medium">Lacak pemasukan dan pengeluaran harianmu.</p>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-stone-900 text-white rounded-3xl p-8 shadow-xl">
-            <p className="text-stone-400 uppercase tracking-widest text-xs font-bold mb-2">Total Saldo</p>
-            <h2 className="text-4xl font-serif font-bold mb-6">Rp {balance.toLocaleString('id-ID')}</h2>
+          <div className="glass-card text-white rounded-[2rem] p-8 border border-white/10 shadow-2xl relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-6 opacity-10">
+                <Wallet className="w-20 h-20" />
+             </div>
+            <p className="text-slate-500 uppercase tracking-widest text-[10px] font-black mb-1">Total Saldo</p>
+            <h2 className="text-4xl font-black mb-8 tracking-tight">Rp {balance.toLocaleString('id-ID')}</h2>
             
-            <div className="grid grid-cols-2 gap-4 border-t border-stone-800 pt-6">
+            <div className="grid grid-cols-2 gap-6 border-t border-white/5 pt-6">
               <div>
-                <p className="text-stone-500 text-xs uppercase tracking-widest font-bold mb-1 border-b border-green-500/30 pb-1">Pendapatan</p>
-                <p className="text-green-400 font-bold font-mono">Rp {totalIncome.toLocaleString('id-ID')}</p>
+                <p className="text-slate-500 text-[10px] uppercase tracking-widest font-black mb-1">Pemasukan</p>
+                <p className="text-green-400 font-black text-sm">Rp {totalIncome.toLocaleString('id-ID')}</p>
               </div>
               <div>
-                <p className="text-stone-500 text-xs uppercase tracking-widest font-bold mb-1 border-b border-red-500/30 pb-1">Pengeluaran</p>
-                <p className="text-red-400 font-bold font-mono">Rp {totalExpense.toLocaleString('id-ID')}</p>
+                <p className="text-slate-500 text-[10px] uppercase tracking-widest font-black mb-1">Pengeluaran</p>
+                <p className="text-red-400 font-black text-sm">Rp {totalExpense.toLocaleString('id-ID')}</p>
               </div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-4">
-            <h3 className="font-bold text-lg">Tambah Catatan</h3>
+          <form onSubmit={handleSubmit} className="glass-card rounded-[2rem] p-8 border border-white/5 shadow-xl space-y-6">
+            <h3 className="font-bold text-lg text-white">Tambah Catatan</h3>
             
-            <div className="flex gap-2">
+            <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
               <button
                 type="button"
                 onClick={() => { setType('expense'); setCategory(''); setShowCatDropdown(false); playClick(); }}
-                className={cn("flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all", type === 'expense' ? "bg-red-100 text-red-700 shadow-sm" : "bg-stone-50 text-stone-500 hover:bg-stone-100")}
+                className={cn("flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all text-xs", type === 'expense' ? "bg-red-500 text-white shadow-lg" : "text-slate-400 hover:text-white")}
               >
-                <Minus className="w-5 h-5" /> Keluar
+                <Minus className="w-4 h-4" /> Keluar
               </button>
               <button
                 type="button"
                 onClick={() => { setType('income'); setCategory(''); setShowCatDropdown(false); playClick(); }}
-                className={cn("flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all", type === 'income' ? "bg-green-100 text-green-700 shadow-sm" : "bg-stone-50 text-stone-500 hover:bg-stone-100")}
+                className={cn("flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all text-xs", type === 'income' ? "bg-green-500 text-white shadow-lg" : "text-slate-400 hover:text-white")}
               >
-                <Plus className="w-5 h-5" /> Masuk
+                <Plus className="w-4 h-4" /> Masuk
               </button>
             </div>
 
-            <div>
-              <label className="block text-xs uppercase tracking-wide text-stone-500 font-bold mb-2">Jumlah</label>
-              <div className="relative">
-                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 font-bold">Rp</span>
-                 <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required className="w-full bg-stone-50 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-stone-900 font-mono text-lg" placeholder="0" />
+            <div className="space-y-2">
+              <label className="block text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">Nominal</label>
+              <div className="relative group">
+                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs">Rp</span>
+                 <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-accent-blue font-black text-xl text-white transition-all" placeholder="0" />
               </div>
             </div>
 
-            <div className="relative">
-              <label className="block text-xs uppercase tracking-wide text-stone-500 font-bold mb-2">Kategori (Pilih atau Ketik)</label>
+            <div className="relative space-y-2">
+              <label className="block text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">Kategori</label>
               <div className="relative">
                  <input 
                    type="text" 
@@ -198,98 +201,97 @@ export function Finance() {
                    onChange={e => { setCategory(e.target.value); setShowCatDropdown(true); }}
                    onFocus={() => setShowCatDropdown(true)}
                    required 
-                   className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-stone-900 pr-10" 
+                   className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-accent-blue pr-12 text-white font-bold" 
                    placeholder="Cth. Makanan"
                  />
-                 <button type="button" onClick={() => setShowCatDropdown(!showCatDropdown)} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-stone-400 hover:text-stone-600">
-                    <ChevronDown className={cn("w-4 h-4 transition-transform", showCatDropdown ? "rotate-180" : "")} />
+                 <button type="button" onClick={() => setShowCatDropdown(!showCatDropdown)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-white transition-colors">
+                    <ChevronDown className={cn("w-5 h-5 transition-transform", showCatDropdown ? "rotate-180" : "")} />
                  </button>
               </div>
               
               {showCatDropdown && (
-                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto overflow-x-hidden p-2 grid grid-cols-2 gap-1 animate-in fade-in slide-in-from-top-2">
+                 <div className="absolute top-full left-0 right-0 mt-3 glass-card border border-white/10 rounded-2xl shadow-2xl z-[60] max-h-56 overflow-y-auto p-2 grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-4">
                     {categorySuggestions.filter(c => c.toLowerCase().includes(category.toLowerCase())).map((cat, i) => (
                       <button 
                         key={i} 
                         type="button" 
                         onClick={() => { setCategory(cat); setShowCatDropdown(false); playClick(); }} 
-                        className="text-left px-3 py-2 text-sm rounded-lg hover:bg-stone-100 font-medium truncate"
+                        className="text-left px-4 py-3 text-sm rounded-xl hover:bg-white/10 font-bold text-white transition-all flex items-center justify-between group"
                       >
                          {cat}
+                         <Tag className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
                       </button>
                     ))}
                     {categorySuggestions.filter(c => c.toLowerCase().includes(category.toLowerCase())).length === 0 && (
-                      <div className="col-span-2 text-center py-4 text-xs text-stone-400">Ketik untuk membuat baru "{category}"</div>
+                      <div className="text-center py-6 text-[10px] text-slate-500 font-bold uppercase tracking-widest">Ketik untuk simpan "{category}"</div>
                     )}
                  </div>
               )}
             </div>
 
-            <div>
-              <label className="block text-xs uppercase tracking-wide text-stone-500 font-bold mb-2">Catatan Tambahan (Opsional)</label>
-              <input type="text" value={note} onChange={e => setNote(e.target.value)} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-stone-900" placeholder="Opsional" />
+            <div className="space-y-2">
+              <label className="block text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">Catatan</label>
+              <input type="text" value={note} onChange={e => setNote(e.target.value)} className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-accent-blue text-white font-bold" placeholder="Opsional" />
             </div>
 
-            <button type="submit" className="w-full bg-stone-900 text-white rounded-xl py-4 font-bold mt-2 hover:bg-stone-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-              <Save className="w-5 h-5"/> Simpan Data
+            <button type="submit" className="w-full fab-gradient text-white rounded-2xl py-5 font-black mt-4 hover:shadow-[0_10px_30px_-5px_rgba(168,85,247,0.5)] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+              <Save className="w-6 h-6"/> Simpan Data
             </button>
           </form>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           {financeRecords.length > 0 && (
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {incomeData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm">
-                     <h3 className="font-bold text-stone-900 mb-4 text-center">Distribusi Pendapatan</h3>
-                     <div className="h-64 md:h-56">
+                  <div className="glass-card rounded-[2rem] border border-white/5 p-8 shadow-xl">
+                     <h3 className="font-black text-white mb-6 text-center text-sm uppercase tracking-widest">Pendapatan</h3>
+                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={incomeData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={35}
+                              innerRadius={45}
                               outerRadius={85}
-                              paddingAngle={2}
+                              paddingAngle={4}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
                             >
                               {incomeData.map((_entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} />
+                                <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />
                               ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
-                            <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
                           </PieChart>
                         </ResponsiveContainer>
                      </div>
                   </div>
                 )}
                 {expenseData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm">
-                     <h3 className="font-bold text-stone-900 mb-4 text-center">Distribusi Pengeluaran</h3>
-                     <div className="h-64 md:h-56">
+                  <div className="glass-card rounded-[2rem] border border-white/5 p-8 shadow-xl">
+                     <h3 className="font-black text-white mb-6 text-center text-sm uppercase tracking-widest">Pengeluaran</h3>
+                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={expenseData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={35}
+                              innerRadius={45}
                               outerRadius={85}
-                              paddingAngle={2}
+                              paddingAngle={4}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
                             >
                               {expenseData.map((_entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} />
+                                <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />
                               ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
-                            <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
                           </PieChart>
                         </ResponsiveContainer>
                      </div>
@@ -298,32 +300,36 @@ export function Finance() {
              </div>
           )}
 
-          <div className="bg-paper rounded-3xl border border-stone-200 overflow-hidden shadow-sm">
-            <div className="px-6 py-4 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
-              <h3 className="font-bold text-stone-900">Transaksi Terakhir</h3>
+          <div className="glass-card rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl relative">
+            <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-white/2">
+              <h3 className="font-black text-white text-lg">Riwayat Transaksi</h3>
+              <span className="text-[10px] font-black bg-white/5 px-3 py-1 rounded-full text-slate-500 uppercase tracking-widest">{financeRecords.length} Entri</span>
             </div>
             {financeRecords.length === 0 ? (
-              <div className="p-12 text-center text-stone-400">Belum ada catatan yang ditemukan. Mulai tambahkan data!</div>
+              <div className="p-20 text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">Belum ada riwayat transaksi.</div>
             ) : (
-              <ul className="divide-y divide-stone-100">
-                {financeRecords.map(record => (
-                  <li key={record.id} className="p-6 flex items-center justify-between hover:bg-stone-50 transition-colors group">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", record.type === 'income' ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
-                        {record.type === 'income' ? <Plus className="w-5 h-5"/> : <Minus className="w-5 h-5"/>}
+              <ul className="divide-y divide-white/5">
+                {[...financeRecords].reverse().map(record => (
+                  <li key={record.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-all group">
+                    <div className="flex items-center gap-5 min-w-0">
+                      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border transition-all shadow-lg", record.type === 'income' ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20")}>
+                        {record.type === 'income' ? <Plus className="w-6 h-6"/> : <Minus className="w-6 h-6"/>}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-stone-900 truncate">{record.category}</p>
-                        <p className="text-sm text-stone-500 truncate">{record.note || format(record.createdAt, 'd MMM yyyy', { locale: id })}</p>
+                        <p className="font-black text-white truncate text-base leading-none mb-1">{record.category}</p>
+                        <p className="text-[10px] text-slate-500 truncate font-black uppercase tracking-widest">{record.note || format(record.createdAt, 'd MMMM yyyy', { locale: id })}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <span className={cn("font-bold text-sm md:text-lg font-mono whitespace-nowrap", record.type === 'income' ? "text-green-600" : "text-stone-900")}>
-                        {record.type === 'income' ? '+' : '-'}Rp {record.amount.toLocaleString('id-ID')}
-                      </span>
+                    <div className="flex items-center gap-6 shrink-0">
+                      <div className="text-right">
+                         <span className={cn("font-black text-lg font-mono whitespace-nowrap block leading-none mb-1", record.type === 'income' ? "text-green-400" : "text-white")}>
+                           {record.type === 'income' ? '+' : '-'}Rp {record.amount.toLocaleString('id-ID')}
+                         </span>
+                         <span className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">{format(record.createdAt, 'HH:mm')}</span>
+                      </div>
                       <button onClick={() => { 
                          if(window.confirm("Hapus transaksi ini?")) { deleteFinanceRecord(record.id); playError(); } 
-                      }} className="p-2 text-stone-300 hover:text-red-500 transition-colors rounded-full hover:bg-red-50 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0">
+                      }} className="w-10 h-10 flex items-center justify-center text-slate-700 hover:text-red-500 transition-all rounded-xl hover:bg-red-500/10 shrink-0 border border-transparent hover:border-red-500/20">
                         <Trash2 className="w-5 h-5" />
                       </button>
                     </div>

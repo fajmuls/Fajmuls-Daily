@@ -13,6 +13,8 @@ const navItems = [
   { icon: UserIcon, label: 'Profil', path: '/profile' },
 ];
 
+const LOGO_URL = "/Fajmuls-Daily/logo.png";
+
 export function Layout({ children }: { children: ReactNode }) {
   const { playClick } = useAudio();
   const navigate = useNavigate();
@@ -41,8 +43,8 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Sidebar for Desktop (matching the app's aesthetic) */}
       <aside className="hidden lg:flex flex-col w-72 border-r border-white/5 bg-dashboard-bg/50 backdrop-blur-xl">
         <div className="p-8 flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner">
-             <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" alt="Logo" className="w-8 h-8 object-contain" onError={(e) => e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/1055/1055644.png'} />
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner overflow-hidden">
+             <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain" onError={(e) => e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/1055/1055644.png'} />
           </div>
           <div>
             <h1 className="text-xl font-black tracking-tight text-white leading-none">Fajmuls</h1>
@@ -104,8 +106,8 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Universal Header (Mobile & Desktop) */}
         <header className="flex items-center justify-between p-6 lg:px-10">
           <div className="lg:hidden flex items-center gap-3">
-             <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-                <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+             <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 overflow-hidden">
+                <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain" onError={(e) => e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/1055/1055644.png'} />
              </div>
              <div>
                 <h1 className="text-lg font-black text-white leading-none">Fajmuls</h1>
@@ -116,12 +118,17 @@ export function Layout({ children }: { children: ReactNode }) {
           <div className="flex-1 hidden lg:block" />
 
           <div className="flex items-center gap-3">
-            <button className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all relative">
+            <button 
+              onClick={() => { playClick(); alert("Notifikasi belum tersedia."); }}
+              className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all relative"
+            >
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-dashboard-bg" />
             </button>
-            <UserAvatar className="w-10 h-10 lg:ml-2" />
-            <div className="hidden lg:block text-left">
+            <div onClick={() => navigate('/profile')}>
+               <UserAvatar className="w-10 h-10 lg:ml-2" />
+            </div>
+            <div className="hidden lg:block text-left cursor-pointer" onClick={() => navigate('/profile')}>
                <p className="text-xs font-bold text-white leading-none mb-1">{firstName(profile?.displayName)}</p>
                <p className="text-[10px] text-slate-500 font-medium">Premium Member</p>
             </div>
@@ -154,7 +161,7 @@ export function Layout({ children }: { children: ReactNode }) {
             {/* Floating FAB */}
             <div className="relative -top-8 px-4">
                <button 
-                 onClick={() => navigate('/notes')}
+                 onClick={() => navigate('/notes/normal')}
                  className="w-16 h-16 fab-gradient rounded-full flex items-center justify-center shadow-[0_10px_25px_-5px_rgba(168,85,247,0.5)] border-4 border-dashboard-bg text-white active:scale-95 transition-transform"
                >
                  <Plus className="w-8 h-8 stroke-[3]" />
