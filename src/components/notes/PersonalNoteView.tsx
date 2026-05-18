@@ -10,7 +10,7 @@ import { cn } from '../../lib/utils';
 export function PersonalNoteView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { notes, addNote, updateNote, deleteNote } = useAppContext();
+  const { notes, addNote, updateNote, deleteNote, showConfirm, setAlert } = useAppContext();
   const { playSuccess, playClick, playError } = useAudio();
 
   const existingNote = notes.find(n => n.id === id && n.type === 'personal') as PersonalNote | undefined;
@@ -53,7 +53,7 @@ export function PersonalNoteView() {
       (formData.extraNotes ? `\nCatatan: ${formData.extraNotes}` : '');
     navigator.clipboard.writeText(text);
     playSuccess();
-    alert("Berhasil menyalin data profil ke clipboard!");
+    setAlert("Berhasil menyalin data profil ke clipboard!");
   };
 
   const handlePaste = async () => {
@@ -111,12 +111,11 @@ export function PersonalNoteView() {
 
   const handleDelete = () => {
     if (existingNote) {
-      const confirm = window.confirm("Apakah kamu ingin menghapus profil ini beserta seluruh datanya?");
-      if (confirm) {
+      showConfirm("Apakah kamu ingin menghapus profil ini beserta seluruh datanya?", () => {
          deleteNote(existingNote.id);
          playError();
          navigate('/notes/personal-list');
-      }
+      });
     } else {
       navigate('/notes/personal-list');
     }

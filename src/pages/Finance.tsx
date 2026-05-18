@@ -354,17 +354,15 @@ export function Finance() {
             ) : (
               <ul className="divide-y divide-stone-100">
                 {financeRecords.map(record => (
-                  <li key={record.id} className="p-6 flex items-center justify-between hover:bg-stone-50 transition-colors group">
+                  <li key={record.id} className="p-6 flex items-center justify-between hover:bg-stone-50 transition-colors group relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: getCategoryColor(record.category, record.type) }} />
                     <div className="flex items-center gap-4 min-w-0">
                       <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", record.type === 'income' ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
                         {record.type === 'income' ? <Plus className="w-5 h-5"/> : <Minus className="w-5 h-5"/>}
                       </div>
                       <div className="min-w-0 flex flex-col">
-                        <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getCategoryColor(record.category, record.type) }} />
-                           <p className="font-bold text-stone-900 truncate">{record.category}</p>
-                        </div>
-                        <p className="text-sm text-stone-500 truncate">{record.note || format(record.createdAt, 'd MMM yyyy', { locale: id })}</p>
+                         <p className="font-bold text-stone-900 truncate">{record.category}</p>
+                         <p className="text-sm text-stone-500 truncate">{record.note || format(record.createdAt, 'd MMM yyyy', { locale: id })}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 shrink-0">

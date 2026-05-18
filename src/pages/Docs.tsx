@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 export function Docs() {
+  const { setAlert } = useAppContext();
   const { playSuccess, playError } = useAppContext() as any; 
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
@@ -47,7 +48,7 @@ export function Docs() {
     const file = acceptedFiles[0];
     
     if (file.size > 800 * 1024) {
-      alert("Uh oh! Karena menggunakan Firestore (tanpa Storage), ukuran gambar maksimal 800KB. Tolong kompres gambarnya ya!");
+      setAlert("Uh oh! Karena menggunakan Firestore (tanpa Storage), ukuran gambar maksimal 800KB. Tolong kompres gambarnya ya!");
       return;
     }
 

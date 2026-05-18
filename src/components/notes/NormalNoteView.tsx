@@ -9,7 +9,7 @@ import { useAudio } from '../../hooks/useAudio';
 export function NormalNoteView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { notes, addNote, updateNote, deleteNote } = useAppContext();
+  const { notes, addNote, updateNote, deleteNote, showConfirm } = useAppContext();
   const { playSuccess, playClick, playError } = useAudio();
 
   const existingNote = notes.find(n => n.id === id && n.type === 'normal') as NormalNote | undefined;
@@ -49,10 +49,14 @@ export function NormalNoteView() {
 
   const handleDelete = () => {
     if (existingNote) {
-      deleteNote(existingNote.id);
-      playError();
+      showConfirm("Hapus catatan ini?", () => {
+        deleteNote(existingNote.id);
+        playError();
+        navigate('/notes');
+      });
+    } else {
+      navigate('/notes');
     }
-    navigate('/notes');
   };
 
   return (

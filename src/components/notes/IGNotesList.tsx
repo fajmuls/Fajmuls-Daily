@@ -114,8 +114,31 @@ export function IGNotesList() {
                    <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
                       <User className="w-6 h-6" />
                    </div>
-                   <div className="truncate">
-                      <h3 className="font-bold text-lg text-stone-900 truncate">@{owner || 'Anonim'}</h3>
+                   <div className="truncate flex-1">
+                      {editingOwner === owner ? (
+                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                            <input 
+                              autoFocus
+                              value={newOwnerName}
+                              onChange={e => setNewOwnerName(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && handleSaveOwnerName(owner)}
+                              className="w-full bg-white border border-indigo-300 rounded-lg px-2 py-1 outline-none font-bold text-stone-900"
+                            />
+                            <button onClick={() => handleSaveOwnerName(owner)} className="p-1 text-green-600 hover:bg-green-50 rounded-md">
+                               <Check className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => setEditingOwner(null)} className="p-1 text-red-600 hover:bg-red-50 rounded-md">
+                               <X className="w-4 h-4" />
+                            </button>
+                         </div>
+                      ) : (
+                         <div className="flex items-center gap-2 group/title">
+                            <h3 className="font-bold text-lg text-stone-900 truncate">@{owner || 'Anonim'}</h3>
+                            <button onClick={(e) => handleStartEditOwner(owner, e)} className="p-1 text-stone-300 hover:text-indigo-500 opacity-0 group-hover/title:opacity-100 transition-opacity">
+                               <Edit3 className="w-4 h-4" />
+                            </button>
+                         </div>
+                      )}
                       <p className="text-sm text-stone-500">{ownerNotes.length} catatan</p>
                    </div>
                 </div>

@@ -10,7 +10,7 @@ import { cn } from '../../lib/utils';
 
 export function PersonalNotesList() {
   const navigate = useNavigate();
-  const { notes, deleteNote } = useAppContext();
+  const { notes, deleteNote, showConfirm } = useAppContext();
   const { playClick, playSuccess, playError } = useAudio();
 
   const [selectionMode, setSelectionMode] = useState(false);
@@ -30,15 +30,12 @@ export function PersonalNotesList() {
 
   const handleDeleteSelected = () => {
     if (selectedIds.length === 0) return;
-    const pass = window.prompt("Ketik 'hapus semua' untuk konfirmasi penghapusan:");
-    if (pass === 'hapus semua') {
+    showConfirm(`Hapus ${selectedIds.length} profil terpilih?`, () => {
        selectedIds.forEach(id => deleteNote(id));
        setSelectedIds([]);
        setSelectionMode(false);
        playError();
-    } else if (pass !== null) {
-       alert("Konfirmasi salah!");
-    }
+    });
   };
 
   return (

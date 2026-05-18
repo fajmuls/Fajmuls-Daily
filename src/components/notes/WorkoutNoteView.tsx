@@ -14,7 +14,7 @@ export function WorkoutNoteView() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { notes, addNote, updateNote, deleteNote } = useAppContext();
+  const { notes, addNote, updateNote, deleteNote, showConfirm } = useAppContext();
   const { playSuccess, playClick, playError } = useAudio();
 
   const existingNote = notes.find(n => n.id === id && n.type === 'workout') as WorkoutNote | undefined;
@@ -116,12 +116,11 @@ export function WorkoutNoteView() {
 
   const handleDelete = () => {
     if (existingNote) {
-      const confirm = window.confirm("Apakah kamu ingin menghapus catatan olahraga ini?");
-      if (confirm) {
+      showConfirm("Apakah kamu ingin menghapus catatan olahraga ini?", () => {
          deleteNote(existingNote.id);
          playError();
          navigate('/notes/workout-list');
-      }
+      });
     } else {
       navigate('/notes/workout-list');
     }

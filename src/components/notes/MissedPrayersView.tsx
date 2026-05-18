@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useAppContext } from '../../store';
-import { ArrowLeft, CheckCircle2, Circle, Plus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 import confetti from 'canvas-confetti';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Save, Trash2, Heart, CheckSquare, Square } from 'lucide-react';
+import { Sparkles, Save, Trash2, Heart, CheckSquare, Square, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { cn } from '../lib/utils';
@@ -18,6 +18,9 @@ export function Special() {
   const [dayTitle, setDayTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isBulkDelete, setIsBulkDelete] = useState(false);
   const { playSuccess, playError, playClick } = useAudio();
 
   const handleSave = () => {
@@ -35,31 +38,41 @@ export function Special() {
     playSuccess();
   };
 
-  const handleDeleteSingle = (id: string) => {
-    const code = window.prompt("Masukkan kode verifikasi untuk menghapus catatan eksklusif ini:");
-    if (code === "FAJMUL") {
-      deleteSpecial(id);
-      setSelectedIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
+  const handleVerifyDelete = () => {
+    if (verificationCode === "FAJMUL") {
+      if (isBulkDelete) {
+        selectedIds.forEach(id => deleteSpecial(id));
+        setSelectedIds(new Set());
+      } else if (verificationId) {
+        deleteSpecial(verificationId);
+        setSelectedIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(verificationId);
+          return newSet;
+        });
+      }
+      setVerificationId(null);
+      setVerificationCode('');
+      setIsBulkDelete(false);
       playError();
-    } else if (code !== null) {
-      alert("Kode verifikasi salah!");
+    } else {
+      playClick(); // Error sound
+      setVerificationCode('');
+      // Show some error feedback?
     }
+  };
+
+  const handleDeleteSingle = (id: string) => {
+    setVerificationId(id);
+    setIsBulkDelete(false);
+    setVerificationCode('');
   };
 
   const handleDeleteMultiple = () => {
     if (selectedIds.size === 0) return;
-    const code = window.prompt(`Kamu akan menghapus ${selectedIds.size} catatan. Masukkan kode verifikasi:`);
-    if (code === "FAJMUL") {
-      selectedIds.forEach(id => deleteSpecial(id));
-      setSelectedIds(new Set());
-      playError();
-    } else if (code !== null) {
-      alert("Kode verifikasi salah!");
-    }
+    setVerificationId('bulk');
+    setIsBulkDelete(true);
+    setVerificationCode('');
   };
 
   const toggleSelect = (id: string) => {
@@ -112,6 +125,35 @@ export function Special() {
       </div>
 
       <div className="space-y-6">
+        {verificationId && (
+          <div className="bg-red-50 border border-red-200 rounded-3xl p-6 animate-in slide-in-from-top-4 flex flex-col md:flex-row items-center gap-4">
+            <div className="shrink-0 w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="font-bold text-red-900">Verifikasi Penghapusan</h3>
+              <p className="text-sm text-red-700">Masukkan kode <strong>FAJMUL</strong> untuk konfirmasi.</p>
+            </div>
+            <div className="flex gap-2 w-full md:w-auto">
+              <input 
+                autoFocus
+                type="text"
+                value={verificationCode}
+                onChange={e => setVerificationCode(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && handleVerifyDelete()}
+                placeholder="KODE"
+                className="bg-white border border-red-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-red-500 font-bold tracking-widest w-full md:w-32"
+              />
+              <button onClick={handleVerifyDelete} className="bg-red-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-red-700 transition-colors">
+                Hapus
+              </button>
+              <button onClick={() => { setVerificationId(null); setVerificationCode(''); }} className="bg-stone-200 text-stone-600 px-4 py-2 rounded-xl font-bold hover:bg-stone-300 transition-colors">
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <h2 className="font-bold uppercase tracking-wider text-sm text-stone-500">Momen Tersimpan</h2>
           {selectedIds.size > 0 && (
