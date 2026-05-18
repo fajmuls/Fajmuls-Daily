@@ -21,6 +21,10 @@ interface AppState {
   docs: DailyDoc[];
   specials: SpecialNote[];
   loading: boolean;
+  confirmDialog: { isOpen: boolean; message: string; onConfirm: () => void } | null;
+  alertMessage: string | null;
+  setAlert: (message: string | null) => void;
+  showConfirm: (message: string, onConfirm: () => void) => void;
   addNote: (note: Note) => void;
   updateNote: (note: Note) => void;
   deleteNote: (id: string) => void;
@@ -29,6 +33,7 @@ interface AppState {
   togglePrayer: (id: string) => void;
   addMissedPrayer: (prayer: MissedPrayer) => void;
   deleteMissedPrayer: (id: string) => void;
+  deleteAllMissedPrayers: () => void;
   addDoc: (doc: DailyDoc) => void;
   addSpecial: (special: SpecialNote) => void;
   deleteSpecial: (id: string) => void;
@@ -44,6 +49,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [docs, setDocs] = useState<DailyDoc[]>([]);
   const [specials, setSpecials] = useState<SpecialNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; message: string; onConfirm: () => void } | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
+  const setAlert = (message: string | null) => setAlertMessage(message);
+  const showConfirm = (message: string, onConfirm: () => void) => {
+    setConfirmDialog({ isOpen: true, message, onConfirm });
+  };
 
   // Track if initial data has loaded
   const [initialLoaded, setInitialLoaded] = useState({
@@ -260,6 +272,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/prayers/${id}`); }
   };
 
+  const deleteAllMissedPrayers = async () => {
+    if (!user) return;
+    const batch = writeBatch(db);
+    missedPrayers.forEach(p => {
+      batch.delete(doc(db, `users/${user.uid}/prayers`, p.id));
+    });
+    try {
+      await batch.commit();
+    } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/prayers`); }
+  };
+
   const addDoc = async (docObj: DailyDoc) => {
     if (!user) return;
     try {
@@ -283,7 +306,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      notes, financeRecords, missedPrayers, docs, specials, loading, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, addDoc, addSpecial, deleteSpecial
+      notes, financeRecords, missedPrayers, docs, specials, loading, 
+      confirmDialog, alertMessage, setAlert, showConfirm,
+      addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial
     }}>
       {children}
     </AppContext.Provider>

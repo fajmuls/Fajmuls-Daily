@@ -23,7 +23,7 @@ const BG_COLORS = [
 export function IGNoteView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { notes, addNote, updateNote, deleteNote } = useAppContext();
+  const { notes, addNote, updateNote, deleteNote, showConfirm, setAlert } = useAppContext();
   const { playSuccess, playClick, playError } = useAudio();
 
   const existingNote = notes.find(n => n.id === id && n.type === 'ig') as IGNote | undefined;
@@ -96,23 +96,21 @@ export function IGNoteView() {
   const handleBulkRename = () => {
      if (!existingNote) return;
      if (owner === existingNote.owner) {
-        alert("Nama pemilik belum berubah!");
+        setAlert("Nama pemilik belum berubah!");
         return;
      }
-     const confirm = window.confirm(`Ubah semua pemilik dari "${existingNote.owner}" ke "${owner}"?`);
-     if (confirm) {
+     showConfirm(`Ubah semua pemilik dari "${existingNote.owner}" ke "${owner}"?`, () => {
         handleSave(true);
-     }
+     });
   };
 
   const handleDelete = () => {
     if (existingNote) {
-      const confirm = window.confirm("Apakah kamu ingin menghapus catatan IG ini?");
-      if (confirm) {
+      showConfirm("Apakah kamu ingin menghapus catatan IG ini?", () => {
          deleteNote(existingNote.id);
          playError();
          navigate('/notes/ig-list');
-      }
+      });
     } else {
        navigate('/notes/ig-list');
     }

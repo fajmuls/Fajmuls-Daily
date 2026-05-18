@@ -10,7 +10,7 @@ import { useAudio } from '../hooks/useAudio';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 export function Finance() {
-  const { financeRecords, addFinanceRecord, deleteFinanceRecord } = useAppContext();
+  const { financeRecords, addFinanceRecord, deleteFinanceRecord, showConfirm } = useAppContext();
   const { playSuccess, playError, playClick } = useAudio();
   
   const [amount, setAmount] = useState('');
@@ -19,18 +19,47 @@ export function Finance() {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
 
+  // Vibrant and distinct colors for income (Bright)
+  const COLORS_INCOME = [
+    '#22c55e', // Green
+    '#0ea5e9', // Sky
+    '#f59e0b', // Amber
+    '#ec4899', // Pink
+    '#8b5cf6', // Violet
+    '#10b981', // Emerald
+    '#f97316', // Orange
+    '#3b82f6', // Blue
+  ];
+
+  // Distinct dark colors for expenses (Darker theme)
+  const COLORS_EXPENSE = [
+    '#7f1d1d', // Dark Red
+    '#1e3a8a', // Dark Blue
+    '#365314', // Dark Lime
+    '#581c87', // Dark Purple
+    '#7c2d12', // Dark Orange
+    '#1c1917', // Gray 900
+    '#14532d', // Dark Green
+    '#450a0a', // Darker Red
+  ];
+
   const categorySuggestions = useMemo(() => {
-    const categories = new Set<string>();
-    if (type === 'income') {
-       categories.add('Gaji'); categories.add('Bonus'); categories.add('Investasi');
-    } else {
-       categories.add('Makanan'); categories.add('Transportasi'); categories.add('Tagihan'); categories.add('Belanja');
-    }
-    
-    financeRecords.forEach(r => {
-      if (r.type === type) categories.add(r.category);
+    const counts: Record<string, number> = {};
+    financeRecords.filter(r => r.type === type).forEach(r => {
+      counts[r.category] = (counts[r.category] || 0) + 1;
     });
-    return Array.from(categories);
+
+    const defaultCats = type === 'income' ? ['Gaji', 'Bonus', 'Investasi'] : ['Makanan', 'Transportasi', 'Tagihan', 'Belanja'];
+    
+    const allCatsSet = new Set([...defaultCats]);
+    financeRecords.filter(r => r.type === type).forEach(r => allCatsSet.add(r.category));
+    
+    return Array.from(allCatsSet).sort((a, b) => {
+      const countA = counts[a] || 0;
+      const countB = counts[b] || 0;
+      if (countA !== countB) return countB - countA;
+      return a.localeCompare(b);
+    });
   }, [financeRecords, type]);
 
   const handleSubmit = (e: FormEvent) => {
@@ -84,29 +113,13 @@ export function Finance() {
     })).sort((a,b) => b.value - a.value);
   }, [financeRecords]);
 
-  // Vibrant and distinct colors for income (Bright)
-  const COLORS_INCOME = [
-    '#22c55e', // Green
-    '#0ea5e9', // Sky
-    '#f59e0b', // Amber
-    '#ec4899', // Pink
-    '#8b5cf6', // Violet
-    '#10b981', // Emerald
-    '#f97316', // Orange
-    '#3b82f6', // Blue
-  ];
-
-  // Distinct dark colors for expenses (Darker theme)
-  const COLORS_EXPENSE = [
-    '#7f1d1d', // Dark Red
-    '#1e3a8a', // Dark Blue
-    '#365314', // Dark Lime
-    '#581c87', // Dark Purple
-    '#7c2d12', // Dark Orange
-    '#111827', // Gray 900
-    '#14532d', // Dark Green
-    '#450a0a', // Darker Red
-  ];
+  // Helper to get color for a category
+  const getCategoryColor = (catName: string, catType: 'income' | 'expense') => {
+    const data = catType === 'income' ? incomeData : expenseData;
+    const colors = catType === 'income' ? COLORS_INCOME : COLORS_EXPENSE;
+    const index = data.findIndex(d => d.name === catName);
+    return index !== -1 ? colors[index % colors.length] : '#d6d3d1';
+  };
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const RADIAN = Math.PI / 180;
@@ -220,16 +233,20 @@ export function Finance() {
               
               {showCatDropdown && (
                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto overflow-x-hidden p-2 grid grid-cols-2 gap-1 animate-in fade-in slide-in-from-top-2">
-                    {categorySuggestions.filter(c => c.toLowerCase().includes(category.toLowerCase())).map((cat, i) => (
-                      <button 
-                        key={i} 
-                        type="button" 
-                        onClick={() => { setCategory(cat); setShowCatDropdown(false); playClick(); }} 
-                        className="text-left px-3 py-2 text-sm rounded-lg hover:bg-stone-100 font-medium truncate"
-                      >
-                         {cat}
-                      </button>
-                    ))}
+                    {categorySuggestions.filter(c => c.toLowerCase().includes(category.toLowerCase())).map((cat, i) => {
+                      const catColor = getCategoryColor(cat, type);
+                      return (
+                        <button 
+                          key={i} 
+                          type="button" 
+                          onClick={() => { setCategory(cat); setShowCatDropdown(false); playClick(); }} 
+                          className="text-left px-3 py-2 text-sm rounded-lg hover:bg-stone-100 font-medium truncate flex items-center gap-2"
+                        >
+                           <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: catColor }} />
+                           {cat}
+                        </button>
+                      );
+                    })}
                     {categorySuggestions.filter(c => c.toLowerCase().includes(category.toLowerCase())).length === 0 && (
                       <div className="col-span-2 text-center py-4 text-xs text-stone-400">Ketik untuk membuat baru "{category}"</div>
                     )}
@@ -254,8 +271,8 @@ export function Finance() {
                  {incomeData.length > 0 && (
                   <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col">
                      <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pendapatan</h3>
-                     <div className="h-72 sm:h-80 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                     <div className="h-72 sm:h-80 w-full min-w-0">
+                        <ResponsiveContainer width="100%" height="100%" key={`income-${incomeData.length}`}>
                           <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
                             <Pie
                               data={incomeData}
@@ -291,8 +308,8 @@ export function Finance() {
                 {expenseData.length > 0 && (
                   <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col">
                      <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pengeluaran</h3>
-                     <div className="h-72 sm:h-80 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                     <div className="h-72 sm:h-80 w-full min-w-0">
+                        <ResponsiveContainer width="100%" height="100%" key={`expense-${expenseData.length}`}>
                           <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
                             <Pie
                               data={expenseData}
@@ -342,8 +359,11 @@ export function Finance() {
                       <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", record.type === 'income' ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
                         {record.type === 'income' ? <Plus className="w-5 h-5"/> : <Minus className="w-5 h-5"/>}
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-stone-900 truncate">{record.category}</p>
+                      <div className="min-w-0 flex flex-col">
+                        <div className="flex items-center gap-2">
+                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getCategoryColor(record.category, record.type) }} />
+                           <p className="font-bold text-stone-900 truncate">{record.category}</p>
+                        </div>
                         <p className="text-sm text-stone-500 truncate">{record.note || format(record.createdAt, 'd MMM yyyy', { locale: id })}</p>
                       </div>
                     </div>
@@ -352,7 +372,7 @@ export function Finance() {
                         {record.type === 'income' ? '+' : '-'}Rp {record.amount.toLocaleString('id-ID')}
                       </span>
                       <button onClick={() => { 
-                         if(window.confirm("Hapus transaksi ini?")) { deleteFinanceRecord(record.id); playError(); } 
+                         showConfirm("Hapus transaksi ini?", () => { deleteFinanceRecord(record.id); playError(); });
                       }} className="p-2 text-stone-300 hover:text-red-500 transition-colors rounded-full hover:bg-red-50 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0">
                         <Trash2 className="w-5 h-5" />
                       </button>

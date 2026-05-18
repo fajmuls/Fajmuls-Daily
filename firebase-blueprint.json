@@ -53,6 +53,18 @@
         "createdAt": { "type": "number" }
       },
       "required": ["id", "createdAt"]
+    },
+    "SpecialNote": {
+      "title": "Special Note",
+      "description": "A high importance secret note",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "dayTitle": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "dayTitle", "createdAt"]
     }
   },
   "firestore": {
@@ -71,6 +83,10 @@
     "/users/{userId}/docs/{docId}": {
       "schema": "DailyDoc",
       "description": "User daily documents"
+    },
+    "/users/{userId}/specials/{specialId}": {
+      "schema": "SpecialNote",
+      "description": "User special secret notes"
     }
   }
 }

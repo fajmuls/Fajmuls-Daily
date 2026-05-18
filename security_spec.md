@@ -8,6 +8,7 @@
   - `financeRecords`: Income and expense records.
   - `missedPrayers`: Tracker for missed prayers.
   - `docs`: Daily documents or records.
+  - `specials`: High importance secret notes.
 - Note types: 'personal', 'workout', 'ig', 'normal', 'missed-prayer'.
 - Finance types: 'income', 'expense'.
 
@@ -16,6 +17,7 @@
 - `/users/{userId}/finance/{recordId}`
 - `/users/{userId}/prayers/{prayerId}`
 - `/users/{userId}/docs/{docId}`
+- `/users/{userId}/specials/{specialId}`
 
 ## The "Dirty Dozen" Payloads (Denial Tests)
 1. **Identity Spoofing**: Attempt to create a note for another user's ID.

@@ -95,8 +95,9 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="flex h-screen w-full bg-cream font-sans text-stone-900 overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-stone-200 bg-paper">
-        <div className="p-6">
-          <h1 className="font-serif text-2xl font-bold tracking-tight text-accent-orange">Fajmus Daily</h1>
+        <div className="p-6 flex items-center gap-3">
+          <img src="https://files.catbox.moe/c1ebqe.png" alt="Logo" className="w-10 h-10 object-contain" />
+          <h1 className="font-serif text-2xl font-bold tracking-tight text-accent-orange">Fajmul Daily</h1>
         </div>
         
         <UserProfile />
@@ -147,8 +148,9 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 bg-paper border-b border-stone-200">
           <div className="flex items-center gap-3">
+             <img src="https://files.catbox.moe/c1ebqe.png" alt="Logo" className="w-8 h-8 object-contain" />
              <UserProfile compact />
-             <h1 className="font-serif text-lg font-bold text-accent-orange">Fajmus Daily</h1>
+             <h1 className="font-serif text-lg font-bold text-accent-orange">Fajmul Daily</h1>
           </div>
           <div className="flex items-center gap-2">
              <button 

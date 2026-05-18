@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, User, Plus, CheckSquare, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Plus, CheckSquare, Trash2, Edit3, Check, X } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
 export function IGNotesList() {
   const navigate = useNavigate();
-  const { notes, deleteNote } = useAppContext();
-  const { playClick, playError } = useAudio();
+  const { notes, deleteNote, updateNote, showConfirm, setAlert } = useAppContext();
+  const { playClick, playError, playSuccess } = useAudio();
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [editingOwner, setEditingOwner] = useState<string | null>(null);
+  const [newOwnerName, setNewOwnerName] = useState('');
 
   // Filter only IG notes and group by owner
   const igNotes = notes.filter(n => n.type === 'ig') as IGNote[];
@@ -34,15 +36,34 @@ export function IGNotesList() {
 
   const handleDeleteSelected = () => {
     if (selectedIds.length === 0) return;
-    const pass = window.prompt("Ketik 'hapus semua' untuk konfirmasi penghapusan:");
-    if (pass === 'hapus semua') {
+    showConfirm(`Hapus ${selectedIds.length} catatan terpilih?`, () => {
        selectedIds.forEach(id => deleteNote(id));
        setSelectedIds([]);
        setSelectionMode(false);
        playError();
-    } else if (pass !== null) {
-       alert("Konfirmasi salah!");
+    });
+  };
+
+  const handleStartEditOwner = (owner: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingOwner(owner);
+    setNewOwnerName(owner);
+  };
+
+  const handleSaveOwnerName = (oldOwner: string) => {
+    if (!newOwnerName || newOwnerName === oldOwner) {
+      setEditingOwner(null);
+      return;
     }
+
+    const notesToUpdate = groupedByOwner[oldOwner];
+    notesToUpdate.forEach(note => {
+      updateNote({ ...note, owner: newOwnerName });
+    });
+
+    setEditingOwner(null);
+    playSuccess();
+    setAlert(`Berhasil mengubah nama dari @${oldOwner} ke @${newOwnerName}`);
   };
 
   return (

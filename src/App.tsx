@@ -12,12 +12,14 @@ import { Notes } from './pages/Notes';
 import { Docs } from './pages/Docs';
 import { Special } from './pages/Special';
 import { AuthWrapper } from './components/AuthWrapper';
+import { CustomDialogs } from './components/CustomDialogs';
 
 export default function App() {
   return (
     <AuthWrapper>
       <AppProvider>
         <HashRouter>
+          <CustomDialogs />
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />

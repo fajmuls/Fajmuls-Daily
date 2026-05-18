@@ -14,7 +14,7 @@ const FARDHU_ORDER: Fardhu[] = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya', '
 
 export function MissedPrayersView() {
   const navigate = useNavigate();
-  const { missedPrayers, addMissedPrayer, togglePrayer, deleteMissedPrayer } = useAppContext();
+  const { missedPrayers, addMissedPrayer, togglePrayer, deleteMissedPrayer, deleteAllMissedPrayers, showConfirm } = useAppContext();
   const { playClick, playSuccess, playError } = useAudio();
   const [filter, setFilter] = useState<Fardhu | 'Semua'>('Semua');
 
@@ -40,6 +40,13 @@ export function MissedPrayersView() {
 
     playSuccess();
     setShowForm(false);
+  };
+
+  const handleDeleteAll = () => {
+    showConfirm("Hapus semua daftar qadha shalat?", () => {
+      deleteAllMissedPrayers();
+      playError();
+    });
   };
 
   const filteredPrayers = missedPrayers.filter(p => filter === 'Semua' || p.prayer === filter);
@@ -68,9 +75,16 @@ export function MissedPrayersView() {
         <button onClick={() => { playClick(); navigate('/notes'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
-          <Plus className="w-5 h-5" /> Tambah Qadha
-        </button>
+        <div className="flex gap-2">
+          {missedPrayers.length > 0 && (
+            <button onClick={handleDeleteAll} className="p-3 bg-red-50 text-red-600 rounded-full border border-red-200 hover:bg-red-100 transition-colors">
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
+          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
+            <Plus className="w-5 h-5" /> Tambah Qadha
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -173,11 +187,11 @@ export function MissedPrayersView() {
                       <button 
                          onClick={(e) => { 
                             e.stopPropagation(); 
-                            if(window.confirm("Hapus qadha ini?")) { deleteMissedPrayer(prayer.id); playError(); } 
+                            showConfirm("Hapus qadha ini?", () => { deleteMissedPrayer(prayer.id); playError(); });
                          }}
                          className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-stone-200 rounded-full flex items-center justify-center text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 z-10"
                       >
-                         <Plus className="w-4 h-4 rotate-45" />
+                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
