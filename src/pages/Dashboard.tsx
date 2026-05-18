@@ -1,16 +1,18 @@
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
-import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert } from 'lucide-react';
+import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export function Dashboard() {
   const { notes, financeRecords } = useAppContext();
   const [docsCount, setDocsCount] = useState(0);
   const [specialsCount, setSpecialsCount] = useState(0);
+  const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
   
   useEffect(() => {
     // get firestore docs count
@@ -44,14 +46,32 @@ export function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <header className="space-y-2">
-        <h1 className="font-serif text-5xl md:text-7xl font-bold tracking-tight text-stone-900">
-          Selamat Siang.
-        </h1>
-        <p className="text-xl text-stone-500 font-medium tracking-wide">
-          {todayDate}
-        </p>
-      </header>
+      {showGreeting && (
+        <header className="space-y-2 relative group">
+          <h1 className="font-serif text-5xl md:text-7xl font-bold tracking-tight text-stone-900">
+            Selamat Siang.
+          </h1>
+          <p className="text-xl text-stone-500 font-medium tracking-wide">
+            {todayDate}
+          </p>
+          <button 
+             onClick={() => setShowGreeting(false)} 
+             className="absolute top-0 right-0 p-2 text-stone-300 hover:text-stone-900 opacity-0 group-hover:opacity-100 transition-opacity"
+             title="Sembunyikan Salam"
+          >
+             <X className="w-5 h-5" />
+          </button>
+        </header>
+      )}
+      
+      {!showGreeting && (
+         <button 
+           onClick={() => setShowGreeting(true)}
+           className="text-stone-400 text-xs font-bold uppercase tracking-widest hover:text-stone-900 transition-colors"
+         >
+           Tampilkan Salam +
+         </button>
+      )}
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
         {/* Finance Snippet */}

@@ -36,7 +36,7 @@ export function Special() {
   };
 
   const handleDeleteSingle = (id: string) => {
-    const code = window.prompt("Masukkan kode verifikasi untuk menghapus catatan eksklusif ini: (Hint: FAJMUL)");
+    const code = window.prompt("Masukkan kode verifikasi untuk menghapus catatan eksklusif ini:");
     if (code === "FAJMUL") {
       setSpecials(prev => prev.filter(s => s.id !== id));
       setSelectedIds(prev => {
@@ -52,7 +52,7 @@ export function Special() {
 
   const handleDeleteMultiple = () => {
     if (selectedIds.size === 0) return;
-    const code = window.prompt(`Kamu akan menghapus ${selectedIds.size} catatan. Masukkan kode verifikasi: (Hint: FAJMUL)`);
+    const code = window.prompt(`Kamu akan menghapus ${selectedIds.size} catatan. Masukkan kode verifikasi:`);
     if (code === "FAJMUL") {
       setSpecials(prev => prev.filter(s => !selectedIds.has(s.id)));
       setSelectedIds(new Set());

@@ -25,14 +25,24 @@ export interface IGNote extends BaseNote {
 export interface PersonalNote extends BaseNote {
   type: 'personal';
   personName?: string;
-  nik: string;
-  ssn: string;
-  postalCode: string;
-  address: string;
-  email: string;
-  accountNumber: string;
   extraNotes: string;
-  customFields?: { key: string; value: string }[];
+  customFields: { key: string; value: string }[];
+  // Legacy fields for backward compatibility
+  nik?: string;
+  ssn?: string;
+  postalCode?: string;
+  address?: string;
+  email?: string;
+  accountNumber?: string;
+}
+
+export interface WorkoutDetail {
+  id: string;
+  exercise: string;
+  sets: number;
+  reps: number;
+  weight?: string;
+  note?: string;
 }
 
 export interface WorkoutNote extends BaseNote {
@@ -40,7 +50,8 @@ export interface WorkoutNote extends BaseNote {
   title: string;
   routine: string;
   durationMins: number;
-  workoutCategory?: string; // e.g., 'Weightlifting', 'Gym', 'Running', 'Other'
+  workoutCategory?: string;
+  details?: WorkoutDetail[];
 }
 
 export type Note = NormalNote | IGNote | PersonalNote | WorkoutNote;

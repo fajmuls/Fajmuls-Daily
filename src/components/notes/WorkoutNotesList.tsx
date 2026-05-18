@@ -29,9 +29,11 @@ export function WorkoutNotesList() {
   };
 
   const handleDayClick = (date: Date, notesForDay: WorkoutNote[]) => {
+    playClick();
     if (notesForDay.length > 0) {
-      playClick();
-      navigate(`/notes/workout/${notesForDay[0].id}`); // Opens the first note for simplification
+      navigate(`/notes/workout/${notesForDay[0].id}`);
+    } else {
+      navigate(`/notes/workout?date=${format(date, 'yyyy-MM-dd')}`);
     }
   };
 

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { useAppContext } from '../../store';
-import { WorkoutNote } from '../../types';
-import { ArrowLeft, Trash2, Save, Timer, Copy, Calendar } from 'lucide-react';
+import { WorkoutNote, WorkoutDetail } from '../../types';
+import { ArrowLeft, Trash2, Save, Timer, Copy, Calendar, Plus, Dumbbell, ChevronDown } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
@@ -12,6 +12,7 @@ const WORKOUT_CATEGORIES = ['Angkat Beban', 'Gym', 'Lari', 'Olahraga Lain'];
 
 export function WorkoutNoteView() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { notes, addNote, updateNote, deleteNote } = useAppContext();
   const { playSuccess, playClick, playError } = useAudio();
@@ -22,7 +23,21 @@ export function WorkoutNoteView() {
   const [routine, setRoutine] = useState('');
   const [durationMins, setDurationMins] = useState<number | ''>('');
   const [workoutCategory, setWorkoutCategory] = useState<string>('Gym');
-  const [dateStr, setDateStr] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [dateStr, setDateStr] = useState<string>(searchParams.get('date') || format(new Date(), 'yyyy-MM-dd'));
+  const [details, setDetails] = useState<WorkoutDetail[]>([]);
+  const [showTitleDropdown, setShowTitleDropdown] = useState(false);
+
+  const titleTemplates = useMemo(() => {
+    const titles = new Set<string>();
+    titles.add('Bahu & Kaki');
+    titles.add('Dada & Trisep');
+    titles.add('Punggung & Bisep');
+    titles.add('Kardio & Perut');
+    notes.filter(n => n.type === 'workout').forEach(n => {
+       if ((n as WorkoutNote).title) titles.add((n as WorkoutNote).title);
+    });
+    return Array.from(titles);
+  }, [notes]);
 
   useEffect(() => {
     if (existingNote) {
@@ -31,11 +46,26 @@ export function WorkoutNoteView() {
       setDurationMins(existingNote.durationMins);
       setWorkoutCategory(existingNote.workoutCategory || 'Gym');
       setDateStr(format(existingNote.createdAt, 'yyyy-MM-dd'));
+      setDetails(existingNote.details || []);
     }
   }, [existingNote]);
 
+  const addDetail = () => {
+     setDetails([...details, { id: uuidv4(), exercise: '', sets: 3, reps: 10, weight: '' }]);
+  };
+
+  const updateDetail = (index: number, field: keyof WorkoutDetail, value: any) => {
+     const newDetails = [...details];
+     newDetails[index] = { ...newDetails[index], [field]: value };
+     setDetails(newDetails);
+  };
+
+  const deleteDetail = (index: number) => {
+     setDetails(details.filter((_, i) => i !== index));
+  };
+
   const handleSave = () => {
-    if (!title && !routine) return;
+    if (!title && details.length === 0) return;
     
     const duration = Number(durationMins) || 0;
     const saveDate = new Date(dateStr).getTime() || Date.now();
@@ -47,7 +77,8 @@ export function WorkoutNoteView() {
         routine,
         durationMins: duration,
         workoutCategory,
-        createdAt: saveDate
+        createdAt: saveDate,
+        details
       });
     } else {
       addNote({
@@ -58,7 +89,8 @@ export function WorkoutNoteView() {
         title,
         routine,
         durationMins: duration,
-        workoutCategory
+        workoutCategory,
+        details
       });
     }
     playSuccess();
@@ -143,33 +175,119 @@ export function WorkoutNoteView() {
            </div>
         </div>
 
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Judul Olahraga (Cth: Dada & Trisep)"
-          className="w-full text-4xl font-serif font-bold text-stone-900 outline-none placeholder:text-stone-300 bg-transparent mt-4"
-        />
-
-        <div className="flex items-center gap-4 bg-orange-50 text-orange-800 p-4 rounded-2xl w-max">
-            <Timer className="w-6 h-6" />
-            <div className="flex items-center gap-2">
-              <input 
-                type="number" 
-                value={durationMins} 
-                onChange={(e) => setDurationMins(e.target.value === '' ? '' : Number(e.target.value))} 
-                className="w-16 bg-transparent border-b border-orange-200 outline-none text-center font-bold font-mono text-xl focus:border-orange-500" 
-                placeholder="0"
-              />
-              <span className="font-bold uppercase tracking-wider text-sm">Menit</span>
-            </div>
+        <div className="relative group">
+           <input
+             type="text"
+             value={title}
+             onFocus={() => setShowTitleDropdown(true)}
+             onChange={(e) => { setTitle(e.target.value); setShowTitleDropdown(true); }}
+             placeholder="Judul Olahraga (Cth: Dada & Trisep)"
+             className="w-full text-4xl font-serif font-bold text-stone-900 outline-none placeholder:text-stone-300 bg-transparent mt-4 pr-10"
+           />
+           <button onClick={() => setShowTitleDropdown(!showTitleDropdown)} className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-stone-300">
+              <ChevronDown className={cn("w-6 h-6 transition-transform", showTitleDropdown ? "rotate-180" : "")} />
+           </button>
+           
+           {showTitleDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-2xl shadow-xl z-20 p-2 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                 {titleTemplates.filter(t => t.toLowerCase().includes(title.toLowerCase())).map((t, i) => (
+                    <button 
+                       key={i}
+                       type="button"
+                       onClick={() => { setTitle(t); setShowTitleDropdown(false); playClick(); }}
+                       className="w-full text-left px-4 py-3 hover:bg-stone-50 rounded-xl font-medium text-stone-700 transition-colors"
+                    >
+                       {t}
+                    </button>
+                 ))}
+                 {titleTemplates.filter(t => t.toLowerCase().includes(title.toLowerCase())).length === 0 && (
+                    <div className="p-4 text-center text-sm text-stone-400">Tekan 'Simpan' untuk menambah template baru</div>
+                 )}
+              </div>
+           )}
         </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+           <div className="flex items-center gap-4 bg-orange-50 text-orange-800 p-4 rounded-2xl w-max">
+               <Timer className="w-6 h-6" />
+               <div className="flex items-center gap-2">
+                 <input 
+                   type="number" 
+                   value={durationMins} 
+                   onChange={(e) => setDurationMins(e.target.value === '' ? '' : Number(e.target.value))} 
+                   className="w-16 bg-transparent border-b border-orange-200 outline-none text-center font-bold font-mono text-xl focus:border-orange-500" 
+                   placeholder="0"
+                 />
+                 <span className="font-bold uppercase tracking-wider text-sm">Menit</span>
+               </div>
+           </div>
+           
+           <button onClick={addDetail} className="flex items-center gap-2 px-6 py-4 bg-paper border-2 border-dashed border-stone-200 rounded-2xl text-stone-500 font-bold hover:border-orange-300 hover:text-orange-600 transition-all">
+              <Plus className="w-5 h-5" /> Tambah Gerakan
+           </button>
+        </div>
+
+        {details.length > 0 && (
+           <div className="space-y-4 pt-4">
+              <h3 className="font-bold uppercase tracking-widest text-stone-400 text-xs pl-2">Detail Gerakan</h3>
+              {details.map((detail, index) => (
+                 <div key={detail.id} className="bg-stone-50 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center group">
+                    <div className="flex-1 w-full">
+                       <input 
+                          type="text" 
+                          value={detail.exercise} 
+                          onChange={(e) => updateDetail(index, 'exercise', e.target.value)}
+                          placeholder="Nama Gerakan (Cth: Push Up)"
+                          className="w-full bg-transparent border-b border-stone-200 outline-none font-bold text-stone-800 focus:border-stone-900 py-1"
+                       />
+                    </div>
+                    
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                       <div className="bg-white border border-stone-200 rounded-xl px-3 py-2 flex items-center gap-2">
+                          <input 
+                             type="number" 
+                             value={detail.sets} 
+                             onChange={(e) => updateDetail(index, 'sets', Number(e.target.value))}
+                             className="w-8 text-center bg-transparent outline-none font-mono font-bold"
+                          />
+                          <span className="text-[10px] uppercase font-bold text-stone-400">Sets</span>
+                       </div>
+                       
+                       <div className="bg-white border border-stone-200 rounded-xl px-3 py-2 flex items-center gap-2">
+                          <input 
+                             type="number" 
+                             value={detail.reps} 
+                             onChange={(e) => updateDetail(index, 'reps', Number(e.target.value))}
+                             className="w-8 text-center bg-transparent outline-none font-mono font-bold"
+                          />
+                          <span className="text-[10px] uppercase font-bold text-stone-400">Reps</span>
+                       </div>
+
+                       <div className="bg-white border border-stone-200 rounded-xl px-3 py-2 flex items-center gap-2">
+                          <input 
+                             type="text" 
+                             value={detail.weight} 
+                             onChange={(e) => updateDetail(index, 'weight', e.target.value)}
+                             placeholder="-"
+                             className="w-12 text-center bg-transparent outline-none font-mono font-bold"
+                          />
+                          <span className="text-[10px] uppercase font-bold text-stone-400">Kg/Lvl</span>
+                       </div>
+
+                       <button onClick={() => deleteDetail(index)} className="p-2 text-stone-300 hover:text-red-500 transition-colors md:opacity-0 group-hover:opacity-100">
+                          <Trash2 className="w-4 h-4" />
+                       </button>
+                    </div>
+                 </div>
+              ))}
+           </div>
+        )}
         
         <textarea
           value={routine}
           onChange={(e) => setRoutine(e.target.value)}
-          placeholder="Tuliskan rutinitas, set, dan repetisimu di sini..."
-          className="w-full flex-1 min-h-[300px] text-lg text-stone-700 outline-none placeholder:text-stone-300 bg-transparent resize-y mt-4"
+          placeholder="Catatan tambahan..."
+          className="w-full flex-1 min-h-[150px] text-lg text-stone-700 outline-none placeholder:text-stone-300 bg-transparent resize-y mt-8"
         />
       </div>
     </div>

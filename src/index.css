@@ -7,12 +7,15 @@
   
   --color-stone-850: #1f1a17;
   --color-stone-900: #171412;
-  --color-cream: #f9f7f4;
+  --color-cream: #fbf9f4;
   --color-paper: #ffffff;
   
-  --color-accent-orange: #f27d26;
-  --color-accent-blue: #267df2;
-  --color-accent-green: #26f27d;
+  /* More vibrant, engaging colors */
+  --color-accent-orange: #ff5f1f;
+  --color-accent-blue: #0070f3;
+  --color-accent-green: #00c853;
+  --color-accent-pink: #d81b60;
+  --color-accent-purple: #7928ca;
 }
 
 html {

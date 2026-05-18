@@ -14,8 +14,8 @@ const FARDHU_ORDER: Fardhu[] = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya', '
 
 export function MissedPrayersView() {
   const navigate = useNavigate();
-  const { missedPrayers, addMissedPrayer, togglePrayer } = useAppContext();
-  const { playClick, playSuccess } = useAudio();
+  const { missedPrayers, addMissedPrayer, togglePrayer, deleteMissedPrayer } = useAppContext();
+  const { playClick, playSuccess, playError } = useAudio();
   const [filter, setFilter] = useState<Fardhu | 'Semua'>('Semua');
 
   // Form state
@@ -151,25 +151,35 @@ export function MissedPrayersView() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {group.items.map(prayer => (
-                    <button
-                      key={prayer.id}
-                      onClick={() => handleToggle(prayer.id, prayer.completed)}
-                      className={cn(
-                        "text-left flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
-                        prayer.completed 
-                          ? "bg-stone-50 border-stone-200 text-stone-400 opacity-70" 
-                          : "bg-paper border-indigo-100 text-stone-900 hover:border-indigo-300 shadow-sm"
-                      )}
-                    >
-                      <div>
-                        {/* the prayer log should list the prayer first, then the date */}
-                        <div className="text-xs text-stone-500 mb-1">{prayer.prayer}</div>
-                        <div className={cn("font-bold text-lg", prayer.completed && "line-through")}>
-                          {prayer.dateInfo}
+                    <div key={prayer.id} className="relative group">
+                      <button
+                        onClick={() => handleToggle(prayer.id, prayer.completed)}
+                        className={cn(
+                          "w-full text-left flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
+                          prayer.completed 
+                            ? "bg-stone-50 border-stone-200 text-stone-400 opacity-70" 
+                            : "bg-paper border-indigo-100 text-stone-900 hover:border-indigo-300 shadow-sm"
+                        )}
+                      >
+                        <div>
+                          <div className="text-xs text-stone-500 mb-1">{prayer.prayer}</div>
+                          <div className={cn("font-bold text-lg", prayer.completed && "line-through")}>
+                            {prayer.dateInfo}
+                          </div>
                         </div>
-                      </div>
-                      {prayer.completed ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Circle className="w-6 h-6 text-stone-300" />}
-                    </button>
+                        {prayer.completed ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Circle className="w-6 h-6 text-stone-300" />}
+                      </button>
+                      
+                      <button 
+                         onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if(window.confirm("Hapus qadha ini?")) { deleteMissedPrayer(prayer.id); playError(); } 
+                         }}
+                         className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-stone-200 rounded-full flex items-center justify-center text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 z-10"
+                      >
+                         <Plus className="w-4 h-4 rotate-45" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>

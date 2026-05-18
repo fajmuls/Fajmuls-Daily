@@ -16,6 +16,7 @@ interface AppState {
   deleteFinanceRecord: (id: string) => void;
   togglePrayer: (id: string) => void;
   addMissedPrayer: (prayer: MissedPrayer) => void;
+  deleteMissedPrayer: (id: string) => void;
   addDoc: (doc: DailyDoc) => void;
 }
 
@@ -60,11 +61,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMissedPrayers(prev => [prayer, ...prev]);
   };
 
+  const deleteMissedPrayer = (id: string) => {
+    setMissedPrayers(prev => prev.filter(p => p.id !== id));
+  };
+
   const addDoc = (doc: DailyDoc) => setDocs(prev => [doc, ...prev]);
 
   return (
     <AppContext.Provider value={{
-      notes, financeRecords, missedPrayers, docs, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, addDoc
+      notes, financeRecords, missedPrayers, docs, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, addDoc
     }}>
       {children}
     </AppContext.Provider>

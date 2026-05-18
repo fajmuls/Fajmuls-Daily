@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppContext } from '../../store';
 import { PersonalNote } from '../../types';
-import { ArrowLeft, Trash2, Save, ShieldCheck, Plus, X } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, ShieldCheck, Plus, X, Copy, ClipboardPaste } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
+import { cn } from '../../lib/utils';
 
 export function PersonalNoteView() {
   const { id } = useParams();
@@ -16,12 +17,6 @@ export function PersonalNoteView() {
 
   const [formData, setFormData] = useState({
     personName: '',
-    nik: '',
-    ssn: '',
-    postalCode: '',
-    address: '',
-    email: '',
-    accountNumber: '',
     extraNotes: ''
   });
 
@@ -31,19 +26,48 @@ export function PersonalNoteView() {
     if (existingNote) {
       setFormData({
         personName: existingNote.personName || '',
-        nik: existingNote.nik || '',
-        ssn: existingNote.ssn || '',
-        postalCode: existingNote.postalCode || '',
-        address: existingNote.address || '',
-        email: existingNote.email || '',
-        accountNumber: existingNote.accountNumber || '',
         extraNotes: existingNote.extraNotes || ''
       });
       if (existingNote.customFields) {
         setCustomFields(existingNote.customFields);
+      } else {
+         // Migration/Default: if it's an old note with explicit fields, move them to customFields
+         const legacyFields = [
+            { key: 'NIK', value: (existingNote as any).nik },
+            { key: 'SSN/NISN', value: (existingNote as any).ssn },
+            { key: 'Email', value: (existingNote as any).email },
+            { key: 'No. Rekening', value: (existingNote as any).accountNumber },
+            { key: 'Alamat', value: (existingNote as any).address },
+            { key: 'Kode Pos', value: (existingNote as any).postalCode }
+         ].filter(f => f.value);
+         setCustomFields(legacyFields.length > 0 ? legacyFields : [{ key: 'NIK 1', value: '' }]);
       }
+    } else {
+       setCustomFields([{ key: 'NIK 1', value: '' }]);
     }
   }, [existingNote]);
+
+  const handleCopy = () => {
+    const text = `Profil: ${formData.personName}\n` + 
+      customFields.map(f => `${f.key}: ${f.value}`).join('\n') + 
+      (formData.extraNotes ? `\nCatatan: ${formData.extraNotes}` : '');
+    navigator.clipboard.writeText(text);
+    playSuccess();
+    alert("Berhasil menyalin data profil ke clipboard!");
+  };
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      // Simple heuristic: if it looks like JSON of our profile, parse it
+      // Otherwise, just append to notes
+      setFormData(prev => ({ ...prev, extraNotes: prev.extraNotes + '\n' + text }));
+      playSuccess();
+    } catch (err) {
+      console.error(err);
+      playError();
+    }
+  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -56,7 +80,7 @@ export function PersonalNoteView() {
   };
 
   const addCustomField = () => {
-    setCustomFields(prev => [...prev, { key: '', value: '' }]);
+    setCustomFields(prev => [...prev, { key: `Info ${prev.length + 1}`, value: '' }]);
   };
 
   const removeCustomField = (index: number) => {
@@ -64,21 +88,22 @@ export function PersonalNoteView() {
   };
 
   const handleSave = () => {
-    if (existingNote) {
-      updateNote({
-        ...existingNote,
-        ...formData,
-        customFields: customFields.filter(f => f.key.trim() !== '' || f.value.trim() !== '')
-      });
-    } else {
-      addNote({
-        id: uuidv4(),
-        type: 'personal',
-        createdAt: Date.now(),
+    const dataToSave = {
+        id: existingNote?.id || uuidv4(),
+        type: 'personal' as const,
+        createdAt: existingNote?.createdAt || Date.now(),
         updatedAt: Date.now(),
-        ...formData,
-        customFields: customFields.filter(f => f.key.trim() !== '' || f.value.trim() !== '')
-      });
+        personName: formData.personName,
+        extraNotes: formData.extraNotes,
+        customFields: customFields.filter(f => f.key.trim() !== '' || f.value.trim() !== ''),
+        // Keep legacy fields empty or as placeholders so types don't break if they are mandatory
+        nik: '', ssn: '', postalCode: '', address: '', email: '', accountNumber: '', notes: []
+    };
+
+    if (existingNote) {
+      updateNote(dataToSave as PersonalNote);
+    } else {
+      addNote(dataToSave as PersonalNote);
     }
     playSuccess();
     navigate('/notes/personal-list');
@@ -105,6 +130,16 @@ export function PersonalNoteView() {
         </button>
         <div className="flex gap-2">
           {existingNote && (
+            <div className="flex gap-1 mr-2 border-r border-stone-200 pr-2">
+               <button onClick={handleCopy} title="Salin Data" className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors">
+                 <Copy className="w-5 h-5" />
+               </button>
+               <button onClick={handlePaste} title="Tempel Data" className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors">
+                 <ClipboardPaste className="w-5 h-5" />
+               </button>
+            </div>
+          )}
+          {existingNote && (
             <button onClick={handleDelete} className="p-3 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors">
               <Trash2 className="w-5 h-5" />
             </button>
@@ -121,75 +156,62 @@ export function PersonalNoteView() {
             <ShieldCheck className="w-8 h-8" />
           </div>
           <div className="flex-1">
-            <h1 className="text-3xl font-serif font-bold text-stone-900">Data Pribadi</h1>
+            <h1 className="text-3xl font-serif font-bold text-stone-900">Data Profil Pribadi</h1>
             <p className="text-stone-500 text-sm">Masukan Nama atau Pemilik data terlebih dahulu.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+        <div className="space-y-6 pt-4">
           <div className="md:col-span-2">
             <label className="block text-xs uppercase tracking-widest text-emerald-600 font-bold mb-2">Nama Pemilik Profil</label>
             <input type="text" name="personName" placeholder="Contoh: Muhammad Rahman Fajmul" value={formData.personName} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-4 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-lg border border-emerald-100" />
           </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">NIK</label>
-            <input type="text" name="nik" value={formData.nik} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">NISN / SSN</label>
-            <input type="text" name="ssn" value={formData.ssn} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Nomor Rekening</label>
-            <input type="text" name="accountNumber" value={formData.accountNumber} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Alamat</label>
-            <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Kode Pos</label>
-            <input type="text" name="postalCode" value={formData.postalCode} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
-          </div>
-
-          <div className="md:col-span-2 mt-4 pt-4 border-t border-stone-100">
-             <h3 className="font-bold text-stone-700 mb-4 tracking-wide">Data Tambahan Sendiri</h3>
+          <div className="mt-8 pt-4 border-t border-stone-100">
+             <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-stone-700 tracking-wide uppercase text-xs">Informasi & Kartu Identitas</h3>
+                <button type="button" onClick={addCustomField} className="flex items-center gap-2 text-emerald-600 font-bold hover:text-emerald-700 transition-colors text-xs">
+                   <Plus className="w-4 h-4" /> Tambah File Baru
+                </button>
+             </div>
           </div>
 
           {/* Kolom Kustom */}
-          {customFields.map((field, idx) => (
-            <div key={idx} className="md:col-span-2 flex items-start gap-4">
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <div>
-                    <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Label Info</label>
-                    <input type="text" value={field.key} onChange={e => handleCustomFieldChange(idx, 'key', e.target.value)} placeholder="Contoh: Nama Pasangan" className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
+          <div className="space-y-3">
+             {customFields.map((field, idx) => (
+               <div key={idx} className="flex items-start gap-2 bg-stone-50/50 p-4 rounded-2xl border border-stone-100 group transition-all hover:bg-white hover:shadow-md">
+                 <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="relative">
+                       <input 
+                         type="text" 
+                         value={field.key} 
+                         onChange={e => handleCustomFieldChange(idx, 'key', e.target.value)} 
+                         placeholder="Label" 
+                         className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-stone-600 text-sm" 
+                       />
+                       <span className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black uppercase text-stone-400">Label</span>
+                    </div>
+                    <div className="md:col-span-2 relative">
+                       <input 
+                         type="text" 
+                         value={field.value} 
+                         onChange={e => handleCustomFieldChange(idx, 'value', e.target.value)} 
+                         placeholder="Nilai Informasi" 
+                         className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-stone-900" 
+                       />
+                       <span className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black uppercase text-stone-400">Value</span>
+                    </div>
                  </div>
-                 <div className="md:col-span-2">
-                    <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Nilai / Isi</label>
-                    <input type="text" value={field.value} onChange={e => handleCustomFieldChange(idx, 'value', e.target.value)} placeholder="Isi informasi..." className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
-                 </div>
-              </div>
-              <button type="button" title="Hapus Kustom" onClick={() => removeCustomField(idx)} className="mt-8 p-3 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-xl flex-shrink-0 border border-transparent hover:border-red-200">
-                <Trash2 className="w-5 h-5" />
-              </button>
-            </div>
-          ))}
-
-          <div className="md:col-span-2 pb-4">
-            <button type="button" onClick={addCustomField} className="flex items-center gap-2 text-emerald-600 font-bold hover:text-emerald-700 transition-colors bg-emerald-50 hover:bg-emerald-100 px-4 py-3 border border-emerald-200 rounded-xl text-sm w-full justify-center">
-               <Plus className="w-4 h-4" />
-               Tambah Info Kustom Lainnya
-            </button>
+                 <button type="button" onClick={() => removeCustomField(idx)} className="p-2 text-stone-300 hover:text-red-500 transition-colors">
+                   <Trash2 className="w-4 h-4" />
+                 </button>
+               </div>
+             ))}
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Catatan Lainnya</label>
-            <textarea name="extraNotes" value={formData.extraNotes} onChange={handleChange} rows={4} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
+          <div className="mt-8">
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Catatan Keterangan Tambahan</label>
+            <textarea name="extraNotes" value={formData.extraNotes} onChange={handleChange} rows={6} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Informasi tambahan terkait profil ini..." />
           </div>
         </div>
       </div>

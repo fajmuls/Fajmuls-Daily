@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, Trash2, Save, History, Palette } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, History, Palette, ChevronDown, User, Edit3 } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
@@ -34,6 +34,17 @@ export function IGNoteView() {
   const [bgColor, setBgColor] = useState('#171412');
   const [showHistory, setShowHistory] = useState(false);
   const [showColors, setShowColors] = useState(false);
+  const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
+
+  const ownerTemplates = useMemo(() => {
+    const owners = new Set<string>();
+    owners.add('Xiaomi');
+    owners.add('Mrachman');
+    notes.filter(n => n.type === 'ig').forEach(n => {
+       if ((n as IGNote).owner) owners.add((n as IGNote).owner);
+    });
+    return Array.from(owners);
+  }, [notes]);
 
   useEffect(() => {
     if (existingNote) {
@@ -44,10 +55,19 @@ export function IGNoteView() {
     }
   }, [existingNote]);
 
-  const handleSave = () => {
+  const handleSave = (bulkRenameOwner = false) => {
     if (!songTitle && !content) return;
     
     if (existingNote) {
+      // If bulk renaming, update all notes with this owner
+      if (bulkRenameOwner && existingNote.owner !== owner) {
+         notes.filter(n => n.type === 'ig' && n.id !== existingNote.id).forEach(n => {
+            if ((n as IGNote).owner === existingNote.owner) {
+               updateNote({ ...n, owner } as IGNote);
+            }
+         });
+      }
+
       updateNote({
         ...existingNote,
         owner,
@@ -71,6 +91,18 @@ export function IGNoteView() {
     }
     playSuccess();
     navigate('/notes/ig-list');
+  };
+
+  const handleBulkRename = () => {
+     if (!existingNote) return;
+     if (owner === existingNote.owner) {
+        alert("Nama pemilik belum berubah!");
+        return;
+     }
+     const confirm = window.confirm(`Ubah semua pemilik dari "${existingNote.owner}" ke "${owner}"?`);
+     if (confirm) {
+        handleSave(true);
+     }
   };
 
   const handleDelete = () => {
@@ -110,16 +142,46 @@ export function IGNoteView() {
       </div>
 
       <div className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-6 relative overflow-hidden">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative group">
             <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Pemilik IG</label>
-            <input
-              type="text"
-              value={owner}
-              onChange={(e) => setOwner(e.target.value)}
-              placeholder="Cth. Xiaomi"
-              className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 font-medium"
-            />
+            <div className="relative">
+               <input
+                 type="text"
+                 value={owner}
+                 onFocus={() => setShowOwnerDropdown(true)}
+                 onChange={(e) => { setOwner(e.target.value); setShowOwnerDropdown(true); }}
+                 placeholder="Cth. Xiaomi"
+                 className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 font-medium pr-10"
+               />
+               <button onClick={() => setShowOwnerDropdown(!showOwnerDropdown)} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-stone-300">
+                  <ChevronDown className={cn("w-4 h-4 transition-transform", showOwnerDropdown ? "rotate-180" : "")} />
+               </button>
+            </div>
+
+            {showOwnerDropdown && (
+               <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-xl shadow-xl z-30 p-2 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                  {ownerTemplates.filter(o => o.toLowerCase().includes(owner.toLowerCase())).map((o, i) => (
+                     <button 
+                        key={i}
+                        type="button"
+                        onClick={() => { setOwner(o); setShowOwnerDropdown(false); playClick(); }}
+                        className="w-full text-left px-3 py-2 hover:bg-stone-50 rounded-lg text-sm font-medium text-stone-700 transition-colors"
+                     >
+                        {o}
+                     </button>
+                  ))}
+               </div>
+            )}
+            
+            {existingNote && owner !== existingNote.owner && (
+               <button 
+                  onClick={handleBulkRename}
+                  className="mt-2 flex items-center gap-1 text-[10px] text-pink-600 font-bold uppercase tracking-wider hover:underline"
+               >
+                  <Edit3 className="w-3 h-3"/> Ubah Semua Pemilik Liburan "{existingNote.owner}"
+               </button>
+            )}
           </div>
           <div>
             <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Judul Lagu</label>
