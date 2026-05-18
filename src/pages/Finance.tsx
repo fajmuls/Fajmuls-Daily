@@ -84,34 +84,39 @@ export function Finance() {
     })).sort((a,b) => b.value - a.value);
   }, [financeRecords]);
 
-  // Vibrant and distinct colors for income
+  // Vibrant and distinct colors for income (Bright)
   const COLORS_INCOME = [
-    '#22c55e', // Green 500
-    '#0ea5e9', // Sky 500
-    '#8b5cf6', // Violet 500
-    '#f59e0b', // Amber 500
-    '#ec4899', // Pink 500
-    '#10b981', // Emerald 500
+    '#22c55e', // Green
+    '#0ea5e9', // Sky
+    '#f59e0b', // Amber
+    '#ec4899', // Pink
+    '#8b5cf6', // Violet
+    '#10b981', // Emerald
+    '#f97316', // Orange
+    '#3b82f6', // Blue
   ];
 
-  // Darker but distinguishable colors for expenses
+  // Distinct dark colors for expenses (Darker theme)
   const COLORS_EXPENSE = [
-    '#991b1b', // Red 800
-    '#1e3a8a', // Blue 900
-    '#3f6212', // Lime 900
-    '#581c87', // Purple 900
-    '#7c2d12', // Orange 900
+    '#7f1d1d', // Dark Red
+    '#1e3a8a', // Dark Blue
+    '#365314', // Dark Lime
+    '#581c87', // Dark Purple
+    '#7c2d12', // Dark Orange
     '#111827', // Gray 900
+    '#14532d', // Dark Green
+    '#450a0a', // Darker Red
   ];
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.6; // Position inside slightly
+    // Move labels slightly further out to avoid crowding
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.7; 
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     // Only show if slice is large enough
-    if (percent < 0.05) return null; 
+    if (percent < 0.08) return null; 
     
     return (
       <text 
@@ -120,9 +125,9 @@ export function Finance() {
         fill="white" 
         textAnchor="middle" 
         dominantBaseline="central" 
-        fontSize="12" 
+        fontSize="11" 
         fontWeight="bold"
-        className="drop-shadow-sm"
+        className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -246,33 +251,37 @@ export function Finance() {
         <div className="lg:col-span-2 space-y-6">
           {financeRecords.length > 0 && (
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {incomeData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden">
-                     <h3 className="font-bold text-stone-900 mb-6 text-center">Distribusi Pendapatan</h3>
-                     <div className="h-64 sm:h-72">
+                 {incomeData.length > 0 && (
+                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col">
+                     <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pendapatan</h3>
+                     <div className="h-72 sm:h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
+                          <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
                             <Pie
                               data={incomeData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={40}
-                              outerRadius={80}
+                              innerRadius={45}
+                              outerRadius={85}
                               paddingAngle={4}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
+                              animationBegin={0}
+                              animationDuration={800}
                             >
                               {incomeData.map((_entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
+                                <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} stroke="rgba(255,255,255,0.3)" strokeWidth={2} />
                               ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
                             <Legend 
                                verticalAlign="bottom" 
-                               height={36} 
+                               align="center"
+                               layout="horizontal"
                                iconType="circle" 
-                               formatter={(value) => <span className="text-xs font-bold text-stone-600">{value}</span>}
+                               wrapperStyle={{ paddingTop: '20px', fontSize: '10px' }}
+                               formatter={(value) => <span className="text-[10px] font-bold text-stone-600 uppercase tracking-tighter">{value}</span>}
                             />
                           </PieChart>
                         </ResponsiveContainer>
@@ -280,32 +289,36 @@ export function Finance() {
                   </div>
                 )}
                 {expenseData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden">
-                     <h3 className="font-bold text-stone-900 mb-6 text-center">Distribusi Pengeluaran</h3>
-                     <div className="h-64 sm:h-72">
+                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col">
+                     <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pengeluaran</h3>
+                     <div className="h-72 sm:h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
+                          <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
                             <Pie
                               data={expenseData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={40}
-                              outerRadius={80}
+                              innerRadius={45}
+                              outerRadius={85}
                               paddingAngle={4}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
+                              animationBegin={0}
+                              animationDuration={800}
                             >
                               {expenseData.map((_entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
+                                <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} stroke="rgba(255,255,255,0.15)" strokeWidth={2} />
                               ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
                             <Legend 
                                verticalAlign="bottom" 
-                               height={36} 
+                               align="center"
+                               layout="horizontal"
                                iconType="circle" 
-                               formatter={(value) => <span className="text-xs font-bold text-stone-600">{value}</span>}
+                               wrapperStyle={{ paddingTop: '20px', fontSize: '10px' }}
+                               formatter={(value) => <span className="text-[10px] font-bold text-stone-600 uppercase tracking-tighter">{value}</span>}
                             />
                           </PieChart>
                         </ResponsiveContainer>

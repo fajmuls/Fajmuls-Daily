@@ -36,9 +36,15 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
   const handleLoginGoogle = async () => {
     try {
       await signInWithPopup(auth, authProvider);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Gagal login dengan Google.');
+      if (e.code === 'auth/popup-blocked') {
+        alert('Popup diblokir oleh browser. Silakan izinkan popup atau buka aplikasi di tab baru.');
+      } else if (e.code === 'auth/unauthorized-domain') {
+        alert('Domain ini tidak diizinkan untuk login Firebase. Silakan tambahkan domain ini ke Authorized Domains di Firebase Console.');
+      } else {
+        alert(`Gagal login: ${e.message}`);
+      }
     }
   };
 

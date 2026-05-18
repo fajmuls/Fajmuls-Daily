@@ -10,7 +10,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './lib/firebase';
-import { Note, FinanceRecord, MissedPrayer, DailyDoc } from './types';
+import { Note, FinanceRecord, MissedPrayer, DailyDoc, SpecialNote } from './types';
 import { INITIAL_MISSED_PRAYERS, INITIAL_IG_NOTES } from './data';
 import { useAuth } from './components/AuthWrapper';
 
@@ -19,6 +19,7 @@ interface AppState {
   financeRecords: FinanceRecord[];
   missedPrayers: MissedPrayer[];
   docs: DailyDoc[];
+  specials: SpecialNote[];
   loading: boolean;
   addNote: (note: Note) => void;
   updateNote: (note: Note) => void;
@@ -29,6 +30,8 @@ interface AppState {
   addMissedPrayer: (prayer: MissedPrayer) => void;
   deleteMissedPrayer: (id: string) => void;
   addDoc: (doc: DailyDoc) => void;
+  addSpecial: (special: SpecialNote) => void;
+  deleteSpecial: (id: string) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -39,7 +42,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [financeRecords, setFinanceRecords] = useState<FinanceRecord[]>([]);
   const [missedPrayers, setMissedPrayers] = useState<MissedPrayer[]>([]);
   const [docs, setDocs] = useState<DailyDoc[]>([]);
+  const [specials, setSpecials] = useState<SpecialNote[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Track if initial data has loaded
+  const [initialLoaded, setInitialLoaded] = useState({
+    notes: false,
+    finance: false,
+    prayers: false,
+    docs: false,
+    specials: false
+  });
 
   // Sync with Firestore
   useEffect(() => {
@@ -53,101 +66,137 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     setLoading(true);
-
     const userPath = `users/${user.uid}`;
     
     // Listeners
     const unsubNotes = onSnapshot(query(collection(db, `${userPath}/notes`), orderBy('createdAt', 'desc')), (snapshot) => {
-      const data = snapshot.docs.map(d => d.data() as Note);
-      // Initialize with default notes if empty and first time
-      setNotes(data.length > 0 ? data : []);
+      setNotes(snapshot.docs.map(d => d.data() as Note));
+      setInitialLoaded(prev => ({ ...prev, notes: true }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/notes`));
 
     const unsubFinance = onSnapshot(query(collection(db, `${userPath}/finance`), orderBy('createdAt', 'desc')), (snapshot) => {
       setFinanceRecords(snapshot.docs.map(d => d.data() as FinanceRecord));
+      setInitialLoaded(prev => ({ ...prev, finance: true }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/finance`));
 
     const unsubPrayers = onSnapshot(collection(db, `${userPath}/prayers`), (snapshot) => {
-      const data = snapshot.docs.map(d => d.data() as MissedPrayer);
-      setMissedPrayers(data);
+      setMissedPrayers(snapshot.docs.map(d => d.data() as MissedPrayer));
+      setInitialLoaded(prev => ({ ...prev, prayers: true }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/prayers`));
 
     const unsubDocs = onSnapshot(query(collection(db, `${userPath}/docs`), orderBy('createdAt', 'desc')), (snapshot) => {
       setDocs(snapshot.docs.map(d => d.data() as DailyDoc));
+      setInitialLoaded(prev => ({ ...prev, docs: true }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/docs`));
 
-    setLoading(false);
+    const unsubSpecials = onSnapshot(query(collection(db, `${userPath}/specials`), orderBy('createdAt', 'desc')), (snapshot) => {
+      setSpecials(snapshot.docs.map(d => d.data() as SpecialNote));
+      setInitialLoaded(prev => ({ ...prev, specials: true }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/specials`));
 
     return () => {
       unsubNotes();
       unsubFinance();
       unsubPrayers();
       unsubDocs();
+      unsubSpecials();
     };
   }, [user]);
 
-  // Migration from LocalStorage to Firestore (one-time if Firestore is empty)
+  // Update loading state when all initial data is loaded
+  useEffect(() => {
+    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials) {
+      setLoading(false);
+    }
+  }, [initialLoaded]);
+
+  // Migration from LocalStorage to Firestore (one-time)
   useEffect(() => {
     if (!user || loading) return;
+
+    const migrationFlag = localStorage.getItem(`fajmuls-migrated-${user.uid}`);
+    if (migrationFlag) return;
 
     const checkAndMigrate = async () => {
       const userPath = `users/${user.uid}`;
       const suffix = `-${user.uid}`;
+      const batch = writeBatch(db);
+      let hasData = false;
       
-      // We check if Firestore collections are empty before migrating
-      // This is a simple heuristic
-      if (notes.length === 0) {
-        const local = localStorage.getItem(`fajmuls-notes${suffix}`);
-        const notesToMigrate = local ? JSON.parse(local) : INITIAL_IG_NOTES;
+      // Notes
+      const localNotes = localStorage.getItem(`fajmuls-notes${suffix}`);
+      if (localNotes) {
+        const notesToMigrate = JSON.parse(localNotes);
         if (notesToMigrate.length > 0) {
-          const batch = writeBatch(db);
           notesToMigrate.forEach((n: Note) => {
-            const ref = doc(db, `${userPath}/notes`, n.id);
-            batch.set(ref, n);
+            batch.set(doc(db, `${userPath}/notes`, n.id), n);
           });
-          await batch.commit().catch(e => console.error("Migration error:", e));
+          hasData = true;
         }
+      } else if (notes.length === 0) {
+        // Only seed if both local and remote are empty
+        INITIAL_IG_NOTES.forEach((n) => {
+          batch.set(doc(db, `${userPath}/notes`, n.id), n);
+        });
+        hasData = true;
       }
 
-      if (missedPrayers.length === 0) {
-        const local = localStorage.getItem(`fajmuls-prayers${suffix}`);
-        const prayersToMigrate = local ? JSON.parse(local) : INITIAL_MISSED_PRAYERS;
+      // Prayers
+      const localPrayers = localStorage.getItem(`fajmuls-prayers${suffix}`);
+      if (localPrayers) {
+        const prayersToMigrate = JSON.parse(localPrayers);
         if (prayersToMigrate.length > 0) {
-          const batch = writeBatch(db);
           prayersToMigrate.forEach((p: MissedPrayer) => {
-            const ref = doc(db, `${userPath}/prayers`, p.id);
-            batch.set(ref, p);
+            batch.set(doc(db, `${userPath}/prayers`, p.id), p);
           });
-          await batch.commit().catch(e => console.error("Migration error:", e));
+          hasData = true;
         }
+      } else if (missedPrayers.length === 0) {
+        INITIAL_MISSED_PRAYERS.forEach((p) => {
+          batch.set(doc(db, `${userPath}/prayers`, p.id), p);
+        });
+        hasData = true;
       }
 
-      // Similarly for finance and docs if they exist in localStorage
+      // Finance
       const financeLocal = localStorage.getItem(`fajmuls-finance${suffix}`);
-      if (financeLocal && financeRecords.length === 0) {
+      if (financeLocal) {
         const data = JSON.parse(financeLocal);
-        const batch = writeBatch(db);
         data.forEach((r: FinanceRecord) => {
-          const ref = doc(db, `${userPath}/finance`, r.id);
-          batch.set(ref, r);
+          batch.set(doc(db, `${userPath}/finance`, r.id), r);
         });
-        await batch.commit().catch(e => console.error("Migration error:", e));
+        hasData = true;
       }
 
+      // Docs
       const docsLocal = localStorage.getItem(`fajmuls-docs${suffix}`);
-      if (docsLocal && docs.length === 0) {
+      if (docsLocal) {
         const data = JSON.parse(docsLocal);
-        const batch = writeBatch(db);
         data.forEach((d: DailyDoc) => {
-          const ref = doc(db, `${userPath}/docs`, d.id);
-          batch.set(ref, d);
+          batch.set(doc(db, `${userPath}/docs`, d.id), d);
         });
+        hasData = true;
+      }
+
+      // Specials
+      const specialsLocal = localStorage.getItem(`fajmuls-specials${suffix}`) || localStorage.getItem('fajmuls-specials');
+      if (specialsLocal) {
+        const data = JSON.parse(specialsLocal);
+        data.forEach((s: SpecialNote) => {
+          batch.set(doc(db, `${userPath}/specials`, s.id), s);
+        });
+        hasData = true;
+      }
+
+      if (hasData) {
         await batch.commit().catch(e => console.error("Migration error:", e));
       }
+      
+      localStorage.setItem(`fajmuls-migrated-${user.uid}`, 'true');
     };
 
     checkAndMigrate();
-  }, [user, loading]);
+  }, [user, loading, notes.length, missedPrayers.length]);
 
   const addNote = async (note: Note) => {
     if (!user) return;
@@ -218,9 +267,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/docs/${docObj.id}`); }
   };
 
+  const addSpecial = async (special: SpecialNote) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, `users/${user.uid}/specials`, special.id), special);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/specials/${special.id}`); }
+  };
+
+  const deleteSpecial = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, `users/${user.uid}/specials`, id));
+    } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/specials/${id}`); }
+  };
+
   return (
     <AppContext.Provider value={{
-      notes, financeRecords, missedPrayers, docs, loading, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, addDoc
+      notes, financeRecords, missedPrayers, docs, specials, loading, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, addDoc, addSpecial, deleteSpecial
     }}>
       {children}
     </AppContext.Provider>

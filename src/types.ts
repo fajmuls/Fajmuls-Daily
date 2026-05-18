@@ -81,3 +81,10 @@ export interface DailyDoc {
   name: string;
   createdAt: number;
 }
+
+export interface SpecialNote {
+  id: string;
+  dayTitle: string;
+  content: string;
+  createdAt: number;
+}

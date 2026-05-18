@@ -9,34 +9,8 @@ import { db } from '../lib/firebase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export function Dashboard() {
-  const { notes, financeRecords } = useAppContext();
-  const [docsCount, setDocsCount] = useState(0);
-  const [specialsCount, setSpecialsCount] = useState(0);
+  const { notes, financeRecords, docs, specials, loading } = useAppContext();
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
-  
-  useEffect(() => {
-    // get firestore docs count
-    const fetchDocsCount = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "daily_docs"));
-        setDocsCount(querySnapshot.size);
-      } catch (e) {
-        console.error("Error fetching docs count", e);
-      }
-    };
-    fetchDocsCount();
-
-    // get specials count from localstorage
-    const localSpecials = localStorage.getItem('fajmuls-specials');
-    if (localSpecials) {
-      try {
-        const parsed = JSON.parse(localSpecials);
-        setSpecialsCount(Array.isArray(parsed) ? parsed.length : 0);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
 
   const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
 
@@ -125,7 +99,7 @@ export function Dashboard() {
           <div>
             <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Dokumentasi</p>
             <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
-              {docsCount} <span className="text-xl text-stone-400 font-sans font-normal">foto</span>
+              {docs.length} <span className="text-xl text-stone-400 font-sans font-normal">foto</span>
             </h2>
             <p className="text-stone-500 mt-2">Tersimpan di Cloud</p>
           </div>
@@ -144,7 +118,7 @@ export function Dashboard() {
           <div>
             <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Spesial</p>
             <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
-              {specialsCount} <span className="text-xl text-stone-400 font-sans font-normal">item</span>
+              {specials.length} <span className="text-xl text-stone-400 font-sans font-normal">item</span>
             </h2>
             <p className="text-stone-500 mt-2">Catatan sangat penting & rahasia</p>
           </div>
