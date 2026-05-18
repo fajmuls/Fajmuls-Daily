@@ -4,40 +4,12 @@ import { useAppContext } from '../store';
 import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export function Dashboard() {
-  const { notes, financeRecords } = useAppContext();
-  const [docsCount, setDocsCount] = useState(0);
-  const [specialsCount, setSpecialsCount] = useState(0);
+  const { notes, financeRecords, docs, specials } = useAppContext();
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
   
-  useEffect(() => {
-    // get firestore docs count
-    const fetchDocsCount = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "docs"));
-        setDocsCount(querySnapshot.size);
-      } catch (e) {
-        console.error("Error fetching docs count", e);
-      }
-    };
-    fetchDocsCount();
-
-    // get specials count from localstorage
-    const localSpecials = localStorage.getItem('fajmuls-specials');
-    if (localSpecials) {
-      try {
-        const parsed = JSON.parse(localSpecials);
-        setSpecialsCount(Array.isArray(parsed) ? parsed.length : 0);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
-
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
@@ -150,7 +122,7 @@ export function Dashboard() {
             </div>
             <div>
                <p className="text-[10px] uppercase font-black tracking-[0.2em] text-stone-400">Arsip Digital</p>
-               <h3 className="text-3xl font-bold text-stone-900">{docsCount} Dokumen</h3>
+               <h3 className="text-3xl font-bold text-stone-900">{docs.length} Dokumen</h3>
             </div>
           </div>
           <Link to="/docs" className="w-12 h-12 flex items-center justify-center bg-stone-50 rounded-2xl hover:bg-trip-brown hover:text-white transition-all group-hover:rotate-45">
@@ -166,7 +138,7 @@ export function Dashboard() {
             </div>
             <div>
                <p className="text-[10px] uppercase font-black tracking-[0.2em] text-red-300 group-hover:text-red-400">Zona Rahasia</p>
-               <h3 className="text-3xl font-bold">{specialsCount} Vault</h3>
+               <h3 className="text-3xl font-bold">{specials.length} Vault</h3>
             </div>
           </div>
           <Link to="/special" className="w-12 h-12 flex items-center justify-center bg-stone-900 text-white rounded-2xl hover:bg-accent-orange transition-all group-hover:bg-white group-hover:text-stone-900 border border-stone-800">

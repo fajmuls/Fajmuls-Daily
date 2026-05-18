@@ -3,7 +3,7 @@ import { Sparkles, Save, Trash2, Heart, CheckSquare, Square } from 'lucide-react
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { cn } from '../lib/utils';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAppContext } from '../store';
 import { useAudio } from '../hooks/useAudio';
 
 interface SpecialNote {
@@ -14,7 +14,7 @@ interface SpecialNote {
 }
 
 export function Special() {
-  const [specials, setSpecials] = useLocalStorage<SpecialNote[]>('fajmuls-specials', []);
+  const { specials, addSpecial, deleteSpecial } = useAppContext();
   const [dayTitle, setDayTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -23,12 +23,12 @@ export function Special() {
   const handleSave = () => {
     if (!dayTitle) return;
     
-    setSpecials(prev => [{
+    addSpecial({
       id: Date.now().toString(),
       dayTitle,
       content,
       createdAt: Date.now()
-    }, ...prev]);
+    });
 
     setDayTitle('');
     setContent('');
@@ -38,7 +38,7 @@ export function Special() {
   const handleDeleteSingle = (id: string) => {
     const code = window.prompt("Masukkan kode verifikasi untuk menghapus catatan eksklusif ini:");
     if (code === "FAJMUL") {
-      setSpecials(prev => prev.filter(s => s.id !== id));
+      deleteSpecial(id);
       setSelectedIds(prev => {
         const newSet = new Set(prev);
         newSet.delete(id);
@@ -54,7 +54,7 @@ export function Special() {
     if (selectedIds.size === 0) return;
     const code = window.prompt(`Kamu akan menghapus ${selectedIds.size} catatan. Masukkan kode verifikasi:`);
     if (code === "FAJMUL") {
-      setSpecials(prev => prev.filter(s => !selectedIds.has(s.id)));
+      selectedIds.forEach(id => deleteSpecial(id));
       setSelectedIds(new Set());
       playError();
     } else if (code !== null) {

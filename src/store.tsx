@@ -10,6 +10,7 @@ interface AppState {
   financeRecords: FinanceRecord[];
   missedPrayers: MissedPrayer[];
   docs: DailyDoc[];
+  specials: any[];
   loading: boolean;
   addNote: (note: Note) => void;
   updateNote: (note: Note) => void;
@@ -20,6 +21,8 @@ interface AppState {
   addMissedPrayer: (prayer: MissedPrayer) => void;
   deleteMissedPrayer: (id: string) => void;
   addDoc: (doc: DailyDoc) => void;
+  addSpecial: (special: any) => void;
+  deleteSpecial: (id: string) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -31,6 +34,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [financeRecords, setFinanceRecords] = useState<FinanceRecord[]>([]);
   const [missedPrayers, setMissedPrayers] = useState<MissedPrayer[]>([]);
   const [docs, setDocs] = useState<DailyDoc[]>([]);
+  const [specials, setSpecials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setFinanceRecords([]);
       setMissedPrayers([]);
       setDocs([]);
+      setSpecials([]);
       setLoading(false);
       return;
     }
@@ -63,14 +68,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const qDocs = query(collection(db, 'docs'), where('userId', '==', user.uid));
     const unsubDocs = onSnapshot(qDocs, (snap) => {
       setDocs(snap.docs.map(doc => doc.data() as DailyDoc));
-      setLoading(false);
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'docs'));
+
+    const qSpecials = query(collection(db, 'specials'), where('userId', '==', user.uid));
+    const unsubSpecials = onSnapshot(qSpecials, (snap) => {
+      setSpecials(snap.docs.map(doc => doc.data()));
+      setLoading(false);
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'specials'));
 
     return () => {
       unsubNotes();
       unsubFinance();
       unsubPrayers();
       unsubDocs();
+      unsubSpecials();
     };
   }, [user]);
 
@@ -166,9 +177,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const addSpecial = async (special: any) => {
+    if (!user) return;
+    try {
+      const data = { ...special, userId: user.uid };
+      await setDoc(doc(db, 'specials', special.id), data);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'specials');
+    }
+  };
+
+  const deleteSpecial = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'specials', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, 'specials');
+    }
+  };
+
   return (
     <AppContext.Provider value={{
-      notes, financeRecords, missedPrayers, docs, loading, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, addDoc
+      notes, financeRecords, missedPrayers, docs, specials, loading, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, addDoc, addSpecial, deleteSpecial
     }}>
       {children}
     </AppContext.Provider>

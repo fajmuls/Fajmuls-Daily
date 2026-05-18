@@ -30,7 +30,7 @@ testConnection();
 
 export const loginWithGoogle = async () => {
     try {
-        const result = await signInWithPopup(auth, googleProvider);
+        const result = await signInWithPopup(auth, authProvider);
         return result.user;
     } catch (error) {
         console.error("Login failed:", error);

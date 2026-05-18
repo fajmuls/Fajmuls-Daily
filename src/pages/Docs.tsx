@@ -1,8 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { v4 as uuidv4 } from 'uuid';
-import { collection, addDoc as addFirestoreDoc, getDocs, orderBy, query, where } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 import { useAppContext } from '../store';
 import { useAuth } from '../components/AuthWrapper';
 import { UploadCloud, FileImage, Loader2, X } from 'lucide-react';
@@ -10,37 +8,13 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 export function Docs() {
-  const { playSuccess, playError } = useAppContext() as any; 
+  const { docs: firebaseDocs, addDoc, playSuccess, playError } = useAppContext() as any; 
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
-  const [firebaseDocs, setFirebaseDocs] = useState<any[]>([]);
   
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  const fetchDocs = async () => {
-    if (!user) return;
-    try {
-      const q = query(
-        collection(db, "daily_docs"), 
-        where("userId", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      const docsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setFirebaseDocs(docsData);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    fetchDocs();
-  }, [user]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -78,7 +52,8 @@ export function Docs() {
       reader.onloadend = async () => {
         const base64String = reader.result as string;
         
-        await addFirestoreDoc(collection(db, "daily_docs"), {
+        await addDoc({
+          id: uuidv4(),
           userId: user.uid,
           name: pendingFile.name,
           description: description,
@@ -88,7 +63,6 @@ export function Docs() {
         
         setUploading(false);
         handleCancel();
-        fetchDocs();
       };
       reader.readAsDataURL(pendingFile);
     } catch (error) {
