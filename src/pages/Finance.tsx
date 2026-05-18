@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
 import { FinanceRecord } from '../types';
-import { Plus, Minus, Trash2, ChevronDown, Tag } from 'lucide-react';
+import { Plus, Minus, Trash2, ChevronDown, Tag, Save } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAudio } from '../hooks/useAudio';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
