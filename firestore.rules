@@ -55,6 +55,18 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    match /daily_docs/{docId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incomingData().userId == request.auth.uid && isValidId(docId);
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incomingData().userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Specials Collection
     match /specials/{specialId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;

@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { signInWithPopup, onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { auth, authProvider } from '../lib/firebase';
+import { auth, authProvider, db } from '../lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Loader2, Lock } from 'lucide-react';
 
-const AuthContext = createContext<{ user: User | null; logout: () => void }>({
+const AuthContext = createContext<{ user: User | null; profile: any; logout: () => void }>({
   user: null,
+  profile: null,
   logout: () => {},
 });
 
@@ -23,11 +25,36 @@ const GoogleIcon = () => (
 
 export function AuthWrapper({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        try {
+          const userRef = doc(db, 'users', currentUser.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists()) {
+            setProfile(snap.data());
+          } else {
+            // Create initial profile if missing
+            const initialProfile = {
+              displayName: currentUser.displayName,
+              email: currentUser.email,
+              photoURL: currentUser.photoURL,
+              lastLogin: Date.now(),
+              createdAt: Date.now(),
+            };
+            await setDoc(userRef, initialProfile);
+            setProfile(initialProfile);
+          }
+        } catch (e) {
+          console.error("Error fetching/setting user profile", e);
+        }
+      } else {
+        setProfile(null);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -36,7 +63,20 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
   const handleLoginGoogle = async () => {
     try {
       setLoading(true);
-      await signInWithPopup(auth, authProvider);
+      const result = await signInWithPopup(auth, authProvider);
+      const loggedInUser = result.user;
+      
+      // Explicitly update profile on login too
+      const userRef = doc(db, 'users', loggedInUser.uid);
+      const profileData = {
+        displayName: loggedInUser.displayName,
+        email: loggedInUser.email,
+        photoURL: loggedInUser.photoURL,
+        lastLogin: Date.now(),
+      };
+      await setDoc(userRef, profileData, { merge: true });
+      setProfile(prev => ({ ...prev, ...profileData }));
+      
     } catch (e: any) {
       console.error("Login Error Details:", e);
       setLoading(false);
@@ -90,7 +130,7 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, logout: handleLogout }}>
+    <AuthContext.Provider value={{ user, profile, logout: handleLogout }}>
       {children}
     </AuthContext.Provider>
   );

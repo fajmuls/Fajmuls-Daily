@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
+import { useAuth } from '../components/AuthWrapper';
 import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export function Dashboard() {
   const { notes, financeRecords, docs, specials } = useAppContext();
+  const { profile } = useAuth();
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
   
   const [greeting, setGreeting] = useState('');
@@ -27,13 +29,15 @@ export function Dashboard() {
     return curr.type === 'income' ? acc + curr.amount : acc - curr.amount;
   }, 0);
 
+  const firstName = profile?.displayName?.split(' ')[0] || '';
+
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {showGreeting && (
         <header className="relative group pt-4">
           <div className="absolute -left-4 top-0 w-2 h-20 bg-accent-gold rounded-full" />
           <h1 className="font-serif text-6xl md:text-8xl font-bold tracking-tighter text-trip-brown leading-none">
-            {greeting}.
+            {greeting}{firstName ? `, ${firstName}.` : '.'}
           </h1>
           <p className="text-xl text-stone-500 font-medium tracking-wide mt-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-accent-orange rounded-full" />

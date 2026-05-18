@@ -67,6 +67,20 @@
         "createdAt": { "type": "number" }
       },
       "required": ["id", "userId", "url", "name", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "lastLogin": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["uid"]
     }
   },
   "firestore": {
@@ -85,6 +99,10 @@
     "docs": {
       "schema": "DailyDoc",
       "description": "Collection of user documents"
+    },
+    "users": {
+        "schema": "User",
+        "description": "Collection of user profiles"
     }
   }
 }

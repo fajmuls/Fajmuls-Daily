@@ -25,14 +25,7 @@ const mobileNavItems = [
 export function Layout({ children }: { children: ReactNode }) {
   const { playClick, playSuccess } = useAudio();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-
-  useEffect(() => {
-    // Force redirect to home on initial load/refresh as requested
-    if (window.location.hash !== '#/') {
-      navigate('/');
-    }
-  }, []);
+  const { user, profile, logout } = useAuth();
 
   const handleVoiceCommand = (text: string) => {
     const lower = text.toLowerCase();
@@ -51,7 +44,7 @@ export function Layout({ children }: { children: ReactNode }) {
       navigate('/docs');
       playSuccess();
     } else if (lower.includes('catatan') || lower.includes('tulis')) {
-      navigate('/notes'); // or notes list depending on intent
+      navigate('/notes');
       playSuccess();
     } else if (lower.includes('beranda') || lower.includes('dashboard') || lower.includes('home')) {
       navigate('/');
@@ -75,8 +68,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const UserProfile = ({ compact = false }) => (
     <div className={cn("flex items-center gap-3", compact ? "" : "p-4 mx-4 mb-4 bg-stone-100 rounded-2xl border border-stone-200")}>
-      {user?.photoURL ? (
-        <img src={user.photoURL} alt="Profile" className={cn("rounded-full border border-stone-200 object-cover", compact ? "w-8 h-8" : "w-10 h-10")} />
+      {(profile?.photoURL || user?.photoURL) ? (
+        <img src={profile?.photoURL || user?.photoURL} alt="Profile" className={cn("rounded-full border border-stone-200 object-cover", compact ? "w-8 h-8" : "w-10 h-10")} />
       ) : (
         <div className={cn("bg-stone-200 flex items-center justify-center rounded-full text-stone-500", compact ? "w-8 h-8" : "w-10 h-10")}>
            <UserIcon className={compact ? "w-4 h-4" : "w-5 h-5"} />
@@ -84,8 +77,8 @@ export function Layout({ children }: { children: ReactNode }) {
       )}
       {!compact && (
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-stone-900 truncate">{user?.displayName || 'Pengguna'}</p>
-          <p className="text-xs text-stone-500 truncate">{user?.email}</p>
+          <p className="font-bold text-sm text-stone-900 truncate">{profile?.displayName || user?.displayName || 'Pengguna'}</p>
+          <p className="text-xs text-stone-500 truncate">{profile?.email || user?.email}</p>
         </div>
       )}
     </div>
