@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Izinkan siapa saja membaca dan menulis data
+    // Peringatan: Secara keamanan, ini membuat database Anda terbuka untuk publik
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

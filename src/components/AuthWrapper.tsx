@@ -1,13 +1,14 @@
 import { useEffect, useState, ReactNode } from 'react';
 import { signInWithPopup, onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { auth, authProvider } from '../lib/firebase';
-import { Loader2, LogIn, Lock } from 'lucide-react';
+import { auth, authProvider, githubProvider } from '../lib/firebase';
+import { Loader2, LogIn, Lock, Github, SkipForward } from 'lucide-react';
 
 const ADMIN_EMAIL = 'mrachmanfm@gmail.com';
 
 export function AuthWrapper({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBypassed, setIsBypassed] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -17,17 +18,27 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const handleLogin = async () => {
+  const handleLoginGoogle = async () => {
     try {
       await signInWithPopup(auth, authProvider);
     } catch (e) {
       console.error(e);
-      alert('Gagal login.');
+      alert('Gagal login dengan Google.');
+    }
+  };
+
+  const handleLoginGithub = async () => {
+    try {
+      await signInWithPopup(auth, githubProvider);
+    } catch (e) {
+      console.error(e);
+      alert('Gagal login dengan Github.');
     }
   };
 
   const handleLogout = () => {
     signOut(auth);
+    setIsBypassed(false);
   };
 
   if (loading) {
@@ -38,6 +49,11 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
     );
   }
 
+  // Jika bypass aktif, render children
+  if (isBypassed) {
+    return <>{children}</>;
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
@@ -46,14 +62,33 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
             <Lock className="w-8 h-8 text-stone-700" />
           </div>
           <h1 className="font-serif text-3xl font-bold text-stone-900">Akses Terkunci</h1>
-          <p className="text-stone-500">Aplikasi ini bersifat pribadi. Silakan masuk menggunakan akun Google Anda.</p>
-          <button
-            onClick={handleLogin}
-            className="w-full flex items-center justify-center gap-3 bg-stone-900 text-white rounded-xl py-4 font-bold hover:bg-stone-800 transition-colors"
-          >
-            <LogIn className="w-5 h-5" />
-            Login dengan Google
-          </button>
+          <p className="text-stone-500">Aplikasi ini bersifat pribadi. Silakan masuk sebagai Fajmul.</p>
+          
+          <div className="space-y-3 pt-4">
+            <button
+              onClick={handleLoginGoogle}
+              className="w-full flex items-center justify-center gap-3 bg-stone-900 text-white rounded-xl py-4 font-bold hover:bg-stone-800 transition-colors"
+            >
+              <LogIn className="w-5 h-5" />
+              Login dengan Google
+            </button>
+            <button
+              onClick={handleLoginGithub}
+              className="w-full flex items-center justify-center gap-3 bg-stone-100 text-stone-700 border border-stone-200 rounded-xl py-4 font-bold hover:bg-stone-200 transition-colors"
+            >
+              <Github className="w-5 h-5" />
+              Login dengan GitHub
+            </button>
+          </div>
+
+          <div className="pt-4 border-t border-stone-100">
+            <button
+              onClick={() => setIsBypassed(true)}
+              className="text-stone-400 hover:text-stone-700 text-sm flex items-center justify-center gap-2 w-full font-medium"
+            >
+              <SkipForward className="w-4 h-4" /> Lewati (Akses Mode Beta)
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -69,14 +104,23 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
           </div>
           <h1 className="font-serif text-3xl font-bold text-stone-900">Bukan Admin</h1>
           <p className="text-stone-500">
-            Maaf, akun <b>{user.email}</b> tidak memiliki akses ke aplikasi ini.
+            Maaf, akun <b>{user.email || 'tanpa email'}</b> tidak memiliki akses ke aplikasi ini.
           </p>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-3 bg-stone-100 text-stone-700 rounded-xl py-4 font-bold hover:bg-stone-200 transition-colors"
-          >
-            Ganti Akun
-          </button>
+          
+          <div className="space-y-3">
+             <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-3 bg-stone-100 text-stone-700 rounded-xl py-4 font-bold hover:bg-stone-200 transition-colors"
+            >
+              Ganti Akun
+            </button>
+            <button
+              onClick={() => setIsBypassed(true)}
+              className="w-full flex items-center justify-center gap-3 bg-stone-50 text-stone-400 border border-stone-200 rounded-xl py-4 font-bold hover:bg-stone-100 transition-colors text-sm"
+            >
+              Lewati (Akses Mode Beta)
+            </button>
+          </div>
         </div>
       </div>
     );

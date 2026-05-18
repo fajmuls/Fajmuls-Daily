@@ -1,18 +1,16 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { v4 as uuidv4 } from 'uuid';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc as addFirestoreDoc, getDocs, orderBy, query } from 'firebase/firestore';
-import { storage, db } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { useAppContext } from '../store';
 import { UploadCloud, FileImage, Loader2, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 export function Docs() {
-  const { playSuccess, playError } = useAppContext() as any; // Using local audio hooks normally, but let's just make it simple
+  const { playSuccess, playError } = useAppContext() as any; 
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [firebaseDocs, setFirebaseDocs] = useState<any[]>([]);
 
   const fetchDocs = async () => {
@@ -37,37 +35,29 @@ export function Docs() {
     if (acceptedFiles.length === 0) return;
     const file = acceptedFiles[0];
     
+    // Check file size (Firestore limit is ~1MB per document, so we restrict to 800KB to be safe)
+    if (file.size > 800 * 1024) {
+      alert("Uh oh! Karena menggunakan Firestore (tanpa Storage), ukuran gambar maksimal 800KB. Tolong kompres gambarnya ya!");
+      return;
+    }
+
     setUploading(true);
-    setProgress(0);
     
     try {
-      const fileId = uuidv4();
-      const storageRef = ref(storage, `docs/${fileId}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setProgress(p);
-        }, 
-        (error) => {
-          console.error(error);
-          setUploading(false);
-        }, 
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          
-          await addFirestoreDoc(collection(db, "daily_docs"), {
-            name: file.name,
-            url: downloadURL,
-            createdAt: Date.now()
-          });
-          
-          setUploading(false);
-          setProgress(0);
-          fetchDocs();
-        }
-      );
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        
+        await addFirestoreDoc(collection(db, "daily_docs"), {
+          name: file.name,
+          url: base64String,
+          createdAt: Date.now()
+        });
+        
+        setUploading(false);
+        fetchDocs();
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error(error);
       setUploading(false);
@@ -84,7 +74,7 @@ export function Docs() {
     <div className="animate-in fade-in duration-500 max-w-4xl mx-auto space-y-10">
       <header>
         <h1 className="font-serif text-5xl font-bold text-stone-900 mb-2">Dokumentasi Harian</h1>
-        <p className="text-stone-500 text-lg">Catatan foto dan dokumen yang tersimpan aman di cloud.</p>
+        <p className="text-stone-500 text-lg">Catatan foto yang tersimpan langsung di Firestore (Base64).</p>
       </header>
 
       <div 
@@ -96,7 +86,7 @@ export function Docs() {
         {uploading ? (
           <div className="flex flex-col items-center text-accent-orange">
             <Loader2 className="w-12 h-12 animate-spin mb-4" />
-            <p className="font-bold">Mengunggah... {Math.round(progress)}%</p>
+            <p className="font-bold">Mengunggah ke Firestore...</p>
           </div>
         ) : (
           <div className="flex flex-col items-center text-stone-500">
@@ -104,7 +94,7 @@ export function Docs() {
               <UploadCloud className="w-8 h-8 text-stone-700" />
             </div>
             <p className="font-bold text-stone-700 text-lg">Tarik & lepas foto ke sini</p>
-            <p className="text-sm mt-1">atau klik untuk memilih file</p>
+            <p className="text-sm mt-1">Maks. 800KB</p>
           </div>
         )}
       </div>
