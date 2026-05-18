@@ -35,10 +35,21 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
 
   const handleLoginGoogle = async () => {
     try {
+      setLoading(true);
       await signInWithPopup(auth, authProvider);
-    } catch (e) {
-      console.error(e);
-      alert('Gagal login dengan Google.');
+    } catch (e: any) {
+      console.error("Login Error Details:", e);
+      setLoading(false);
+      
+      if (e.code === 'auth/popup-blocked') {
+        alert('Pop-up diblokir oleh browser. Silakan izinkan pop-up untuk situs ini.');
+      } else if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') {
+        // Just user closing it, no need for scary alert
+      } else if (e.code === 'auth/unauthorized-domain') {
+        alert('Domain ini tidak diotorisasi di Firebase Console. Pastikan domain GitHub kamu sudah masuk dalam "Authorized Domains" di Authentication -> Settings.');
+      } else {
+        alert('Gagal login: ' + (e.message || 'Error tidak diketahui'));
+      }
     }
   };
 
