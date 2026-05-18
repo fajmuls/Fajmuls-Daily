@@ -31,19 +31,18 @@ export function PersonalNoteView() {
       if (existingNote.customFields) {
         setCustomFields(existingNote.customFields);
       } else {
-         // Migration/Default: if it's an old note with explicit fields, move them to customFields
+         // Migration
          const legacyFields = [
-            { key: 'NIK', value: (existingNote as any).nik },
-            { key: 'SSN/NISN', value: (existingNote as any).ssn },
+            { key: 'NIK 1', value: (existingNote as any).nik },
             { key: 'Email', value: (existingNote as any).email },
             { key: 'No. Rekening', value: (existingNote as any).accountNumber },
-            { key: 'Alamat', value: (existingNote as any).address },
-            { key: 'Kode Pos', value: (existingNote as any).postalCode }
+            { key: 'Alamat', value: (existingNote as any).address }
          ].filter(f => f.value);
-         setCustomFields(legacyFields.length > 0 ? legacyFields : [{ key: 'NIK 1', value: '' }]);
+         setCustomFields(legacyFields.length > 0 ? legacyFields : []);
       }
     } else {
-       setCustomFields([{ key: 'NIK 1', value: '' }]);
+       // Start empty but with clear prompt for name first
+       setCustomFields([]);
     }
   }, [existingNote]);
 
@@ -51,17 +50,33 @@ export function PersonalNoteView() {
     const text = `Profil: ${formData.personName}\n` + 
       customFields.map(f => `${f.key}: ${f.value}`).join('\n') + 
       (formData.extraNotes ? `\nCatatan: ${formData.extraNotes}` : '');
-    navigator.clipboard.writeText(text);
-    playSuccess();
-    alert("Berhasil menyalin data profil ke clipboard!");
+    
+    // Fallback for document.execCommand if navigator.clipboard fails in some iframes
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        playSuccess();
+        alert("Berhasil menyalin data profil!");
+      });
+    }
   };
 
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      // Simple heuristic: if it looks like JSON of our profile, parse it
-      // Otherwise, just append to notes
-      setFormData(prev => ({ ...prev, extraNotes: prev.extraNotes + '\n' + text }));
+      // Add as a new custom field if it looks like "Key: Value"
+      const lines = text.split('\n');
+      const newFields = [...customFields];
+      lines.forEach(line => {
+        if (line.includes(':')) {
+           const [k, ...v] = line.split(':');
+           newFields.push({ key: k.trim(), value: v.join(':').trim() });
+        }
+      });
+      if (newFields.length > customFields.length) {
+         setCustomFields(newFields);
+      } else {
+         setFormData(prev => ({ ...prev, extraNotes: prev.extraNotes + '\n' + text }));
+      }
       playSuccess();
     } catch (err) {
       console.error(err);

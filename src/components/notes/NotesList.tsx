@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAppContext } from '../../store';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText, Moon, Instagram, Lock, Dumbbell } from 'lucide-react';
+import { FileText, Moon, Instagram, Lock, Dumbbell, ListChecks } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { NoteType } from '../../types';
 
@@ -12,6 +12,7 @@ const NOTE_TYPES: { type: NoteType | 'prayer-list'; icon: any; label: string; co
   { type: 'ig', icon: Instagram, label: 'Catatan IG', color: 'text-pink-700', bg: 'bg-pink-100', link: '/notes/ig-list' },
   { type: 'personal', icon: Lock, label: 'Data Pribadi', color: 'text-emerald-700', bg: 'bg-emerald-100', link: '/notes/personal-list' },
   { type: 'workout', icon: Dumbbell, label: 'Olahraga', color: 'text-orange-700', bg: 'bg-orange-100', link: '/notes/workout-list' },
+  { type: 'attendance', icon: ListChecks, label: 'Absensi', color: 'text-blue-700', bg: 'bg-blue-100', link: '/notes/attendance-list' },
 ];
 
 export function NotesList() {
@@ -62,6 +63,7 @@ export function NotesList() {
               if (note.type === 'ig') { title = `IG: ${note.songTitle}`; preview = note.content; }
               if (note.type === 'personal') { title = `Rekaman Data Pribadi`; }
               if (note.type === 'workout') { title = note.title; preview = `${note.durationMins} menit`; }
+              if (note.type === 'attendance') { title = note.title; preview = `${note.codes.length} entri absensi`; }
 
               return (
                 <Link key={note.id} to={`/notes/${note.type}/${note.id}`} className="bg-paper p-6 rounded-3xl border border-stone-200 hover:shadow-lg transition-all group flex flex-col h-48 relative overflow-hidden">

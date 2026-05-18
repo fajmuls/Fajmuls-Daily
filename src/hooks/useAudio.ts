@@ -8,6 +8,10 @@ const createBeep = (frequency: number, type: OscillatorType, duration: number, v
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
   
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  
   const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
   

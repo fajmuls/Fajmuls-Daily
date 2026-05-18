@@ -1,14 +1,16 @@
-import { createContext, useContext, ReactNode } from 'react';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { Note, FinanceRecord, MissedPrayer, DailyDoc } from './types';
-import { INITIAL_MISSED_PRAYERS, INITIAL_IG_NOTES } from './data';
 import { useAuth } from './components/AuthWrapper';
+import { db } from './lib/firebase';
+import { collection, onSnapshot, query, where, setDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 
 interface AppState {
   notes: Note[];
   financeRecords: FinanceRecord[];
   missedPrayers: MissedPrayer[];
   docs: DailyDoc[];
+  loading: boolean;
   addNote: (note: Note) => void;
   updateNote: (note: Note) => void;
   deleteNote: (id: string) => void;
@@ -24,52 +26,149 @@ const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const suffix = user ? `-${user.uid}` : '';
-
-  const [notes, setNotes] = useLocalStorage<Note[]>(`fajmuls-notes${suffix}`, INITIAL_IG_NOTES);
-  const [financeRecords, setFinanceRecords] = useLocalStorage<FinanceRecord[]>(`fajmuls-finance${suffix}`, []);
-  const [missedPrayers, setMissedPrayers] = useLocalStorage<MissedPrayer[]>(`fajmuls-prayers${suffix}`, INITIAL_MISSED_PRAYERS);
-  const [docs, setDocs] = useLocalStorage<DailyDoc[]>(`fajmuls-docs${suffix}`, []);
-
-  const addNote = (note: Note) => setNotes(prev => [note, ...prev]);
   
-  const updateNote = (updatedNote: Note) => {
-    setNotes(prev => {
-      const index = prev.findIndex(n => n.id === updatedNote.id);
-      if (index === -1) return prev;
-      const newArray = [...prev];
-      newArray[index] = { ...updatedNote, updatedAt: Date.now() };
-      return newArray;
-    });
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [financeRecords, setFinanceRecords] = useState<FinanceRecord[]>([]);
+  const [missedPrayers, setMissedPrayers] = useState<MissedPrayer[]>([]);
+  const [docs, setDocs] = useState<DailyDoc[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setNotes([]);
+      setFinanceRecords([]);
+      setMissedPrayers([]);
+      setDocs([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    const qNotes = query(collection(db, 'notes'), where('userId', '==', user.uid));
+    const unsubNotes = onSnapshot(qNotes, (snap) => {
+      setNotes(snap.docs.map(doc => doc.data() as Note));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'notes'));
+
+    const qFinance = query(collection(db, 'finance'), where('userId', '==', user.uid));
+    const unsubFinance = onSnapshot(qFinance, (snap) => {
+      setFinanceRecords(snap.docs.map(doc => doc.data() as FinanceRecord));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'finance'));
+
+    const qPrayers = query(collection(db, 'prayers'), where('userId', '==', user.uid));
+    const unsubPrayers = onSnapshot(qPrayers, (snap) => {
+      setMissedPrayers(snap.docs.map(doc => doc.data() as MissedPrayer));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'prayers'));
+
+    const qDocs = query(collection(db, 'docs'), where('userId', '==', user.uid));
+    const unsubDocs = onSnapshot(qDocs, (snap) => {
+      setDocs(snap.docs.map(doc => doc.data() as DailyDoc));
+      setLoading(false);
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'docs'));
+
+    return () => {
+      unsubNotes();
+      unsubFinance();
+      unsubPrayers();
+      unsubDocs();
+    };
+  }, [user]);
+
+  const addNote = async (note: Note) => {
+    if (!user) return;
+    try {
+      const data = { ...note, userId: user.uid };
+      await setDoc(doc(db, 'notes', note.id), data);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'notes');
+    }
+  };
+  
+  const updateNote = async (updatedNote: Note) => {
+    if (!user) return;
+    try {
+      const { id, ...data } = updatedNote;
+      await updateDoc(doc(db, 'notes', id), { ...data, userId: user.uid, updatedAt: Date.now() });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, 'notes');
+    }
   };
 
-  const deleteNote = (id: string) => setNotes(prev => prev.filter(n => n.id !== id));
+  const deleteNote = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'notes', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, 'notes');
+    }
+  };
   
-  const addFinanceRecord = (record: FinanceRecord) => setFinanceRecords(prev => [record, ...prev]);
-  const deleteFinanceRecord = (id: string) => setFinanceRecords(prev => prev.filter(r => r.id !== id));
+  const addFinanceRecord = async (record: FinanceRecord) => {
+    if (!user) return;
+    try {
+      const data = { ...record, userId: user.uid };
+      await setDoc(doc(db, 'finance', record.id), data);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'finance');
+    }
+  };
 
-  const togglePrayer = (id: string) => {
-    setMissedPrayers(prev => prev.map(p => {
-      if (p.id === id) {
-        return { ...p, completed: !p.completed, completedAt: !p.completed ? Date.now() : undefined };
+  const deleteFinanceRecord = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'finance', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, 'finance');
+    }
+  };
+
+  const togglePrayer = async (id: string) => {
+    if (!user) return;
+    try {
+      const prayer = missedPrayers.find(p => p.id === id);
+      if (prayer) {
+        await updateDoc(doc(db, 'prayers', id), {
+          completed: !prayer.completed,
+          completedAt: !prayer.completed ? Date.now() : null
+        });
       }
-      return p;
-    }));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, 'prayers');
+    }
   };
 
-  const addMissedPrayer = (prayer: MissedPrayer) => {
-    setMissedPrayers(prev => [prayer, ...prev]);
+  const addMissedPrayer = async (prayer: MissedPrayer) => {
+    if (!user) return;
+    try {
+      const data = { ...prayer, userId: user.uid };
+      await setDoc(doc(db, 'prayers', prayer.id), data);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'prayers');
+    }
   };
 
-  const deleteMissedPrayer = (id: string) => {
-    setMissedPrayers(prev => prev.filter(p => p.id !== id));
+  const deleteMissedPrayer = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'prayers', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, 'prayers');
+    }
   };
 
-  const addDoc = (doc: DailyDoc) => setDocs(prev => [doc, ...prev]);
+  const addDoc = async (dailyDoc: DailyDoc) => {
+    if (!user) return;
+    try {
+      const data = { ...dailyDoc, userId: user.uid };
+      await setDoc(doc(db, 'docs', dailyDoc.id), data);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'docs');
+    }
+  };
 
   return (
     <AppContext.Provider value={{
-      notes, financeRecords, missedPrayers, docs, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, addDoc
+      notes, financeRecords, missedPrayers, docs, loading, addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, addDoc
     }}>
       {children}
     </AppContext.Provider>

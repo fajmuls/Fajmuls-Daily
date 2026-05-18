@@ -1,4 +1,4 @@
-export type NoteType = 'normal' | 'ig' | 'personal' | 'workout';
+export type NoteType = 'normal' | 'ig' | 'personal' | 'workout' | 'attendance';
 
 export interface BaseNote {
   id: string;
@@ -54,7 +54,13 @@ export interface WorkoutNote extends BaseNote {
   details?: WorkoutDetail[];
 }
 
-export type Note = NormalNote | IGNote | PersonalNote | WorkoutNote;
+export interface AttendanceNote extends BaseNote {
+  type: 'attendance';
+  title: string;
+  codes: { time: string; code: string; note?: string }[];
+}
+
+export type Note = NormalNote | IGNote | PersonalNote | WorkoutNote | AttendanceNote;
 
 export interface FinanceRecord {
   id: string;

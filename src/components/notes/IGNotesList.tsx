@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, User, Plus, CheckSquare, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Plus, CheckSquare, Trash2, Edit3 } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
 export function IGNotesList() {
   const navigate = useNavigate();
-  const { notes, deleteNote } = useAppContext();
+  const { notes, deleteNote, updateNote } = useAppContext();
   const { playClick, playError } = useAudio();
 
   const [selectionMode, setSelectionMode] = useState(false);
@@ -93,10 +93,27 @@ export function IGNotesList() {
                    <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
                       <User className="w-6 h-6" />
                    </div>
-                   <div className="truncate">
+                   <div className="truncate flex-1">
                       <h3 className="font-bold text-lg text-stone-900 truncate">@{owner || 'Anonim'}</h3>
                       <p className="text-sm text-stone-500">{ownerNotes.length} catatan</p>
                    </div>
+                   <button 
+                      onClick={(e) => {
+                         e.stopPropagation();
+                         const newName = window.prompt(`Ubah nama @${owner} untuk semua ${ownerNotes.length} catatan ini:`, owner);
+                         if (newName && newName !== owner) {
+                            if (window.confirm(`Ganti semua pemilik dari @${owner} ke @${newName}?`)) {
+                               ownerNotes.forEach(note => {
+                                  updateNote({ ...note, owner: newName });
+                               });
+                            }
+                         }
+                      }}
+                      title="Ubah Nama Pemilik"
+                      className="p-2 text-stone-300 hover:text-stone-900 transition-colors shrink-0"
+                   >
+                      <Edit3 className="w-4 h-4" />
+                   </button>
                 </div>
                 <ul className="divide-y divide-stone-100 flex-1 bg-white">
                    {ownerNotes.map(note => (

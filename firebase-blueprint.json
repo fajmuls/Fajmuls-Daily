@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Note",
+      "description": "General notes including normal, IG, personal, and workout notes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["normal", "ig", "personal", "workout"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "owner": { "type": "string" },
+        "songTitle": { "type": "string" },
+        "backgroundColor": { "type": "string" },
+        "history": { "type": "array", "items": { "type": "string" } },
+        "personName": { "type": "string" },
+        "extraNotes": { "type": "string" },
+        "customFields": { "type": "array", "items": { "type": "object" } },
+        "routine": { "type": "string" },
+        "durationMins": { "type": "number" },
+        "workoutCategory": { "type": "string" },
+        "details": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["id", "userId", "type", "createdAt", "updatedAt"]
+    },
+    "FinanceRecord": {
+      "title": "FinanceRecord",
+      "description": "Income and expense records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["income", "expense"] },
+        "category": { "type": "string" },
+        "note": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "amount", "type", "category", "createdAt"]
+    },
+    "MissedPrayer": {
+      "title": "MissedPrayer",
+      "description": "Log of missed prayers to be fulfilled",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "prayer": { "type": "string" },
+        "dateInfo": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "completedAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "prayer", "dateInfo", "completed"]
+    },
+    "DailyDoc": {
+      "title": "DailyDoc",
+      "description": "Uploaded documents metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "url": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "url", "name", "createdAt"]
+    }
+  },
+  "firestore": {
+    "notes": {
+      "schema": "Note",
+      "description": "Collection of user notes"
+    },
+    "finance": {
+      "schema": "FinanceRecord",
+      "description": "Collection of financial records"
+    },
+    "prayers": {
+      "schema": "MissedPrayer",
+      "description": "Collection of missed prayers"
+    },
+    "docs": {
+      "schema": "DailyDoc",
+      "description": "Collection of user documents"
+    }
+  }
+}

@@ -5,17 +5,24 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
   
-  --color-stone-850: #1f1a17;
-  --color-stone-900: #171412;
-  --color-cream: #fbf9f4;
+  --color-stone-850: #1a1614;
+  --color-stone-900: #120f0e;
+  
+  /* Trip-inspired Earthy UI Palette */
+  --color-cream: #f4f1ea;
   --color-paper: #ffffff;
   
-  /* More vibrant, engaging colors */
-  --color-accent-orange: #ff5f1f;
+  --color-trip-brown: #2d1d16;
+  --color-trip-terracotta: #3d2a21;
+  --color-trip-moss: #2b3d21;
+  --color-trip-forest: #1b2612;
+  
+  /* Vibrant accents */
+  --color-accent-orange: #ff6b00;
   --color-accent-blue: #0070f3;
-  --color-accent-green: #00c853;
-  --color-accent-pink: #d81b60;
-  --color-accent-purple: #7928ca;
+  --color-accent-green: #34d399;
+  --color-accent-yellow: #facc15;
+  --color-accent-gold: #e2b13c;
 }
 
 html {
