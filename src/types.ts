@@ -24,6 +24,7 @@ export interface IGNote extends BaseNote {
 
 export interface PersonalNote extends BaseNote {
   type: 'personal';
+  personName?: string;
   nik: string;
   ssn: string;
   postalCode: string;
@@ -39,6 +40,7 @@ export interface WorkoutNote extends BaseNote {
   title: string;
   routine: string;
   durationMins: number;
+  workoutCategory?: string; // e.g., 'Weightlifting', 'Gym', 'Running', 'Other'
 }
 
 export type Note = NormalNote | IGNote | PersonalNote | WorkoutNote;

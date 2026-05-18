@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMont
 import { id as localeId } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { WorkoutNote } from '../../types';
-import { ArrowLeft, Plus, ChevronLeft, ChevronRight, Activity, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, ChevronLeft, ChevronRight, Activity, Clock, Dumbbell } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
@@ -35,6 +35,11 @@ export function WorkoutNotesList() {
     }
   };
 
+  const weightliftingCount = workoutNotes.filter(n => n.workoutCategory === 'Angkat Beban').length;
+  const gymCount = workoutNotes.filter(n => n.workoutCategory === 'Gym').length;
+  const runningCount = workoutNotes.filter(n => n.workoutCategory === 'Lari').length;
+  const otherCount = workoutNotes.length - weightliftingCount - gymCount - runningCount;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
@@ -42,7 +47,7 @@ export function WorkoutNotesList() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <button onClick={handleCreate} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
-          <Plus className="w-5 h-5" /> Catatan Olahraga
+          <Plus className="w-5 h-5" /> Catatan
         </button>
       </div>
 
@@ -76,6 +81,7 @@ export function WorkoutNotesList() {
              const notesForDay = workoutNotes.filter(n => isSameDay(n.createdAt, date));
              const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
              const hasWorkout = notesForDay.length > 0;
+             const isToday = isSameDay(date, new Date());
              
              return (
                <div 
@@ -83,16 +89,18 @@ export function WorkoutNotesList() {
                  onClick={() => handleDayClick(date, notesForDay)}
                  className={cn(
                    "aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 relative",
-                   !isCurrentMonth ? "opacity-30 border-transparent bg-stone-50" : "bg-white",
-                   hasWorkout ? "border-amber-400 bg-amber-50 hover:bg-amber-100" : "border-stone-100 hover:border-stone-300"
+                   !isCurrentMonth ? "opacity-30 border-transparent bg-stone-50" : (isToday ? "bg-stone-100" : "bg-white"),
+                   hasWorkout ? "border-amber-400 bg-amber-50 hover:bg-amber-100" : (isToday ? "border-stone-300" : "border-stone-100 hover:border-stone-300")
                  )}
                >
                   <span className={cn("text-lg font-bold font-mono", hasWorkout ? "text-amber-700" : "text-stone-700")}>
                     {format(date, 'd')}
                   </span>
                   {hasWorkout && (
-                    <div className="absolute bottom-2">
-                       <Activity className="w-4 h-4 text-amber-500" />
+                    <div className="absolute bottom-1 w-full flex justify-center gap-1">
+                      {notesForDay.map(n => (
+                         <div key={n.id} className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      ))}
                     </div>
                   )}
                </div>
@@ -102,20 +110,29 @@ export function WorkoutNotesList() {
       </div>
 
       {/* Ringkasan */}
-      <div className="bg-stone-900 text-white rounded-3xl p-8 shadow-sm">
-        <h3 className="font-bold uppercase tracking-widest text-stone-400 text-xs mb-4">Ringkasan Total</h3>
-        <div className="grid grid-cols-2 gap-6">
-           <div className="bg-stone-800 rounded-2xl p-6">
-              <Activity className="w-8 h-8 text-amber-400 mb-4" />
-              <p className="text-3xl font-serif font-bold">{workoutNotes.length} Sesi</p>
-              <p className="text-stone-400 text-sm mt-1">Total olahraga yang tercatat</p>
-           </div>
-           <div className="bg-stone-800 rounded-2xl p-6">
-              <Clock className="w-8 h-8 text-blue-400 mb-4" />
-              <p className="text-3xl font-serif font-bold">{workoutNotes.reduce((acc, curr) => acc + (curr.durationMins || 0), 0)} Menit</p>
-              <p className="text-stone-400 text-sm mt-1">Total durasi olahraga</p>
-           </div>
-        </div>
+      <h3 className="font-bold uppercase tracking-widest text-stone-400 text-xs mb-2 pl-2">Ringkasan Riwayat</h3>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+         <div className="bg-stone-900 border border-stone-800 text-white rounded-3xl p-6 shadow-sm">
+            <Activity className="w-6 h-6 text-amber-400 mb-2" />
+            <p className="text-3xl font-serif font-bold">{weightliftingCount}</p>
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mt-1">Angkat Beban</p>
+         </div>
+         <div className="bg-stone-900 border border-stone-800 text-white rounded-3xl p-6 shadow-sm">
+            <Dumbbell className="w-6 h-6 text-green-400 mb-2" />
+            <p className="text-3xl font-serif font-bold">{gymCount}</p>
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mt-1">Gym</p>
+         </div>
+         <div className="bg-stone-900 border border-stone-800 text-white rounded-3xl p-6 shadow-sm">
+            <Activity className="w-6 h-6 text-blue-400 mb-2" />
+            <p className="text-3xl font-serif font-bold">{runningCount}</p>
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mt-1">Lari</p>
+         </div>
+         <div className="bg-stone-900 border border-stone-800 text-white rounded-3xl p-6 shadow-sm">
+            <Clock className="w-6 h-6 text-purple-400 mb-2" />
+            <p className="text-3xl font-serif font-bold">{workoutNotes.reduce((acc, curr) => acc + (curr.durationMins || 0), 0)}</p>
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mt-1">Total (Menit)</p>
+         </div>
       </div>
     </div>
   );

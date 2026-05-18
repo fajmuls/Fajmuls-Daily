@@ -1,57 +1,75 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export function useVoiceCommand(onCommand?: (text: string) => void) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
+  const isManuallyStoppedRef = useRef(false);
 
   const startListening = useCallback(() => {
     if (!('webkitSpeechRecognition' in window)) {
-      alert('Speech recognition is not supported in your browser.');
+      alert('Fitur suara tidak didukung di browsermu.');
       return;
     }
 
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
+    const startRecording = () => {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'id-ID';
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US'; // Adjust later or make dynamically selectable
+      recognition.onstart = () => {
+        setIsListening(true);
+        isManuallyStoppedRef.current = false;
+      };
 
-    recognition.onstart = () => {
-      setIsListening(true);
+      recognition.onresult = (event: any) => {
+        const current = event.resultIndex;
+        const text = event.results[current][0].transcript;
+        setTranscript(text);
+        if (onCommand) {
+          onCommand(text);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+      };
+
+      recognition.onend = () => {
+        // restart if not manually stopped
+        if (!isManuallyStoppedRef.current) {
+           startRecording();
+        } else {
+           setIsListening(false);
+        }
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
     };
 
-    recognition.onresult = (event: any) => {
-      const text = event.results[0][0].transcript;
-      setTranscript(text);
-      if (onCommand) {
-        onCommand(text);
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error', event.error);
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
-    recognitionRef.current = recognition;
+    startRecording();
   }, [onCommand]);
 
   const stopListening = useCallback(() => {
+    isManuallyStoppedRef.current = true;
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
     setIsListening(false);
+  }, []);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      isManuallyStoppedRef.current = true;
+      if (recognitionRef.current) {
+         recognitionRef.current.stop();
+      }
+    };
   }, []);
 
   return { isListening, transcript, startListening, stopListening };

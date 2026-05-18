@@ -6,6 +6,7 @@ import { MissedPrayersView } from '../components/notes/MissedPrayersView';
 import { IGNoteView } from '../components/notes/IGNoteView';
 import { IGNotesList } from '../components/notes/IGNotesList';
 import { PersonalNoteView } from '../components/notes/PersonalNoteView';
+import { PersonalNotesList } from '../components/notes/PersonalNotesList';
 import { WorkoutNoteView } from '../components/notes/WorkoutNoteView';
 import { WorkoutNotesList } from '../components/notes/WorkoutNotesList';
 
@@ -18,6 +19,7 @@ export function Notes() {
       <Route path="/prayers" element={<MissedPrayersView />} />
       <Route path="/ig-list" element={<IGNotesList />} />
       <Route path="/ig/:id?" element={<IGNoteView />} />
+      <Route path="/personal-list" element={<PersonalNotesList />} />
       <Route path="/personal/:id?" element={<PersonalNoteView />} />
       <Route path="/workout-list" element={<WorkoutNotesList />} />
       <Route path="/workout/:id?" element={<WorkoutNoteView />} />

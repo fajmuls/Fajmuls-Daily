@@ -5,9 +5,20 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, Trash2, Save, History } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, History, Palette } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
+
+const BG_COLORS = [
+  '#171412', // dark
+  '#3b82f6', // blue
+  '#ef4444', // red
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#8b5cf6', // purple
+  '#ec4899', // pink
+  '#64748b', // slate
+];
 
 export function IGNoteView() {
   const { id } = useParams();
@@ -20,13 +31,16 @@ export function IGNoteView() {
   const [owner, setOwner] = useState('Xiaomi');
   const [songTitle, setSongTitle] = useState('');
   const [content, setContent] = useState('');
+  const [bgColor, setBgColor] = useState('#171412');
   const [showHistory, setShowHistory] = useState(false);
+  const [showColors, setShowColors] = useState(false);
 
   useEffect(() => {
     if (existingNote) {
       setOwner(existingNote.owner || 'Xiaomi');
       setSongTitle(existingNote.songTitle);
       setContent(existingNote.content);
+      setBgColor(existingNote.backgroundColor || '#171412');
     }
   }, [existingNote]);
 
@@ -39,7 +53,7 @@ export function IGNoteView() {
         owner,
         songTitle,
         content,
-        backgroundColor: '#171412',
+        backgroundColor: bgColor,
         history: existingNote.content !== content ? [existingNote.content, ...existingNote.history] : existingNote.history
       });
     } else {
@@ -51,26 +65,31 @@ export function IGNoteView() {
         updatedAt: Date.now(),
         songTitle,
         content,
-        backgroundColor: '#171412',
+        backgroundColor: bgColor,
         history: []
       });
     }
     playSuccess();
-    navigate('/notes');
+    navigate('/notes/ig-list');
   };
 
   const handleDelete = () => {
     if (existingNote) {
-      deleteNote(existingNote.id);
-      playError();
+      const confirm = window.confirm("Apakah kamu ingin menghapus catatan IG ini?");
+      if (confirm) {
+         deleteNote(existingNote.id);
+         playError();
+         navigate('/notes/ig-list');
+      }
+    } else {
+       navigate('/notes/ig-list');
     }
-    navigate('/notes');
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
+    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
-        <button onClick={() => { playClick(); navigate('/notes'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
+        <button onClick={() => { playClick(); navigate('/notes/ig-list'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex gap-2">
@@ -90,7 +109,7 @@ export function IGNoteView() {
         </div>
       </div>
 
-      <div className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-6">
+      <div className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-6 relative overflow-hidden">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Pemilik IG</label>
@@ -115,15 +134,38 @@ export function IGNoteView() {
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Isi Catatan</label>
+          <div className="flex items-center justify-between mb-2">
+             <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold">Isi Catatan</label>
+             <button 
+               onClick={() => setShowColors(!showColors)}
+               className="p-2 rounded-full hover:bg-stone-100 text-stone-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold"
+             >
+               <Palette className="w-4 h-4" /> Tema
+             </button>
+          </div>
+          
+          {showColors && (
+            <div className="flex flex-wrap gap-2 mb-4 animate-in fade-in">
+               {BG_COLORS.map(c => (
+                 <button
+                   key={c}
+                   onClick={() => { setBgColor(c); setShowColors(false); }}
+                   className={cn("w-8 h-8 rounded-full border-2 transition-transform hover:scale-110", bgColor === c ? "border-stone-900" : "border-transparent")}
+                   style={{ backgroundColor: c }}
+                 />
+               ))}
+            </div>
+          )}
+
           <div 
-            className="rounded-3xl p-8 min-h-[300px] flex items-center justify-center transition-colors bg-stone-900"
+            className="rounded-3xl p-8 min-h-[300px] flex items-center justify-center transition-colors shadow-inner"
+            style={{ backgroundColor: bgColor }}
           >
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Apa yang ada di pikiranmu?"
-              className="w-full text-center text-xl outline-none placeholder:opacity-50 resize-none font-medium text-white bg-transparent"
+              className="w-full text-center text-xl outline-none placeholder:opacity-50 resize-none font-medium text-white bg-transparent drop-shadow-md"
               rows={6}
             />
           </div>

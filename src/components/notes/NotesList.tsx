@@ -10,7 +10,7 @@ const NOTE_TYPES: { type: NoteType | 'prayer-list'; icon: any; label: string; co
   { type: 'normal', icon: FileText, label: 'Biasa', color: 'text-stone-700', bg: 'bg-stone-100', link: '/notes/normal-list' },
   { type: 'prayer-list', icon: Moon, label: 'Qadha Shalat', color: 'text-indigo-700', bg: 'bg-indigo-100', link: '/notes/prayers' },
   { type: 'ig', icon: Instagram, label: 'Catatan IG', color: 'text-pink-700', bg: 'bg-pink-100', link: '/notes/ig-list' },
-  { type: 'personal', icon: Lock, label: 'Data Pribadi', color: 'text-emerald-700', bg: 'bg-emerald-100', link: '/notes/personal' },
+  { type: 'personal', icon: Lock, label: 'Data Pribadi', color: 'text-emerald-700', bg: 'bg-emerald-100', link: '/notes/personal-list' },
   { type: 'workout', icon: Dumbbell, label: 'Olahraga', color: 'text-orange-700', bg: 'bg-orange-100', link: '/notes/workout-list' },
 ];
 

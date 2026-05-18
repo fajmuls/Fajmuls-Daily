@@ -15,6 +15,7 @@ export function PersonalNoteView() {
   const existingNote = notes.find(n => n.id === id && n.type === 'personal') as PersonalNote | undefined;
 
   const [formData, setFormData] = useState({
+    personName: '',
     nik: '',
     ssn: '',
     postalCode: '',
@@ -29,13 +30,14 @@ export function PersonalNoteView() {
   useEffect(() => {
     if (existingNote) {
       setFormData({
-        nik: existingNote.nik,
-        ssn: existingNote.ssn,
-        postalCode: existingNote.postalCode,
-        address: existingNote.address,
-        email: existingNote.email,
-        accountNumber: existingNote.accountNumber,
-        extraNotes: existingNote.extraNotes
+        personName: existingNote.personName || '',
+        nik: existingNote.nik || '',
+        ssn: existingNote.ssn || '',
+        postalCode: existingNote.postalCode || '',
+        address: existingNote.address || '',
+        email: existingNote.email || '',
+        accountNumber: existingNote.accountNumber || '',
+        extraNotes: existingNote.extraNotes || ''
       });
       if (existingNote.customFields) {
         setCustomFields(existingNote.customFields);
@@ -79,21 +81,26 @@ export function PersonalNoteView() {
       });
     }
     playSuccess();
-    navigate('/notes');
+    navigate('/notes/personal-list');
   };
 
   const handleDelete = () => {
     if (existingNote) {
-      deleteNote(existingNote.id);
-      playError();
+      const confirm = window.confirm("Apakah kamu ingin menghapus profil ini beserta seluruh datanya?");
+      if (confirm) {
+         deleteNote(existingNote.id);
+         playError();
+         navigate('/notes/personal-list');
+      }
+    } else {
+      navigate('/notes/personal-list');
     }
-    navigate('/notes');
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
-        <button onClick={() => { playClick(); navigate('/notes'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
+        <button onClick={() => { playClick(); navigate('/notes/personal-list'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex gap-2">
@@ -113,19 +120,24 @@ export function PersonalNoteView() {
           <div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-serif font-bold text-stone-900">Data Pribadi</h1>
-            <p className="text-stone-500">Catatan aman untuk informasi sensitif Anda.</p>
+            <p className="text-stone-500 text-sm">Masukan Nama atau Pemilik data terlebih dahulu.</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs uppercase tracking-widest text-emerald-600 font-bold mb-2">Nama Pemilik Profil</label>
+            <input type="text" name="personName" placeholder="Contoh: Muhammad Rahman Fajmul" value={formData.personName} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-4 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-lg border border-emerald-100" />
+          </div>
+
           <div>
             <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">NIK</label>
             <input type="text" name="nik" value={formData.nik} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">SSN</label>
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">NISN / SSN</label>
             <input type="text" name="ssn" value={formData.ssn} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
           </div>
           <div>
@@ -145,6 +157,10 @@ export function PersonalNoteView() {
             <input type="text" name="postalCode" value={formData.postalCode} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
           </div>
 
+          <div className="md:col-span-2 mt-4 pt-4 border-t border-stone-100">
+             <h3 className="font-bold text-stone-700 mb-4 tracking-wide">Data Tambahan Sendiri</h3>
+          </div>
+
           {/* Kolom Kustom */}
           {customFields.map((field, idx) => (
             <div key={idx} className="md:col-span-2 flex items-start gap-4">
@@ -158,16 +174,16 @@ export function PersonalNoteView() {
                     <input type="text" value={field.value} onChange={e => handleCustomFieldChange(idx, 'value', e.target.value)} placeholder="Isi informasi..." className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
                  </div>
               </div>
-              <button type="button" onClick={() => removeCustomField(idx)} className="mt-8 p-3 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-xl flex-shrink-0">
-                <X className="w-5 h-5" />
+              <button type="button" title="Hapus Kustom" onClick={() => removeCustomField(idx)} className="mt-8 p-3 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-xl flex-shrink-0 border border-transparent hover:border-red-200">
+                <Trash2 className="w-5 h-5" />
               </button>
             </div>
           ))}
 
           <div className="md:col-span-2 pb-4">
-            <button type="button" onClick={addCustomField} className="flex items-center gap-2 text-emerald-600 font-bold hover:text-emerald-700 transition-colors bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm">
+            <button type="button" onClick={addCustomField} className="flex items-center gap-2 text-emerald-600 font-bold hover:text-emerald-700 transition-colors bg-emerald-50 hover:bg-emerald-100 px-4 py-3 border border-emerald-200 rounded-xl text-sm w-full justify-center">
                <Plus className="w-4 h-4" />
-               Tambah Info Kustom
+               Tambah Info Kustom Lainnya
             </button>
           </div>
 

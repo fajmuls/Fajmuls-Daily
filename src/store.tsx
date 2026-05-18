@@ -2,6 +2,7 @@ import { createContext, useContext, ReactNode } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Note, FinanceRecord, MissedPrayer, DailyDoc } from './types';
 import { INITIAL_MISSED_PRAYERS, INITIAL_IG_NOTES } from './data';
+import { useAuth } from './components/AuthWrapper';
 
 interface AppState {
   notes: Note[];
@@ -21,10 +22,13 @@ interface AppState {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [notes, setNotes] = useLocalStorage<Note[]>('fajmuls-notes', INITIAL_IG_NOTES);
-  const [financeRecords, setFinanceRecords] = useLocalStorage<FinanceRecord[]>('fajmuls-finance', []);
-  const [missedPrayers, setMissedPrayers] = useLocalStorage<MissedPrayer[]>('fajmuls-prayers', INITIAL_MISSED_PRAYERS);
-  const [docs, setDocs] = useLocalStorage<DailyDoc[]>('fajmuls-docs', []);
+  const { user } = useAuth();
+  const suffix = user ? `-${user.uid}` : '';
+
+  const [notes, setNotes] = useLocalStorage<Note[]>(`fajmuls-notes${suffix}`, INITIAL_IG_NOTES);
+  const [financeRecords, setFinanceRecords] = useLocalStorage<FinanceRecord[]>(`fajmuls-finance${suffix}`, []);
+  const [missedPrayers, setMissedPrayers] = useLocalStorage<MissedPrayer[]>(`fajmuls-prayers${suffix}`, INITIAL_MISSED_PRAYERS);
+  const [docs, setDocs] = useLocalStorage<DailyDoc[]>(`fajmuls-docs${suffix}`, []);
 
   const addNote = (note: Note) => setNotes(prev => [note, ...prev]);
   
@@ -74,4 +78,5 @@ export function useAppContext() {
   }
   return context;
 }
+
 

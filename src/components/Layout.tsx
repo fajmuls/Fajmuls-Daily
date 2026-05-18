@@ -1,14 +1,15 @@
 import { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic } from 'lucide-react';
+import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic, LogOut, User as UserIcon } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
 import { useVoiceCommand } from '../hooks/useVoiceCommand';
+import { useAuth } from './AuthWrapper';
 import { cn } from '../lib/utils';
 
 const desktopNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
-  { icon: NotebookPen, label: 'Catatan Harian', path: '/notes' },
+  { icon: NotebookPen, label: 'Catatan', path: '/notes' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
   { icon: Star, label: 'Spesial', path: '/special' },
 ];
@@ -16,27 +17,34 @@ const desktopNavItems = [
 const mobileNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
-  { icon: NotebookPen, label: 'Catatan Harian', path: '/notes' },
+  { icon: Star, label: 'Spesial', path: '/special' }, // Move special here
+  { icon: NotebookPen, label: 'Catatan', path: '/notes' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
   const { playClick, playSuccess } = useAudio();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const handleVoiceCommand = (text: string) => {
     const lower = text.toLowerCase();
+    console.log("Mendeteksi suara:", lower);
+    
     if (lower.includes('keuangan') || lower.includes('uang')) {
       navigate('/finance');
       playSuccess();
-    } else if (lower.includes('catatan') || lower.includes('tulis')) {
-      navigate('/notes');
+    } else if (lower.includes('ig') || lower.includes('instagram')) {
+      navigate('/notes/ig-list');
+      playSuccess();
+    } else if (lower.includes('spesial') || lower.includes('khusus')) {
+      navigate('/special');
       playSuccess();
     } else if (lower.includes('dokumen') || lower.includes('foto')) {
       navigate('/docs');
       playSuccess();
-    } else if (lower.includes('spesial') || lower.includes('khusus')) {
-      navigate('/special');
+    } else if (lower.includes('catatan') || lower.includes('tulis')) {
+      navigate('/notes'); // or notes list depending on intent
       playSuccess();
     } else if (lower.includes('beranda') || lower.includes('dashboard') || lower.includes('home')) {
       navigate('/');
@@ -46,13 +54,42 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceCommand);
 
+  const toggleVoice = () => {
+     if (isListening) {
+        stopListening();
+     } else {
+        alert("Fitur suara akan terus mendengarkan sampai dimatikan. Coba katakan: 'Buka catatan IG', 'Keuangan', atau 'Beranda'.");
+        startListening();
+     }
+  };
+
+  const UserProfile = ({ compact = false }) => (
+    <div className={cn("flex items-center gap-3", compact ? "" : "p-4 mx-4 mb-4 bg-stone-100 rounded-2xl border border-stone-200")}>
+      {user?.photoURL ? (
+        <img src={user.photoURL} alt="Profile" className={cn("rounded-full border border-stone-200 object-cover", compact ? "w-8 h-8" : "w-10 h-10")} />
+      ) : (
+        <div className={cn("bg-stone-200 flex items-center justify-center rounded-full text-stone-500", compact ? "w-8 h-8" : "w-10 h-10")}>
+           <UserIcon className={compact ? "w-4 h-4" : "w-5 h-5"} />
+        </div>
+      )}
+      {!compact && (
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm text-stone-900 truncate">{user?.displayName || 'Pengguna'}</p>
+          <p className="text-xs text-stone-500 truncate">{user?.email}</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex h-screen w-full bg-cream font-sans text-stone-900 overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-stone-200 bg-paper">
         <div className="p-6">
-          <h1 className="font-serif text-2xl font-bold tracking-tight">Fajmul's Daily</h1>
+          <h1 className="font-serif text-2xl font-bold tracking-tight text-accent-orange">Fajmul's</h1>
         </div>
+        
+        <UserProfile />
         
         <nav className="flex-1 px-4 space-y-2">
           {desktopNavItems.map((item) => (
@@ -73,16 +110,24 @@ export function Layout({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-stone-200">
+        <div className="p-4 border-t border-stone-200 space-y-2">
           <button 
-            onClick={isListening ? stopListening : startListening}
+            onClick={toggleVoice}
             className={cn(
-              "w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all",
-              isListening ? "bg-accent-orange text-white animate-pulse" : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+              "w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-sm",
+              isListening ? "bg-accent-orange text-white animate-pulse shadow-sm" : "bg-stone-100 text-stone-700 hover:bg-stone-200"
             )}
           >
-            <Mic className="w-5 h-5" />
+            <Mic className="w-4 h-4" />
             {isListening ? "Mendengarkan..." : "Perintah Suara"}
+          </button>
+          
+          <button 
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-sm bg-red-50 text-red-600 hover:bg-red-100"
+          >
+            <LogOut className="w-4 h-4" />
+            Keluar
           </button>
         </div>
       </aside>
@@ -91,13 +136,24 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 bg-paper border-b border-stone-200">
-          <h1 className="font-serif text-xl font-bold">Fajmul's</h1>
-          <button 
-            onClick={isListening ? stopListening : startListening}
-            className={cn("p-2 rounded-full", isListening ? "bg-accent-orange text-white animate-pulse" : "bg-stone-100")}
-          >
-            <Mic className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-3">
+             <UserProfile compact />
+             <h1 className="font-serif text-lg font-bold text-accent-orange">Fajmul's</h1>
+          </div>
+          <div className="flex items-center gap-2">
+             <button 
+               onClick={toggleVoice}
+               className={cn("p-2 rounded-full", isListening ? "bg-accent-orange text-white animate-pulse" : "bg-stone-100 text-stone-600")}
+             >
+               <Mic className="w-5 h-5" />
+             </button>
+             <button 
+               onClick={logout}
+               className="p-2 rounded-full bg-red-50 text-red-600"
+             >
+               <LogOut className="w-5 h-5" />
+             </button>
+          </div>
         </header>
 
         {/* Dynamic Content */}
@@ -105,32 +161,22 @@ export function Layout({ children }: { children: ReactNode }) {
           {children}
         </div>
 
-        {/* Floating Special Button for Mobile */}
-        <div className="md:hidden fixed bottom-24 right-4 z-50">
-          <button
-            onClick={() => { playClick(); navigate('/special'); }}
-            className="w-14 h-14 bg-gradient-to-br from-accent-orange to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
-          >
-            <Star className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Mobile Bottom Bar */}
-        <nav className="md:hidden flex items-center justify-around bg-paper border-t border-stone-200 fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom,16px)] pt-2 px-2">
+        {/* Mobile Bottom Bar (Smaller icons & fonts) */}
+        <nav className="md:hidden flex items-center justify-around bg-paper border-t border-stone-200 fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom,16px)] pt-1 px-1">
           {mobileNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               onClick={playClick}
               className={({ isActive }) => cn(
-                "flex flex-col items-center gap-1 p-2 flex-1 rounded-xl transition-colors",
+                "flex flex-col items-center gap-1 p-1 flex-1 rounded-xl transition-colors",
                 isActive ? "text-stone-900 font-bold bg-stone-100" : "text-stone-500 hover:bg-stone-50"
               )}
             >
               {({ isActive }) => (
                 <>
-                  <item.icon className={cn("w-5 h-5", isActive ? "scale-110" : "")} />
-                  <span className="text-[10px] uppercase tracking-wider">{item.label}</span>
+                  <item.icon className={cn("w-4 h-4", isActive ? "scale-110" : "")} />
+                  <span className="text-[9px] uppercase tracking-wider">{item.label}</span>
                 </>
               )}
             </NavLink>

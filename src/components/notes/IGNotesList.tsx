@@ -1,13 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, User, Plus } from 'lucide-react';
+import { ArrowLeft, User, Plus, CheckSquare, Trash2 } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
+import { cn } from '../../lib/utils';
 
 export function IGNotesList() {
   const navigate = useNavigate();
-  const { notes } = useAppContext();
-  const { playClick } = useAudio();
+  const { notes, deleteNote } = useAppContext();
+  const { playClick, playError } = useAudio();
+
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Filter only IG notes and group by owner
   const igNotes = notes.filter(n => n.type === 'ig') as IGNote[];
@@ -22,15 +27,53 @@ export function IGNotesList() {
     navigate('/notes/ig');
   };
 
+  const toggleSelection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.length === 0) return;
+    const pass = window.prompt("Ketik 'hapus semua' untuk konfirmasi penghapusan:");
+    if (pass === 'hapus semua') {
+       selectedIds.forEach(id => deleteNote(id));
+       setSelectedIds([]);
+       setSelectionMode(false);
+       playError();
+    } else if (pass !== null) {
+       alert("Konfirmasi salah!");
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
         <button onClick={() => { playClick(); navigate('/notes'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <button onClick={handleCreate} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
-          <Plus className="w-5 h-5" /> Catatan Baru
-        </button>
+        <div className="flex gap-2">
+          {selectionMode ? (
+             <>
+               <button onClick={handleDeleteSelected} disabled={selectedIds.length === 0} className="flex items-center gap-2 px-6 py-3 bg-red-100 text-red-700 rounded-full font-bold hover:bg-red-200 transition-all disabled:opacity-50">
+                 <Trash2 className="w-5 h-5" /> Hapus ({selectedIds.length})
+               </button>
+               <button onClick={() => { setSelectionMode(false); setSelectedIds([]); }} className="px-6 py-3 bg-stone-100 text-stone-700 rounded-full font-bold hover:bg-stone-200 transition-all">
+                 Batal
+               </button>
+             </>
+          ) : (
+             <>
+               {igNotes.length > 0 && (
+                 <button onClick={() => setSelectionMode(true)} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-all">
+                   <CheckSquare className="w-5 h-5" />
+                 </button>
+               )}
+               <button onClick={handleCreate} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
+                 <Plus className="w-5 h-5" /> Catatan Baru
+               </button>
+             </>
+          )}
+        </div>
       </div>
 
       <header className="py-4">
@@ -57,8 +100,24 @@ export function IGNotesList() {
                 </div>
                 <ul className="divide-y divide-stone-100 flex-1 bg-white">
                    {ownerNotes.map(note => (
-                      <li key={note.id}>
-                         <button onClick={() => { playClick(); navigate(`/notes/ig/${note.id}`); }} className="w-full text-left px-6 py-4 hover:bg-stone-50 transition-colors">
+                      <li key={note.id} className="relative">
+                         {selectionMode && (
+                           <div className="absolute top-1/2 -translate-y-1/2 left-4 z-10">
+                              <button onClick={(e) => toggleSelection(note.id, e)} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors", selectedIds.includes(note.id) ? "bg-stone-900 border-stone-900 text-white" : "border-stone-300 bg-white")}>
+                                 {selectedIds.includes(note.id) && <CheckSquare className="w-3 h-3" />}
+                              </button>
+                           </div>
+                         )}
+                         <button 
+                           onClick={(e) => {
+                             if (selectionMode) {
+                                toggleSelection(note.id, e);
+                             } else {
+                                playClick(); navigate(`/notes/ig/${note.id}`);
+                             }
+                           }} 
+                           className={cn("w-full text-left py-4 hover:bg-stone-50 transition-colors", selectionMode ? "pl-12 pr-6" : "px-6")}
+                         >
                             <p className="font-medium text-stone-700 truncate">{note.content || 'Catatan Kosong'}</p>
                             {note.songTitle && <p className="text-xs text-stone-400 mt-1 truncate">🎵 {note.songTitle}</p>}
                          </button>

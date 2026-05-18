@@ -15,6 +15,15 @@
   --color-accent-green: #26f27d;
 }
 
+html {
+  font-size: 13px; /* Smaller base size on mobile to fit more content */
+}
+@media (min-width: 768px) {
+  html {
+    font-size: 16px; /* Reset to standard on desktop */
+  }
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-cream);
