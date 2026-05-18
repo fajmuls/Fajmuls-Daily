@@ -63,7 +63,11 @@ export function Finance() {
       data[r.category] = (data[r.category] || 0) + r.amount;
       total += r.amount;
     });
-    return Object.entries(data).map(([name, value]) => ({ name, value, percent: total > 0 ? (value / total * 100).toFixed(1) : 0 })).sort((a,b) => b.value - a.value);
+    return Object.entries(data).map(([name, value]) => ({ 
+      name, 
+      value, 
+      displayPercent: total > 0 ? (value / total * 100).toFixed(1) : 0 
+    })).sort((a,b) => b.value - a.value);
   }, [financeRecords]);
 
   const expenseData = useMemo(() => {
@@ -73,21 +77,53 @@ export function Finance() {
       data[r.category] = (data[r.category] || 0) + r.amount;
       total += r.amount;
     });
-    return Object.entries(data).map(([name, value]) => ({ name, value, percent: total > 0 ? (value / total * 100).toFixed(1) : 0 })).sort((a,b) => b.value - a.value);
+    return Object.entries(data).map(([name, value]) => ({ 
+      name, 
+      value, 
+      displayPercent: total > 0 ? (value / total * 100).toFixed(1) : 0 
+    })).sort((a,b) => b.value - a.value);
   }, [financeRecords]);
 
-  const COLORS_INCOME = ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534'];
-  const COLORS_EXPENSE = ['#f87171', '#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
+  // Vibrant and distinct colors for income
+  const COLORS_INCOME = [
+    '#22c55e', // Green 500
+    '#0ea5e9', // Sky 500
+    '#8b5cf6', // Violet 500
+    '#f59e0b', // Amber 500
+    '#ec4899', // Pink 500
+    '#10b981', // Emerald 500
+  ];
+
+  // Darker but distinguishable colors for expenses
+  const COLORS_EXPENSE = [
+    '#991b1b', // Red 800
+    '#1e3a8a', // Blue 900
+    '#3f6212', // Lime 900
+    '#581c87', // Purple 900
+    '#7c2d12', // Orange 900
+    '#111827', // Gray 900
+  ];
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.6; // Position inside slightly
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-    if (percent < 0.05) return null; // hide very small labels
+    // Only show if slice is large enough
+    if (percent < 0.05) return null; 
+    
     return (
-      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize="12" fontWeight="bold">
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor="middle" 
+        dominantBaseline="central" 
+        fontSize="12" 
+        fontWeight="bold"
+        className="drop-shadow-sm"
+      >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
     );
@@ -100,7 +136,7 @@ export function Finance() {
         <div className="bg-stone-900 text-white p-3 rounded-xl shadow-lg text-sm border border-stone-700">
           <p className="font-bold mb-1 flex items-center gap-2"><Tag className="w-3 h-3"/> {data.name}</p>
           <p className="font-mono">Rp {data.value.toLocaleString('id-ID')}</p>
-          <p className="text-stone-400 text-xs mt-1">{data.percent}% dari total</p>
+          <p className="text-stone-400 text-xs mt-1">{data.displayPercent}% dari total</p>
         </div>
       );
     }
@@ -211,56 +247,66 @@ export function Finance() {
           {financeRecords.length > 0 && (
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {incomeData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm">
-                     <h3 className="font-bold text-stone-900 mb-4 text-center">Distribusi Pendapatan</h3>
-                     <div className="h-48">
+                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden">
+                     <h3 className="font-bold text-stone-900 mb-6 text-center">Distribusi Pendapatan</h3>
+                     <div className="h-64 sm:h-72">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={incomeData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={30}
+                              innerRadius={40}
                               outerRadius={80}
-                              paddingAngle={2}
+                              paddingAngle={4}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
                             >
-                              {incomeData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} />
+                              {incomeData.map((_entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
                               ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
-                            <Legend />
+                            <Legend 
+                               verticalAlign="bottom" 
+                               height={36} 
+                               iconType="circle" 
+                               formatter={(value) => <span className="text-xs font-bold text-stone-600">{value}</span>}
+                            />
                           </PieChart>
                         </ResponsiveContainer>
                      </div>
                   </div>
                 )}
                 {expenseData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm">
-                     <h3 className="font-bold text-stone-900 mb-4 text-center">Distribusi Pengeluaran</h3>
-                     <div className="h-48">
+                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden">
+                     <h3 className="font-bold text-stone-900 mb-6 text-center">Distribusi Pengeluaran</h3>
+                     <div className="h-64 sm:h-72">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={expenseData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={30}
+                              innerRadius={40}
                               outerRadius={80}
-                              paddingAngle={2}
+                              paddingAngle={4}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
                             >
-                              {expenseData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} />
+                              {expenseData.map((_entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
                               ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
-                            <Legend />
+                            <Legend 
+                               verticalAlign="bottom" 
+                               height={36} 
+                               iconType="circle" 
+                               formatter={(value) => <span className="text-xs font-bold text-stone-600">{value}</span>}
+                            />
                           </PieChart>
                         </ResponsiveContainer>
                      </div>

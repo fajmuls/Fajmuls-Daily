@@ -1,10 +1,36 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Izinkan siapa saja membaca dan menulis data
-    // Peringatan: Secara keamanan, ini membuat database Anda terbuka untuk publik
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    // User data partitioning
+    match /users/{userId} {
+      match /notes/{noteId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /finance/{recordId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /prayers/{prayerId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /docs/{docId} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }

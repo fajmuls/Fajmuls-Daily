@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Note",
+      "description": "A personal note",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "type": { "enum": ["personal", "workout", "ig", "normal", "missed-prayer"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "tags": { "type": "array" }
+      },
+      "required": ["id", "type", "createdAt"]
+    },
+    "FinanceRecord": {
+      "title": "Finance Record",
+      "description": "An income or expense record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "note": { "type": "string" },
+        "type": { "enum": ["income", "expense"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "amount", "category", "type", "createdAt"]
+    },
+    "MissedPrayer": {
+      "title": "Missed Prayer",
+      "description": "A tracker for a missed prayer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "count": { "type": "number" },
+        "completed": { "type": "boolean" },
+        "completedAt": { "type": "number" }
+      },
+      "required": ["id", "name", "count", "completed"]
+    },
+    "DailyDoc": {
+      "title": "Daily Document",
+      "description": "A generic daily record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/notes/{noteId}": {
+      "schema": "Note",
+      "description": "User notes"
+    },
+    "/users/{userId}/finance/{recordId}": {
+      "schema": "FinanceRecord",
+      "description": "User finance records"
+    },
+    "/users/{userId}/prayers/{prayerId}": {
+      "schema": "MissedPrayer",
+      "description": "User missed prayers"
+    },
+    "/users/{userId}/docs/{docId}": {
+      "schema": "DailyDoc",
+      "description": "User daily documents"
+    }
+  }
+}
