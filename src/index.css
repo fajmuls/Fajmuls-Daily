@@ -5,42 +5,50 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
   
-  --color-stone-850: #1a1614;
-  --color-stone-900: #120f0e;
+  --color-dashboard-bg: #0b1120;
+  --color-card-bg: #1e293b;
+  --color-card-border: #334155;
   
-  /* Trip-inspired Earthy UI Palette */
-  --color-cream: #f4f1ea;
-  --color-paper: #ffffff;
+  --color-accent-blue: #3b82f6;
+  --color-accent-purple: #8b5cf6;
+  --color-accent-green: #10b981;
+  --color-accent-yellow: #f59e0b;
   
-  --color-trip-brown: #2d1d16;
-  --color-trip-terracotta: #3d2a21;
-  --color-trip-moss: #2b3d21;
-  --color-trip-forest: #1b2612;
-  
-  /* Vibrant accents */
-  --color-accent-orange: #ff6b00;
-  --color-accent-blue: #0070f3;
-  --color-accent-green: #34d399;
-  --color-accent-yellow: #facc15;
-  --color-accent-gold: #e2b13c;
+  --color-glass-bg: rgba(30, 41, 59, 0.7);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
 }
 
 html {
-  font-size: 13px; /* Smaller base size on mobile to fit more content */
+  font-size: 14px;
 }
 @media (min-width: 768px) {
   html {
-    font-size: 16px; /* Reset to standard on desktop */
+    font-size: 16px;
   }
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-cream);
-  color: var(--color-stone-900);
+  background-color: var(--color-dashboard-bg);
+  color: #f8fafc;
   margin: 0;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.active-nav-bg {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+}
+
+.fab-gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
 }
 
 /* Scrollbar styling for a cleaner look */

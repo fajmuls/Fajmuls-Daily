@@ -1,278 +1,225 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic, LogOut, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, Wallet, NotebookPen, Bell, Plus, LogOut, User as UserIcon, Settings, Calendar, BarChart3, Grid } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
-import { useVoiceCommand } from '../hooks/useVoiceCommand';
 import { useAuth } from './AuthWrapper';
 import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
 
-const desktopNavItems = [
+const navItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
   { icon: NotebookPen, label: 'Catatan', path: '/notes' },
-  { icon: FileText, label: 'Dokumen', path: '/docs' },
-  { icon: Star, label: 'Spesial', path: '/special' },
-];
-
-const mobileNavItems = [
-  { icon: LayoutDashboard, label: 'Beranda', path: '/' },
-  { icon: Wallet, label: 'Keuangan', path: '/finance' },
-  { icon: Star, label: 'Spesial', path: '/special' }, // Move special here
-  { icon: NotebookPen, label: 'Catatan', path: '/notes' },
-  { icon: FileText, label: 'Dokumen', path: '/docs' },
+  { icon: UserIcon, label: 'Profil', path: '/profile' },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { playClick, playSuccess } = useAudio();
+  const { playClick } = useAudio();
   const navigate = useNavigate();
   const { user, profile, logout } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const handleVoiceCommand = (text: string) => {
-    const lower = text.toLowerCase();
-    console.log("Mendeteksi suara:", lower);
-    
-    // 1. Navigation Commands
-    if (lower.includes('kembali') || lower.includes('balik') || lower.includes('back')) {
-      navigate(-1);
-      return;
-    }
-
-    if (lower.includes('keuangan') || lower.includes('uang')) {
-      navigate('/finance');
-      return;
-    } else if (lower.includes('ig') || lower.includes('instagram')) {
-      navigate('/notes/ig-list');
-      return;
-    } else if (lower.includes('spesial') || lower.includes('khusus')) {
-      navigate('/special');
-      return;
-    } else if (lower.includes('dokumen') || lower.includes('foto')) {
-      navigate('/docs');
-      return;
-    } else if (lower.includes('catatan') || lower.includes('tulis')) {
-      navigate('/notes');
-      return;
-    } else if (lower.includes('beranda') || lower.includes('dashboard') || lower.includes('home')) {
-      navigate('/');
-      return;
-    }
-
-    // 2. Smart Element Detection (Buttons/Inputs/Links/Labels)
-    // We search for elements on screen that match the command
-    const elements = document.querySelectorAll('button, a, label, input[type="button"], input[type="submit"], [role="button"]');
-    let bestMatch: HTMLElement | null = null;
-    let maxMatchLength = 0;
-
-    elements.forEach((el) => {
-       const htmlEl = el as HTMLElement;
-       const elText = htmlEl.innerText?.toLowerCase().trim() || htmlEl.textContent?.toLowerCase().trim() || (htmlEl as HTMLInputElement).value?.toLowerCase() || '';
-       if (elText && lower.includes(elText) && elText.length > 1) {
-          // Priority 1: Exact Match (after trimming)
-          if (elText === lower) {
-             bestMatch = el as HTMLElement;
-             maxMatchLength = 999; // Highest priority
-          } else if (elText.length > maxMatchLength && maxMatchLength < 999) {
-             // Priority 2: Longest substring match (handles multi-word buttons)
-             maxMatchLength = elText.length;
-             bestMatch = el as HTMLElement;
-          }
-       }
-    });
-
-    if (bestMatch) {
-       bestMatch.click();
-       // Only play success on specific confirmation-like commands
-       const confirmKeywords = ['simpan', 'hapus', 'tambah', 'oke', 'selesai', 'save', 'delete'];
-       if (confirmKeywords.some(k => lower.includes(k))) {
-          playSuccess();
-       }
-       return;
-    }
-
-    // 3. Smart Input Detection
-    // If command starts with keywords like "jumlah", "kategory", "keterangan"
-    const inputs = document.querySelectorAll('input, textarea');
-    let inputToFill: HTMLInputElement | HTMLTextAreaElement | null = null;
-    let valueToFill = '';
-
-    if (lower.includes('jumlah') || lower.includes('nominal')) {
-       // Look for amount input
-       inputToFill = document.querySelector('input[type="number"], input[placeholder*="0"]');
-       const match = lower.match(/\d+/g);
-       if (match) valueToFill = match.join('');
-    } else if (lower.includes('kategori')) {
-       inputToFill = document.querySelector('input[placeholder*="Cth. Makanan"], input[placeholder*="Kategori"]');
-       const words = lower.split('kategori');
-       if (words.length > 1) valueToFill = words[1].trim();
-    } else if (lower.includes('keterangan') || lower.includes('catatan')) {
-       inputToFill = document.querySelector('input[placeholder*="Opsional"], textarea[placeholder*="Tulis"]');
-       const words = lower.split(/keterangan|catatan/);
-       if (words.length > 1) valueToFill = words[1].trim();
-    }
-
-    if (inputToFill && valueToFill) {
-       inputToFill.focus();
-       // Use native setter to trigger React state updates
-       const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-       const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
-       
-       if (inputToFill instanceof HTMLTextAreaElement && nativeTextAreaValueSetter) {
-          nativeTextAreaValueSetter.call(inputToFill, valueToFill);
-       } else if (inputToFill instanceof HTMLInputElement && nativeInputValueSetter) {
-          nativeInputValueSetter.call(inputToFill, valueToFill);
-       }
-       
-       inputToFill.dispatchEvent(new Event('input', { bubbles: true }));
-       playSuccess();
-       return;
-    }
-
-    // 4. Fallback
-    console.log("Perintah tidak dikenali:", lower);
-  };
-
-  const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceCommand);
-  const [voiceHint, setVoiceHint] = useState<string | null>(null);
-
-  const toggleVoice = () => {
-    if (isListening) {
-       stopListening();
-       setVoiceHint(null);
-    } else {
-       setVoiceHint("Sebutkan perintah (Cth: 'Keuangan', 'IG', 'Dashboard')");
-       startListening();
-       setTimeout(() => setVoiceHint(null), 5000);
-    }
- };
-
-  const UserProfile = ({ compact = false }) => (
-    <div className={cn("flex items-center gap-3", compact ? "" : "p-4 mx-4 mb-4 bg-stone-100 rounded-2xl border border-stone-200")}>
+  const UserAvatar = ({ className = "w-10 h-10" }) => (
+    <div className={cn("relative group cursor-pointer", className)}>
       {(profile?.photoURL || user?.photoURL) ? (
-        <img src={profile?.photoURL || user?.photoURL} alt="Profile" className={cn("rounded-full border border-stone-200 object-cover", compact ? "w-8 h-8" : "w-10 h-10")} />
+        <img 
+          src={profile?.photoURL || user?.photoURL} 
+          alt="Profile" 
+          className="w-full h-full rounded-full border border-white/10 object-cover shadow-lg" 
+        />
       ) : (
-        <div className={cn("bg-stone-200 flex items-center justify-center rounded-full text-stone-500", compact ? "w-8 h-8" : "w-10 h-10")}>
-           <UserIcon className={compact ? "w-4 h-4" : "w-5 h-5"} />
+        <div className="w-full h-full bg-accent-blue/20 flex items-center justify-center rounded-full text-accent-blue border border-accent-blue/30">
+           <UserIcon className="w-1/2 h-1/2" />
         </div>
       )}
-      {!compact && (
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-stone-900 truncate">{profile?.displayName || user?.displayName || 'Pengguna'}</p>
-          <p className="text-xs text-stone-500 truncate">{profile?.email || user?.email}</p>
-        </div>
-      )}
+      <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-colors" />
     </div>
   );
 
   return (
-    <div className="flex h-screen w-full bg-cream font-sans text-stone-900 overflow-hidden">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-stone-200 bg-paper">
-        <div className="p-6">
-          <h1 className="font-serif text-2xl font-bold tracking-tight text-accent-orange">Fajmus Daily</h1>
+    <div className="flex h-screen w-full bg-dashboard-bg font-sans text-slate-200 overflow-hidden">
+      {/* Sidebar for Desktop (matching the app's aesthetic) */}
+      <aside className="hidden lg:flex flex-col w-72 border-r border-white/5 bg-dashboard-bg/50 backdrop-blur-xl">
+        <div className="p-8 flex items-center gap-4">
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner">
+             <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" alt="Logo" className="w-8 h-8 object-contain" onError={(e) => e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/1055/1055644.png'} />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-white leading-none">Fajmuls</h1>
+            <span className="text-[10px] font-bold text-accent-blue uppercase tracking-widest">Daily App</span>
+          </div>
         </div>
-        
-        <UserProfile />
-        
-        <nav className="flex-1 px-4 space-y-2">
-          {desktopNavItems.map((item) => (
+
+        <nav className="flex-1 px-6 space-y-2 mt-4">
+          {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               onClick={playClick}
               className={({ isActive }) => cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium",
+                "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 font-semibold group",
                 isActive 
-                  ? "bg-stone-900 text-cream shadow-sm" 
-                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                  ? "active-nav-bg text-white shadow-[0_8px_20px_-6px_rgba(59,130,246,0.5)]" 
+                  : "text-slate-400 hover:bg-white/5 hover:text-white"
               )}
             >
-              <item.icon className="w-5 h-5" />
+              <item.icon className={cn("w-5 h-5 transition-transform group-hover:scale-110")} />
               {item.label}
             </NavLink>
           ))}
+          
+          <div className="pt-6 mt-6 border-t border-white/5 space-y-2">
+            <p className="px-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Layanan</p>
+            {[
+              { icon: Calendar, label: 'Kalender', path: '/calendar' },
+              { icon: BarChart3, label: 'Statistik', path: '/stats' },
+              { icon: Grid, label: 'Lainnya', path: '/others' },
+              { icon: Settings, label: 'Pengaturan', path: '/settings' },
+            ].map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className="flex items-center gap-4 px-5 py-3 rounded-xl transition-all text-slate-400 hover:text-white hover:bg-white/5 font-medium"
+              >
+                <item.icon className="w-4 h-4" />
+                <span className="text-sm">{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
         </nav>
 
-        <div className="p-4 border-t border-stone-200 space-y-2">
-          <button 
-            onClick={toggleVoice}
-            className={cn(
-              "w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-sm",
-              isListening ? "bg-accent-orange text-white animate-pulse shadow-sm" : "bg-stone-100 text-stone-700 hover:bg-stone-200"
-            )}
-          >
-            <Mic className="w-4 h-4" />
-            {isListening ? "Mendengarkan..." : "Perintah Suara"}
-          </button>
-          
-          <button 
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-sm bg-red-50 text-red-600 hover:bg-red-100"
-          >
-            <LogOut className="w-4 h-4" />
-            Keluar
-          </button>
+        <div className="p-8">
+           <button 
+             onClick={() => setShowLogoutConfirm(true)}
+             className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold bg-white/5 text-slate-400 hover:bg-red-500/10 hover:text-red-500 transition-all border border-white/5"
+           >
+             <LogOut className="w-5 h-5" />
+             Keluar Akun
+           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-paper border-b border-stone-200">
-          <div className="flex items-center gap-3">
-             <UserProfile compact />
-             <h1 className="font-serif text-lg font-bold text-accent-orange">Fajmus Daily</h1>
+        {/* Universal Header (Mobile & Desktop) */}
+        <header className="flex items-center justify-between p-6 lg:px-10">
+          <div className="lg:hidden flex items-center gap-3">
+             <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+                <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+             </div>
+             <div>
+                <h1 className="text-lg font-black text-white leading-none">Fajmuls</h1>
+                <p className="text-[8px] text-accent-blue font-bold uppercase tracking-widest">Daily</p>
+             </div>
           </div>
-          <div className="flex items-center gap-2">
-             <button 
-               onClick={toggleVoice}
-               className={cn("p-2 rounded-full", isListening ? "bg-accent-orange text-white animate-pulse" : "bg-stone-100 text-stone-600")}
-             >
-               <Mic className="w-5 h-5" />
-             </button>
-             <button 
-               onClick={logout}
-               className="p-2 rounded-full bg-red-50 text-red-600"
-             >
-               <LogOut className="w-5 h-5" />
-             </button>
+          
+          <div className="flex-1 hidden lg:block" />
+
+          <div className="flex items-center gap-3">
+            <button className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-dashboard-bg" />
+            </button>
+            <UserAvatar className="w-10 h-10 lg:ml-2" />
+            <div className="hidden lg:block text-left">
+               <p className="text-xs font-bold text-white leading-none mb-1">{firstName(profile?.displayName)}</p>
+               <p className="text-[10px] text-slate-500 font-medium">Premium Member</p>
+            </div>
           </div>
         </header>
 
-        {/* Dynamic Content */}
-        <div className="flex-1 overflow-y-auto w-full max-w-5xl mx-auto p-4 md:p-8 pb-32 md:pb-8">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto w-full px-6 lg:px-10 pb-32 lg:pb-10">
           {children}
         </div>
 
-        {/* Voice Callout */}
-        {voiceHint && (
-           <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-stone-900/90 text-white px-6 py-3 rounded-full font-bold shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5">
-              <div className="w-2 h-2 bg-accent-orange rounded-full animate-ping" />
-              {voiceHint}
-           </div>
-        )}
+        {/* Mobile Bottom Navigation (Image accurate) */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-6 pb-6 pt-2 bg-gradient-to-t from-dashboard-bg via-dashboard-bg to-transparent">
+          <nav className="glass-card flex items-center justify-between px-4 py-2 rounded-[2.5rem]">
+            {navItems.slice(0, 2).map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={playClick}
+                className={({ isActive }) => cn(
+                  "flex flex-col items-center gap-1 p-3 rounded-2xl transition-all flex-1",
+                  isActive ? "text-accent-blue" : "text-slate-500"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
+              </NavLink>
+            ))}
 
-        {/* Mobile Bottom Bar (Smaller icons & fonts) */}
-        <nav className="md:hidden flex items-center justify-around bg-paper border-t border-stone-200 fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom,16px)] pt-1 px-1">
-          {mobileNavItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={playClick}
-              className={({ isActive }) => cn(
-                "flex flex-col items-center gap-1 p-1 flex-1 rounded-xl transition-colors",
-                isActive ? "text-stone-900 font-bold bg-stone-100" : "text-stone-500 hover:bg-stone-50"
-              )}
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon className={cn("w-4 h-4", isActive ? "scale-110" : "")} />
-                  <span className="text-[9px] uppercase tracking-wider">{item.label}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
-        </nav>
+            {/* Floating FAB */}
+            <div className="relative -top-8 px-4">
+               <button 
+                 onClick={() => navigate('/notes')}
+                 className="w-16 h-16 fab-gradient rounded-full flex items-center justify-center shadow-[0_10px_25px_-5px_rgba(168,85,247,0.5)] border-4 border-dashboard-bg text-white active:scale-95 transition-transform"
+               >
+                 <Plus className="w-8 h-8 stroke-[3]" />
+               </button>
+            </div>
+
+            {navItems.slice(2, 4).map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={playClick}
+                className={({ isActive }) => cn(
+                  "flex flex-col items-center gap-1 p-3 rounded-2xl transition-all flex-1",
+                  isActive ? "text-accent-blue" : "text-slate-500"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
       </main>
+
+      {/* Logout Dialog */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card p-8 rounded-3xl max-w-sm w-full text-center"
+            >
+              <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-6">
+                 <LogOut className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Konfirmasi Keluar</h3>
+              <p className="text-slate-400 text-sm mb-8">Apakah Anda yakin ingin keluar dari akun Anda?</p>
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={() => {
+                    logout();
+                    setShowLogoutConfirm(false);
+                  }}
+                  className="py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-lg"
+                >
+                  Ya, Keluar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
+}
+
+function firstName(name?: string | null) {
+  if (!name) return 'User';
+  return name.split(' ')[0];
 }

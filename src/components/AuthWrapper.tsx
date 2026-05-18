@@ -111,10 +111,12 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="min-h-screen bg-dashboard-bg flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 text-stone-900 animate-spin mx-auto mb-4" />
-          <p className="text-stone-500 font-medium">Menyiapkan Fajmuls Daily...</p>
+          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl mx-auto mb-6 animate-pulse">
+             <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+          </div>
+          <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Menyiapkan Pengalaman...</p>
         </div>
       </div>
     );
@@ -122,28 +124,46 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-paper p-8 md:p-12 rounded-3xl border border-stone-200 shadow-xl max-w-md w-full text-center space-y-6">
-          <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-2">
-            <Lock className="w-10 h-10 text-stone-700" />
+      <div className="min-h-screen bg-dashboard-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        {/* Background Accents */}
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent-blue/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-accent-purple/10 blur-[120px] rounded-full" />
+
+        <div className="glass-card p-10 md:p-14 rounded-[3rem] border border-white/10 shadow-2xl max-w-md w-full text-center space-y-8 relative z-10">
+          <div className="w-24 h-24 bg-white/5 rounded-3xl flex items-center justify-center mx-auto border border-white/10 shadow-inner group transition-transform hover:scale-110">
+             <img src="https://fajmuls.github.io/Fajmuls-Daily/logo.png" alt="Logo" className="w-14 h-14 object-contain shadow-2xl" />
           </div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">Akses Terkunci</h1>
-          <p className="text-stone-500">Masuk untuk mencatat hari Anda dan mengelola data Anda sendiri.</p>
+          
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black text-white tracking-tight">Fajmuls<span className="text-accent-blue">.</span></h1>
+            <p className="text-slate-400 font-medium">Capture your daily life in a beautiful, personalized space.</p>
+          </div>
           
           <div className="space-y-4 pt-4">
             <button
               onClick={handleLoginGoogle}
               id="login-button"
-              className="w-full flex items-center justify-center gap-3 bg-stone-900 text-white rounded-2xl py-4 font-bold hover:bg-stone-800 transition-all shadow-md active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-4 active-nav-bg text-white rounded-2xl py-5 font-black hover:shadow-[0_10px_30px_-10px_rgba(59,130,246,0.6)] transition-all active:scale-[0.98] group"
             >
-              <GoogleIcon />
-              Login dengan Google
+              <div className="bg-white p-1 rounded-lg">
+                <GoogleIcon />
+              </div>
+              Lanjutkan dengan Google
             </button>
-            <p className="text-[10px] text-stone-400 leading-relaxed font-medium">
-              Jika tombol tidak merespon, pastikan pop-up diizinkan atau coba buka aplikasi di tab baru.
+            
+            <div className="flex items-center gap-3 py-2">
+               <div className="h-px bg-white/10 flex-1" />
+               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Privacy Protected</span>
+               <div className="h-px bg-white/10 flex-1" />
+            </div>
+
+            <p className="text-[10px] text-slate-500 leading-relaxed font-bold uppercase tracking-wider">
+              Akses cepat • Tidak ada iklan • 100% Aman
             </p>
           </div>
         </div>
+        
+        <p className="mt-10 text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">Built for productivity & focus</p>
       </div>
     );
   }
