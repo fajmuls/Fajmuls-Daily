@@ -1,12 +1,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { signInWithPopup, onAuthStateChanged, User, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { auth, authProvider, db } from '../lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { signInWithPopup, onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { auth, authProvider } from '../lib/firebase';
 import { Loader2, Lock } from 'lucide-react';
 
-const AuthContext = createContext<{ user: User | null; profile: any; logout: () => void }>({
+const AuthContext = createContext<{ user: User | null; logout: () => void }>({
   user: null,
-  profile: null,
   logout: () => {},
 });
 
@@ -25,47 +23,11 @@ const GoogleIcon = () => (
 
 export function AuthWrapper({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Force persistence to LOCAL to ensure session survives refreshes
-    const setupPersistence = async () => {
-      try {
-        await setPersistence(auth, browserLocalPersistence);
-      } catch (e) {
-        console.error("Persistence setup error", e);
-      }
-    };
-    setupPersistence();
-
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      console.log("Auth State Changed:", currentUser?.uid || "No user");
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        try {
-          const userRef = doc(db, 'users', currentUser.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            setProfile(snap.data());
-          } else {
-            const initialProfile = {
-              uid: currentUser.uid,
-              displayName: currentUser.displayName,
-              email: currentUser.email,
-              photoURL: currentUser.photoURL,
-              lastLogin: Date.now(),
-              createdAt: Date.now(),
-            };
-            await setDoc(userRef, initialProfile);
-            setProfile(initialProfile);
-          }
-        } catch (e) {
-          console.error("Error fetching/setting user profile", e);
-        }
-      } else {
-        setProfile(null);
-      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -73,115 +35,51 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
 
   const handleLoginGoogle = async () => {
     try {
-      setLoading(true);
-      console.log("Starting Google Login for domain:", window.location.hostname);
-      const result = await signInWithPopup(auth, authProvider);
-      const loggedInUser = result.user;
-      console.log("Login successful:", loggedInUser.uid);
-      
-      const userRef = doc(db, 'users', loggedInUser.uid);
-      const profileData = {
-        uid: loggedInUser.uid,
-        displayName: loggedInUser.displayName,
-        email: loggedInUser.email,
-        photoURL: loggedInUser.photoURL,
-        lastLogin: Date.now(),
-      };
-      await setDoc(userRef, profileData, { merge: true });
-      setProfile(prev => ({ ...prev, ...profileData }));
-      // setUser is implicitly called by onAuthStateChanged, but we can set it here too
-      setUser(loggedInUser);
-      setLoading(false);
-      
-    } catch (e: any) {
-      console.error("Detailed Login Error:", e);
-      setLoading(false);
-      
-      if (e.code === 'auth/popup-blocked') {
-        alert('Pop-up login diblokir oleh browser. Silakan izinkan pop-up atau klik ikon "Open in new tab" (kotak dengan panah) di pojok kanan atas preview.');
-      } else if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') {
-        console.log("User closed login popup.");
-      } else if (e.code === 'auth/unauthorized-domain' || (e.message && e.message.includes('unauthorized domain'))) {
-        alert(`DOMAIN TIDAK DIOTORISASI!\n\nSalin domain ini: ${window.location.hostname}\n\nLalu buka Firebase Console -> Authentication -> Settings -> Authorized Domains dan TAMBAHKAN domain tersebut.`);
-      } else if (e.code === 'auth/network-request-failed') {
-        alert('Koneksi internet bermasalah atau terhalang VPN/AdBlocker.');
-      } else {
-        alert('Gagal login: ' + (e.message || 'Coba buka aplikasi di tab baru jika masih gagal.'));
-      }
+      await signInWithPopup(auth, authProvider);
+    } catch (e) {
+      console.error(e);
+      alert('Gagal login dengan Google.');
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setUser(null);
-      setProfile(null);
-    } catch (e) {
-      console.error("Logout error", e);
-    }
+  const handleLogout = () => {
+    signOut(auth);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dashboard-bg flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl mx-auto mb-6 animate-pulse overflow-hidden">
-             <img src="/Fajmuls-Daily/logo.png" alt="Logo" className="w-full h-full object-contain" onError={(e) => e.currentTarget.src = 'https://fajmuls.github.io/Fajmuls-Daily/logo.png'} />
-          </div>
-          <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Menyiapkan Pengalaman...</p>
-        </div>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-stone-900 animate-spin" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-dashboard-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
-        {/* Background Accents */}
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent-blue/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-accent-purple/10 blur-[120px] rounded-full" />
-
-        <div className="glass-card p-10 md:p-14 rounded-[3rem] border border-white/10 shadow-2xl max-w-md w-full text-center space-y-8 relative z-10">
-          <div className="w-24 h-24 bg-white/5 rounded-3xl flex items-center justify-center mx-auto border border-white/10 shadow-inner group transition-transform hover:scale-110 overflow-hidden">
-             <img src="/Fajmuls-Daily/logo.png" alt="Logo" className="w-full h-full object-contain shadow-2xl" onError={(e) => e.currentTarget.src = 'https://fajmuls.github.io/Fajmuls-Daily/logo.png'} />
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-paper p-10 rounded-3xl border border-stone-200 shadow-md max-w-md w-full text-center space-y-6">
+          <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Lock className="w-8 h-8 text-stone-700" />
           </div>
+          <h1 className="font-serif text-3xl font-bold text-stone-900">Akses Terkunci</h1>
+          <p className="text-stone-500">Silakan masuk dengan akun Google kamu.</p>
           
-          <div className="space-y-2">
-            <h1 className="text-4xl font-black text-white tracking-tight">Fajmuls<span className="text-accent-blue">.</span></h1>
-            <p className="text-slate-400 font-medium">Capture your daily life in a beautiful, personalized space.</p>
-          </div>
-          
-          <div className="space-y-4 pt-4">
+          <div className="space-y-3 pt-4">
             <button
               onClick={handleLoginGoogle}
-              id="login-button"
-              className="w-full flex items-center justify-center gap-4 active-nav-bg text-white rounded-2xl py-5 font-black hover:shadow-[0_10px_30px_-10px_rgba(59,130,246,0.6)] transition-all active:scale-[0.98] group"
+              className="w-full flex items-center justify-center gap-3 bg-stone-900 text-white rounded-xl py-4 font-bold hover:bg-stone-800 transition-colors"
             >
-              <div className="bg-white p-1 rounded-lg">
-                <GoogleIcon />
-              </div>
-              Lanjutkan dengan Google
+              <GoogleIcon />
+              Login dengan Google
             </button>
-            
-            <div className="flex items-center gap-3 py-2">
-               <div className="h-px bg-white/10 flex-1" />
-               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Privacy Protected</span>
-               <div className="h-px bg-white/10 flex-1" />
-            </div>
-
-            <p className="text-[10px] text-slate-500 leading-relaxed font-bold uppercase tracking-wider">
-              Akses cepat • Tidak ada iklan • 100% Aman
-            </p>
           </div>
         </div>
-        
-        <p className="mt-10 text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">Built for productivity & focus</p>
       </div>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, logout: handleLogout }}>
+    <AuthContext.Provider value={{ user, logout: handleLogout }}>
       {children}
     </AuthContext.Provider>
   );

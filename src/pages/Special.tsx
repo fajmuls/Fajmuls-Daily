@@ -1,116 +1,174 @@
 import { useState } from 'react';
-import { Save, Trash2, Heart, Lock, Plus } from 'lucide-react';
+import { Sparkles, Save, Trash2, Heart, CheckSquare, Square } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
-import { useAppContext } from '../store';
+import { cn } from '../lib/utils';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAudio } from '../hooks/useAudio';
 
+interface SpecialNote {
+  id: string;
+  dayTitle: string;
+  content: string;
+  createdAt: number;
+}
+
 export function Special() {
-  const { specials, addSpecial, deleteSpecial } = useAppContext();
+  const [specials, setSpecials] = useLocalStorage<SpecialNote[]>('fajmuls-specials', []);
   const [dayTitle, setDayTitle] = useState('');
   const [content, setContent] = useState('');
-  const { playSuccess, playError } = useAudio();
-  const [showForm, setShowForm] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { playSuccess, playError, playClick } = useAudio();
 
   const handleSave = () => {
     if (!dayTitle) return;
-    addSpecial({
+    
+    setSpecials(prev => [{
       id: Date.now().toString(),
       dayTitle,
       content,
       createdAt: Date.now()
-    });
+    }, ...prev]);
+
     setDayTitle('');
     setContent('');
-    setShowForm(false);
     playSuccess();
   };
 
   const handleDeleteSingle = (id: string) => {
-    const code = window.prompt("Masukkan kode verifikasi:");
+    const code = window.prompt("Masukkan kode verifikasi untuk menghapus catatan eksklusif ini:");
     if (code === "FAJMUL") {
-      deleteSpecial(id);
+      setSpecials(prev => prev.filter(s => s.id !== id));
+      setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
       playError();
+    } else if (code !== null) {
+      alert("Kode verifikasi salah!");
     }
   };
 
+  const handleDeleteMultiple = () => {
+    if (selectedIds.size === 0) return;
+    const code = window.prompt(`Kamu akan menghapus ${selectedIds.size} catatan. Masukkan kode verifikasi:`);
+    if (code === "FAJMUL") {
+      setSpecials(prev => prev.filter(s => !selectedIds.has(s.id)));
+      setSelectedIds(new Set());
+      playError();
+    } else if (code !== null) {
+      alert("Kode verifikasi salah!");
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    playClick();
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-700 pb-20 md:pb-0">
-      <header className="flex justify-between items-end">
-        <div className="space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400">Restricted Access</p>
-          <h1 className="font-serif text-6xl font-bold text-stone-900 flex items-center gap-3">
-            Menu Spesial <Lock className="w-8 h-8 text-stone-300" />
-          </h1>
-        </div>
-        <button 
-          onClick={() => setShowForm(!showForm)}
-          className="p-4 bg-stone-900 text-white rounded-2xl hover:bg-stone-800 transition-all shadow-xl active:scale-95"
-        >
-          {showForm ? <Trash2 className="w-6 h-6 rotate-45" /> : <Plus className="w-6 h-6" />}
-        </button>
+    <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-500 pb-20 md:pb-0">
+      <header>
+        <h1 className="font-serif text-5xl font-bold text-stone-900 mb-2 flex items-center gap-4">
+          Menu Spesial <Sparkles className="w-10 h-10 text-accent-orange" />
+        </h1>
+        <p className="text-stone-500 text-lg">Catatan eksklusif harian untuk momen yang sangat spesial.</p>
       </header>
 
-      {showForm && (
-        <div className="bg-white p-10 rounded-[2.5rem] border border-stone-200 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
-          <div className="space-y-8">
-            <input
-              type="text"
-              value={dayTitle}
-              onChange={(e) => setDayTitle(e.target.value)}
-              placeholder="Judul momen..."
-              className="w-full text-4xl font-serif font-bold text-stone-900 outline-none placeholder:text-stone-200 bg-transparent"
-            />
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Tulis detail momen spesial ini..."
-              className="w-full min-h-[160px] text-xl text-stone-600 outline-none placeholder:text-stone-300 bg-stone-50 p-8 rounded-3xl border border-stone-100 resize-none"
-            />
-            <div className="flex justify-end">
-              <button
-                onClick={handleSave}
-                className="flex items-center gap-2 px-10 py-5 bg-trip-brown text-white rounded-full font-bold hover:bg-stone-800 transition-all shadow-lg active:scale-95"
-              >
-                <Save className="w-6 h-6" /> Amankan Momen
-              </button>
-            </div>
+      <div className="bg-gradient-to-br from-orange-50 to-pink-50 p-8 rounded-3xl border border-orange-100 shadow-sm relative overflow-hidden">
+        <Heart className="absolute -right-10 -bottom-10 w-64 h-64 text-orange-500/5 rotate-12" />
+        
+        <div className="relative z-10 space-y-6">
+          <input
+            type="text"
+            value={dayTitle}
+            onChange={(e) => setDayTitle(e.target.value)}
+            placeholder="Hari apa ini? (Contoh: Hari Ulang Tahunnya...)"
+            className="w-full text-3xl font-serif font-bold text-stone-900 outline-none placeholder:text-stone-400 bg-transparent"
+          />
+          
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Tulis sebuah pesan eksklusif yang sangat spesial..."
+            className="w-full min-h-[150px] text-lg text-stone-700 outline-none placeholder:text-stone-400 bg-white/50 p-6 rounded-2xl border border-white/60 resize-y backdrop-blur-sm"
+          />
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-2 px-8 py-4 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all shadow-md hover:shadow-lg active:scale-95"
+            >
+              <Save className="w-5 h-5" /> Simpan Momen
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      <div className="space-y-8">
-        <div className="flex items-center justify-between border-b border-stone-100 pb-4">
-          <h2 className="font-bold uppercase tracking-widest text-xs text-stone-400">Vault ({specials.length})</h2>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold uppercase tracking-wider text-sm text-stone-500">Momen Tersimpan</h2>
+          {selectedIds.size > 0 && (
+            <button 
+              onClick={handleDeleteMultiple}
+              className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-600 rounded-xl font-bold hover:bg-red-200 transition-colors text-sm"
+            >
+              <Trash2 className="w-4 h-4" /> Hapus Terpilih ({selectedIds.size})
+            </button>
+          )}
         </div>
         
         {specials.length === 0 ? (
-          <div className="py-32 text-center space-y-4">
-            <Heart className="w-12 h-12 text-stone-100 mx-auto" />
-            <p className="text-stone-400 font-medium">Belum ada momen yang diamankan.</p>
+          <div className="p-12 border-2 border-dashed border-stone-200 rounded-3xl text-center text-stone-400">
+            Belum ada momen spesial yang dicatat.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {specials.map(special => (
-              <div 
-                key={special.id} 
-                className="bg-white p-10 rounded-[2.5rem] border border-stone-100 shadow-sm hover:shadow-xl transition-all group"
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <span className="text-[10px] font-mono font-bold text-stone-400 uppercase tracking-tighter bg-stone-50 px-3 py-1 rounded-full">
-                    {format(special.createdAt, 'd MMM yyyy • HH:mm', { locale: localeId })}
-                  </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {specials.map(special => {
+              const isSelected = selectedIds.has(special.id);
+              return (
+                <div 
+                  key={special.id} 
+                  className={cn(
+                    "bg-paper p-8 rounded-3xl border shadow-sm relative group transition-colors cursor-pointer",
+                    isSelected ? "border-red-300 ring-2 ring-red-100 bg-red-50/20" : "border-stone-200"
+                  )}
+                  onClick={(e) => {
+                     // Prevent toggle when clicking the delete button
+                     if ((e.target as HTMLElement).closest('button')) return;
+                     toggleSelect(special.id);
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <p className="text-xs font-mono text-stone-400">{format(special.createdAt, 'EEEE, d MMMM yyyy HH:mm', { locale: localeId })}</p>
+                    <div className={cn("text-stone-300", isSelected && "text-red-500")}>
+                      {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                    </div>
+                  </div>
+                  <h3 className="font-serif text-2xl font-bold mb-3">{special.dayTitle}</h3>
+                  <p className="text-stone-600 leading-relaxed font-medium line-clamp-4">{special.content}</p>
+                  
                   <button
-                    onClick={() => handleDeleteSingle(special.id)}
-                    className="p-3 text-stone-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteSingle(special.id);
+                    }}
+                    className={cn(
+                      "absolute bottom-6 right-6 p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all",
+                      isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
-                <h3 className="font-serif text-3xl font-bold mb-4 text-stone-900 group-hover:text-accent-orange transition-colors">{special.dayTitle}</h3>
-                <p className="text-stone-500 text-lg leading-relaxed font-medium">{special.content}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

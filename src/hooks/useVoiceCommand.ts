@@ -13,12 +13,6 @@ export function useVoiceCommand(onCommand?: (text: string) => void) {
     }
 
     const startRecording = () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {}
-      }
-
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       
@@ -32,11 +26,8 @@ export function useVoiceCommand(onCommand?: (text: string) => void) {
       };
 
       recognition.onresult = (event: any) => {
-        let text = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          text += event.results[i][0].transcript;
-        }
-        text = text.trim();
+        const current = event.resultIndex;
+        const text = event.results[current][0].transcript;
         setTranscript(text);
         if (onCommand) {
           onCommand(text);
@@ -44,41 +35,20 @@ export function useVoiceCommand(onCommand?: (text: string) => void) {
       };
 
       recognition.onerror = (event: any) => {
-        if (event.error === 'aborted') {
-          console.warn('Speech recognition aborted');
-          return;
-        }
         console.error('Speech recognition error', event.error);
-        if (event.error === 'not-allowed') {
-          isManuallyStoppedRef.current = true;
-          setIsListening(false);
-        }
       };
 
       recognition.onend = () => {
         // restart if not manually stopped
         if (!isManuallyStoppedRef.current) {
-           // delay a bit before restart to avoid 'aborted' race condition
-           setTimeout(() => {
-             if (!isManuallyStoppedRef.current) {
-               try {
-                 recognition.start();
-               } catch (e) {
-                 console.error("Failed to restart recognition:", e);
-               }
-             }
-           }, 300);
+           startRecording();
         } else {
            setIsListening(false);
         }
       };
 
-      try {
-        recognition.start();
-        recognitionRef.current = recognition;
-      } catch (e) {
-        console.error("Start error:", e);
-      }
+      recognition.start();
+      recognitionRef.current = recognition;
     };
 
     startRecording();

@@ -1,78 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Reusable helpers
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    function incomingData() {
-      return request.resource.data;
-    }
-
-    // Default deny
+    // Izinkan siapa saja membaca dan menulis data
+    // Peringatan: Secara keamanan, ini membuat database Anda terbuka untuk publik
     match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Notes Collection
-    match /notes/{noteId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && incomingData().userId == request.auth.uid && isValidId(noteId);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incomingData().userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Finance Collection
-    match /finance/{recordId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && incomingData().userId == request.auth.uid && isValidId(recordId);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incomingData().userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Prayers Collection
-    match /prayers/{prayerId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && incomingData().userId == request.auth.uid && isValidId(prayerId);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incomingData().userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Docs Collection
-    match /docs/{docId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && incomingData().userId == request.auth.uid && isValidId(docId);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incomingData().userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    match /daily_docs/{docId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && incomingData().userId == request.auth.uid && isValidId(docId);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incomingData().userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Users Collection
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // Specials Collection
-    match /specials/{specialId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && incomingData().userId == request.auth.uid && isValidId(specialId);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incomingData().userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow read, write: if true;
     }
   }
 }

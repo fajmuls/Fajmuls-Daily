@@ -8,10 +8,6 @@ const createBeep = (frequency: number, type: OscillatorType, duration: number, v
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
   
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  
   const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
   
@@ -34,7 +30,8 @@ export function useAudio() {
   }, []);
 
   const playSuccess = useCallback(() => {
-    createBeep(1500, 'sine', 0.08, 0.05); // High freq, short duration, low volume "ting"
+    createBeep(800, 'sine', 0.1, 0.1);
+    setTimeout(() => createBeep(1200, 'sine', 0.15, 0.1), 100);
   }, []);
 
   const playError = useCallback(() => {
