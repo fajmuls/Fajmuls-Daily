@@ -64,7 +64,8 @@ export function Layout({ children }: { children: ReactNode }) {
     let maxMatchLength = 0;
 
     elements.forEach((el) => {
-       const elText = el.innerText?.toLowerCase().trim() || el.textContent?.toLowerCase().trim() || (el as HTMLInputElement).value?.toLowerCase() || '';
+       const htmlEl = el as HTMLElement;
+       const elText = htmlEl.innerText?.toLowerCase().trim() || htmlEl.textContent?.toLowerCase().trim() || (htmlEl as HTMLInputElement).value?.toLowerCase() || '';
        if (elText && lower.includes(elText) && elText.length > 1) {
           // Priority 1: Exact Match (after trimming)
           if (elText === lower) {

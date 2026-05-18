@@ -40,6 +40,7 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
           } else {
             // Create initial profile if missing
             const initialProfile = {
+              uid: currentUser.uid,
               displayName: currentUser.displayName,
               email: currentUser.email,
               photoURL: currentUser.photoURL,
@@ -69,6 +70,7 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
       // Explicitly update profile on login too
       const userRef = doc(db, 'users', loggedInUser.uid);
       const profileData = {
+        uid: loggedInUser.uid,
         displayName: loggedInUser.displayName,
         email: loggedInUser.email,
         photoURL: loggedInUser.photoURL,
@@ -82,11 +84,11 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
       setLoading(false);
       
       if (e.code === 'auth/popup-blocked') {
-        alert('Pop-up diblokir oleh browser. Silakan izinkan pop-up untuk situs ini.');
+        alert('Pop-up login diblokir oleh browser. Silakan izinkan pop-up atau klik ikon "Open in new tab" di pojok kanan atas aplikasi.');
       } else if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') {
-        // Just user closing it, no need for scary alert
+        // Just user closing it
       } else if (e.code === 'auth/unauthorized-domain') {
-        alert('Domain ini tidak diotorisasi di Firebase Console. Pastikan domain GitHub kamu sudah masuk dalam "Authorized Domains" di Authentication -> Settings.');
+        alert('Domain ini tidak diotorisasi. Tambahkan domain aplikasi ini ke "Authorized Domains" di Firebase Console Anda.');
       } else {
         alert('Gagal login: ' + (e.message || 'Error tidak diketahui'));
       }
@@ -100,7 +102,10 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-stone-900 animate-spin" />
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 text-stone-900 animate-spin mx-auto mb-4" />
+          <p className="text-stone-500 font-medium">Menyiapkan Fajmuls Daily...</p>
+        </div>
       </div>
     );
   }
@@ -108,21 +113,25 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
   if (!user) {
     return (
       <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-paper p-10 rounded-3xl border border-stone-200 shadow-md max-w-md w-full text-center space-y-6">
-          <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-2">
-            <Lock className="w-8 h-8 text-stone-700" />
+        <div className="bg-paper p-8 md:p-12 rounded-3xl border border-stone-200 shadow-xl max-w-md w-full text-center space-y-6">
+          <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Lock className="w-10 h-10 text-stone-700" />
           </div>
           <h1 className="font-serif text-3xl font-bold text-stone-900">Akses Terkunci</h1>
-          <p className="text-stone-500">Silakan masuk dengan akun Google kamu.</p>
+          <p className="text-stone-500">Masuk untuk mencatat hari Anda dan mengelola data Anda sendiri.</p>
           
-          <div className="space-y-3 pt-4">
+          <div className="space-y-4 pt-4">
             <button
               onClick={handleLoginGoogle}
-              className="w-full flex items-center justify-center gap-3 bg-stone-900 text-white rounded-xl py-4 font-bold hover:bg-stone-800 transition-colors"
+              id="login-button"
+              className="w-full flex items-center justify-center gap-3 bg-stone-900 text-white rounded-2xl py-4 font-bold hover:bg-stone-800 transition-all shadow-md active:scale-[0.98]"
             >
               <GoogleIcon />
               Login dengan Google
             </button>
+            <p className="text-[10px] text-stone-400 leading-relaxed font-medium">
+              Jika tombol tidak merespon, pastikan pop-up diizinkan atau coba buka aplikasi di tab baru.
+            </p>
           </div>
         </div>
       </div>
