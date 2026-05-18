@@ -36,7 +36,7 @@ function ErrorFallback({ error, resetErrorBoundary }: any) {
 }
 
 export default function App() {
-  const basename = '/Fajmuls-Daily';
+  const basename = import.meta.env.MODE === 'production' ? '/Fajmuls-Daily' : '';
   
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>

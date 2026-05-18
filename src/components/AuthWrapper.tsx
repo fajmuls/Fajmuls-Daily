@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { signInWithPopup, onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { signInWithPopup, onAuthStateChanged, User, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth, authProvider, db } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Loader2, Lock } from 'lucide-react';
@@ -29,7 +29,18 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Force persistence to LOCAL to ensure session survives refreshes
+    const setupPersistence = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch (e) {
+        console.error("Persistence setup error", e);
+      }
+    };
+    setupPersistence();
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      console.log("Auth State Changed:", currentUser?.uid || "No user");
       setUser(currentUser);
       if (currentUser) {
         try {
@@ -38,7 +49,6 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
           if (snap.exists()) {
             setProfile(snap.data());
           } else {
-            // Create initial profile if missing
             const initialProfile = {
               uid: currentUser.uid,
               displayName: currentUser.displayName,
@@ -64,12 +74,11 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
   const handleLoginGoogle = async () => {
     try {
       setLoading(true);
-      console.log("Starting Google Login...");
+      console.log("Starting Google Login for domain:", window.location.hostname);
       const result = await signInWithPopup(auth, authProvider);
       const loggedInUser = result.user;
       console.log("Login successful:", loggedInUser.uid);
       
-      // Explicitly update profile on login too
       const userRef = doc(db, 'users', loggedInUser.uid);
       const profileData = {
         uid: loggedInUser.uid,
@@ -80,21 +89,24 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
       };
       await setDoc(userRef, profileData, { merge: true });
       setProfile(prev => ({ ...prev, ...profileData }));
+      // setUser is implicitly called by onAuthStateChanged, but we can set it here too
+      setUser(loggedInUser);
       setLoading(false);
       
     } catch (e: any) {
-      console.error("Login Error Details:", e);
+      console.error("Detailed Login Error:", e);
       setLoading(false);
       
       if (e.code === 'auth/popup-blocked') {
-        alert('Pop-up login diblokir oleh browser. Silakan izinkan pop-up atau klik ikon "Open in new tab" di pojok kanan atas aplikasi.');
+        alert('Pop-up login diblokir oleh browser. Silakan izinkan pop-up atau klik ikon "Open in new tab" (kotak dengan panah) di pojok kanan atas preview.');
       } else if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') {
-        // Just user closing it
-        console.log("Login user closed popup or duplicate request.");
-      } else if (e.code === 'auth/unauthorized-domain') {
-        alert(`Domain ini (${window.location.hostname}) tidak diotorisasi di Firebase Console.\n\nSilakan buka Firebase Console -> Authentication -> Settings -> Authorized Domains dan tambahkan: ${window.location.hostname}`);
+        console.log("User closed login popup.");
+      } else if (e.code === 'auth/unauthorized-domain' || (e.message && e.message.includes('unauthorized domain'))) {
+        alert(`DOMAIN TIDAK DIOTORISASI!\n\nSalin domain ini: ${window.location.hostname}\n\nLalu buka Firebase Console -> Authentication -> Settings -> Authorized Domains dan TAMBAHKAN domain tersebut.`);
+      } else if (e.code === 'auth/network-request-failed') {
+        alert('Koneksi internet bermasalah atau terhalang VPN/AdBlocker.');
       } else {
-        alert('Gagal login: ' + (e.message || 'Error tidak diketahui'));
+        alert('Gagal login: ' + (e.message || 'Coba buka aplikasi di tab baru jika masih gagal.'));
       }
     }
   };
