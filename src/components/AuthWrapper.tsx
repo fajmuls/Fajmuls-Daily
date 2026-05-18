@@ -90,8 +90,9 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
         alert('Pop-up login diblokir oleh browser. Silakan izinkan pop-up atau klik ikon "Open in new tab" di pojok kanan atas aplikasi.');
       } else if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') {
         // Just user closing it
+        console.log("Login user closed popup or duplicate request.");
       } else if (e.code === 'auth/unauthorized-domain') {
-        alert('Domain ini tidak diotorisasi. Tambahkan domain (' + window.location.hostname + ') ke "Authorized Domains" di Firebase Console Anda.');
+        alert(`Domain ini (${window.location.hostname}) tidak diotorisasi di Firebase Console.\n\nSilakan buka Firebase Console -> Authentication -> Settings -> Authorized Domains dan tambahkan: ${window.location.hostname}`);
       } else {
         alert('Gagal login: ' + (e.message || 'Error tidak diketahui'));
       }

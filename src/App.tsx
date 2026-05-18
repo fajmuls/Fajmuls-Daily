@@ -34,11 +34,13 @@ function ErrorFallback({ error, resetErrorBoundary }: any) {
 }
 
 export default function App() {
+  const basename = import.meta.env.BASE_URL?.replace(/\/$/, '') || '/';
+  
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <AuthWrapper>
         <AppProvider>
-          <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <BrowserRouter basename={basename}>
             <Layout>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
