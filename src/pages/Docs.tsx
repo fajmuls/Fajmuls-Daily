@@ -24,8 +24,7 @@ export function Docs() {
     if (!user) return;
     try {
       const q = query(
-        collection(db, "daily_docs"), 
-        where("userId", "==", user.uid),
+        collection(db, `users/${user.uid}/docs`), 
         orderBy("createdAt", "desc")
       );
       const querySnapshot = await getDocs(q);
@@ -79,7 +78,7 @@ export function Docs() {
       reader.onloadend = async () => {
         const base64String = reader.result as string;
         
-        await addFirestoreDoc(collection(db, "daily_docs"), {
+        await addFirestoreDoc(collection(db, `users/${user.uid}/docs`), {
           userId: user.uid,
           name: pendingFile.name,
           description: description,

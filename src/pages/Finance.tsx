@@ -15,9 +15,12 @@ export function Finance() {
   
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
+  const [parentCategory, setParentCategory] = useState('');
   const [note, setNote] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
+  const [showParentDropdown, setShowParentDropdown] = useState(false);
+  const [chartMode, setChartMode] = useState<'detail' | 'grouped'>('detail');
 
   // Vibrant and distinct colors for income (Bright)
   const COLORS_INCOME = [
@@ -62,6 +65,17 @@ export function Finance() {
     });
   }, [financeRecords, type]);
 
+  const parentSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    if (type === 'expense') {
+      ['Kebutuhan', 'Hiburan', 'Kesehatan', 'Tabungan'].forEach(s => set.add(s));
+    } else {
+      ['UTAMA', 'Sampingan', 'Pasif'].forEach(s => set.add(s));
+    }
+    financeRecords.filter(r => r.type === type && r.parentCategory).forEach(r => set.add(r.parentCategory!));
+    return Array.from(set);
+  }, [financeRecords, type]);
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!amount || !category) return;
@@ -70,6 +84,7 @@ export function Finance() {
       id: uuidv4(),
       amount: parseFloat(amount),
       category,
+      parentCategory: parentCategory || undefined,
       note,
       type,
       createdAt: Date.now()
@@ -77,6 +92,7 @@ export function Finance() {
 
     setAmount('');
     setCategory('');
+    setParentCategory('');
     setNote('');
     playSuccess();
   };
@@ -89,7 +105,8 @@ export function Finance() {
     const data: Record<string, number> = {};
     let total = 0;
     financeRecords.filter(r => r.type === 'income').forEach(r => {
-      data[r.category] = (data[r.category] || 0) + r.amount;
+      const key = chartMode === 'grouped' ? (r.parentCategory || 'Lainnya') : r.category;
+      data[key] = (data[key] || 0) + r.amount;
       total += r.amount;
     });
     return Object.entries(data).map(([name, value]) => ({ 
@@ -97,13 +114,14 @@ export function Finance() {
       value, 
       displayPercent: total > 0 ? (value / total * 100).toFixed(1) : 0 
     })).sort((a,b) => b.value - a.value);
-  }, [financeRecords]);
+  }, [financeRecords, chartMode]);
 
   const expenseData = useMemo(() => {
     const data: Record<string, number> = {};
     let total = 0;
     financeRecords.filter(r => r.type === 'expense').forEach(r => {
-      data[r.category] = (data[r.category] || 0) + r.amount;
+      const key = chartMode === 'grouped' ? (r.parentCategory || 'Lainnya') : r.category;
+      data[key] = (data[key] || 0) + r.amount;
       total += r.amount;
     });
     return Object.entries(data).map(([name, value]) => ({ 
@@ -111,7 +129,7 @@ export function Finance() {
       value, 
       displayPercent: total > 0 ? (value / total * 100).toFixed(1) : 0 
     })).sort((a,b) => b.value - a.value);
-  }, [financeRecords]);
+  }, [financeRecords, chartMode]);
 
   // Helper to get color for a category
   const getCategoryColor = (catName: string, catType: 'income' | 'expense') => {
@@ -232,7 +250,7 @@ export function Finance() {
               </div>
               
               {showCatDropdown && (
-                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto overflow-x-hidden p-2 grid grid-cols-2 gap-1 animate-in fade-in slide-in-from-top-2">
+                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto overflow-x-hidden p-2 grid grid-cols-2 gap-1 animate-in fade-in slide-in-from-top-2">
                     {categorySuggestions.filter(c => c.toLowerCase().includes(category.toLowerCase())).map((cat, i) => {
                       const catColor = getCategoryColor(cat, type);
                       return (
@@ -254,6 +272,41 @@ export function Finance() {
               )}
             </div>
 
+            <div className="relative">
+              <label className="block text-xs uppercase tracking-wide text-stone-500 font-bold mb-2">Grup Kategori (Opsional)</label>
+              <div className="relative">
+                 <input 
+                   type="text" 
+                   value={parentCategory} 
+                   onChange={e => { setParentCategory(e.target.value); setShowParentDropdown(true); }}
+                   onFocus={() => setShowParentDropdown(true)}
+                   className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-stone-900 pr-10" 
+                   placeholder="Cth. Kebutuhan"
+                 />
+                 <button type="button" onClick={() => setShowParentDropdown(!showParentDropdown)} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-stone-400 hover:text-stone-600">
+                    <ChevronDown className={cn("w-4 h-4 transition-transform", showParentDropdown ? "rotate-180" : "")} />
+                 </button>
+              </div>
+              
+              {showParentDropdown && (
+                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-xl shadow-lg z-10 max-h-40 overflow-y-auto p-2 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2">
+                    {parentSuggestions.filter(p => p.toLowerCase().includes(parentCategory.toLowerCase())).map((p, i) => (
+                      <button 
+                        key={i} 
+                        type="button" 
+                        onClick={() => { setParentCategory(p); setShowParentDropdown(false); playClick(); }} 
+                        className="text-left px-3 py-2 text-sm rounded-lg hover:bg-stone-100 font-medium truncate"
+                      >
+                         {p}
+                      </button>
+                    ))}
+                    {parentSuggestions.filter(p => p.toLowerCase().includes(parentCategory.toLowerCase())).length === 0 && (
+                      <div className="text-center py-2 text-xs text-stone-400 italic">Baru: "{parentCategory}"</div>
+                    )}
+                 </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-xs uppercase tracking-wide text-stone-500 font-bold mb-2">Catatan Tambahan (Opsional)</label>
               <input type="text" value={note} onChange={e => setNote(e.target.value)} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-stone-900" placeholder="Opsional" />
@@ -267,12 +320,27 @@ export function Finance() {
 
         <div className="lg:col-span-2 space-y-6">
           {financeRecords.length > 0 && (
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {incomeData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col">
-                     <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pendapatan</h3>
-                     <div className="h-72 sm:h-80 w-full min-w-0">
-                        <ResponsiveContainer width="100%" height="100%" key={`income-${incomeData.length}`}>
+             <div className="space-y-4">
+               <div className="flex justify-end gap-2 px-2">
+                  <button 
+                    onClick={() => setChartMode('detail')}
+                    className={cn("px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all", chartMode === 'detail' ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-500 hover:bg-stone-200")}
+                  >
+                    Detail
+                  </button>
+                  <button 
+                    onClick={() => setChartMode('grouped')}
+                    className={cn("px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all", chartMode === 'grouped' ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-500 hover:bg-stone-200")}
+                  >
+                    Grup
+                  </button>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {incomeData.length > 0 && (
+                    <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+                       <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pendapatan</h3>
+                       <div className="flex-1 w-full min-w-0 min-h-0">
+                          <ResponsiveContainer width="100%" height="100%" key={`income-${incomeData.length}-${chartMode}`}>
                           <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                             <Pie
                               data={incomeData}
@@ -305,10 +373,10 @@ export function Finance() {
                   </div>
                 )}
                 {expenseData.length > 0 && (
-                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col">
+                  <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
                      <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pengeluaran</h3>
-                     <div className="h-72 sm:h-80 w-full min-w-0">
-                        <ResponsiveContainer width="100%" height="100%" key={`expense-${expenseData.length}`}>
+                     <div className="flex-1 w-full min-w-0 min-h-0">
+                        <ResponsiveContainer width="100%" height="100%" key={`expense-${expenseData.length}-${chartMode}`}>
                           <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                             <Pie
                               data={expenseData}
@@ -341,7 +409,8 @@ export function Finance() {
                   </div>
                 )}
              </div>
-          )}
+           </div>
+         )}
 
           <div className="bg-paper rounded-3xl border border-stone-200 overflow-hidden shadow-sm">
             <div className="px-6 py-4 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">

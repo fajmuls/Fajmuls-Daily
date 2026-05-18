@@ -61,6 +61,7 @@ export interface FinanceRecord {
   amount: number;
   type: 'income' | 'expense';
   category: string;
+  parentCategory?: string;
   note: string;
   createdAt: number;
 }
