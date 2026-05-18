@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
 import { useAppContext } from '../../store';
-import { ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Plus } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 import confetti from 'canvas-confetti';
@@ -11,9 +14,33 @@ const FARDHU_ORDER: Fardhu[] = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya', '
 
 export function MissedPrayersView() {
   const navigate = useNavigate();
-  const { missedPrayers, togglePrayer } = useAppContext();
-  const { playClick } = useAudio();
+  const { missedPrayers, addMissedPrayer, togglePrayer } = useAppContext();
+  const { playClick, playSuccess } = useAudio();
   const [filter, setFilter] = useState<Fardhu | 'Semua'>('Semua');
+
+  // Form state
+  const [showForm, setShowForm] = useState(false);
+  const [newPrayerType, setNewPrayerType] = useState<Fardhu>('Subuh');
+  const [newDate, setNewDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDate) return;
+
+    // Formatting date to readable Id format like "14 Okt 2023"
+    const dateObj = new Date(newDate);
+    const formattedDate = format(dateObj, 'd MMMM yyyy', { locale: localeId });
+
+    addMissedPrayer({
+      id: uuidv4(),
+      prayer: newPrayerType,
+      dateInfo: formattedDate,
+      completed: false
+    });
+
+    playSuccess();
+    setShowForm(false);
+  };
 
   const filteredPrayers = missedPrayers.filter(p => filter === 'Semua' || p.prayer === filter);
 
@@ -36,12 +63,46 @@ export function MissedPrayersView() {
   const totalCount = missedPrayers.length;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
         <button onClick={() => { playClick(); navigate('/notes'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
+        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
+          <Plus className="w-5 h-5" /> Tambah Qadha
+        </button>
       </div>
+
+      {showForm && (
+        <form onSubmit={handleAddSubmit} className="bg-paper rounded-3xl p-6 border border-indigo-200 shadow-sm space-y-4 animate-in slide-in-from-top-4">
+           <h3 className="font-bold text-lg text-indigo-900">Catat Hutang Shalat</h3>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                 <label className="block text-xs uppercase tracking-wider text-stone-500 font-bold mb-1">Shalat Fardhu</label>
+                 <select 
+                   value={newPrayerType} 
+                   onChange={e => setNewPrayerType(e.target.value as Fardhu)} 
+                   className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                 >
+                   {FARDHU_ORDER.map(f => <option key={f} value={f}>{f}</option>)}
+                 </select>
+              </div>
+              <div>
+                 <label className="block text-xs uppercase tracking-wider text-stone-500 font-bold mb-1">Pilih Tanggal</label>
+                 <input 
+                   type="date" 
+                   required
+                   value={newDate} 
+                   onChange={e => setNewDate(e.target.value)} 
+                   className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                 />
+              </div>
+           </div>
+           <button type="submit" className="w-full bg-indigo-600 text-white rounded-xl py-4 font-bold mt-2 hover:bg-indigo-700 transition-all">
+             Simpan Ke Daftar
+           </button>
+        </form>
+      )}
 
       <div className="bg-paper rounded-3xl p-8 border border-stone-200 shadow-sm space-y-8">
         <div>
@@ -79,36 +140,41 @@ export function MissedPrayersView() {
         </div>
 
         <div className="space-y-8">
-          {grouped.map(group => (
-            <div key={group.fardhu}>
-              <h2 className="text-xl font-bold text-stone-900 mb-4 flex items-center gap-2">
-                <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
-                {group.fardhu}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {group.items.map(prayer => (
-                  <button
-                    key={prayer.id}
-                    onClick={() => handleToggle(prayer.id, prayer.completed)}
-                    className={cn(
-                      "text-left flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
-                      prayer.completed 
-                        ? "bg-stone-50 border-stone-200 text-stone-400 opacity-70" 
-                        : "bg-paper border-indigo-100 text-stone-900 hover:border-indigo-300 shadow-sm"
-                    )}
-                  >
-                    <div>
-                      <div className={cn("font-bold", prayer.completed && "line-through")}>
-                        {prayer.dateInfo}
+          {grouped.length === 0 ? (
+             <div className="text-center py-10 text-stone-400 font-medium">Belum ada daftar qadha. Alhamdulillah!</div>
+          ) : (
+            grouped.map(group => (
+              <div key={group.fardhu}>
+                <h2 className="text-xl font-bold text-stone-900 mb-4 flex items-center gap-2">
+                  <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
+                  {group.fardhu}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {group.items.map(prayer => (
+                    <button
+                      key={prayer.id}
+                      onClick={() => handleToggle(prayer.id, prayer.completed)}
+                      className={cn(
+                        "text-left flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
+                        prayer.completed 
+                          ? "bg-stone-50 border-stone-200 text-stone-400 opacity-70" 
+                          : "bg-paper border-indigo-100 text-stone-900 hover:border-indigo-300 shadow-sm"
+                      )}
+                    >
+                      <div>
+                        {/* the prayer log should list the prayer first, then the date */}
+                        <div className="text-xs text-stone-500 mb-1">{prayer.prayer}</div>
+                        <div className={cn("font-bold text-lg", prayer.completed && "line-through")}>
+                          {prayer.dateInfo}
+                        </div>
                       </div>
-                      <div className="text-xs text-stone-500 mt-1">{prayer.prayer}</div>
-                    </div>
-                    {prayer.completed ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Circle className="w-6 h-6 text-stone-300" />}
-                  </button>
-                ))}
+                      {prayer.completed ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Circle className="w-6 h-6 text-stone-300" />}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
       </div>

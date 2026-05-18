@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Sparkles, Save, Trash2, Heart } from 'lucide-react';
+import { Sparkles, Save, Trash2, Heart, CheckSquare, Square } from 'lucide-react';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { id as localeId } from 'date-fns/locale';
 import { cn } from '../lib/utils';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAudio } from '../hooks/useAudio';
@@ -17,7 +17,8 @@ export function Special() {
   const [specials, setSpecials] = useLocalStorage<SpecialNote[]>('fajmuls-specials', []);
   const [dayTitle, setDayTitle] = useState('');
   const [content, setContent] = useState('');
-  const { playSuccess, playError } = useAudio();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { playSuccess, playError, playClick } = useAudio();
 
   const handleSave = () => {
     if (!dayTitle) return;
@@ -34,13 +35,45 @@ export function Special() {
     playSuccess();
   };
 
-  const handleDelete = (id: string) => {
-    setSpecials(prev => prev.filter(s => s.id !== id));
-    playError();
+  const handleDeleteSingle = (id: string) => {
+    const code = window.prompt("Masukkan kode verifikasi untuk menghapus catatan eksklusif ini: (Hint: FAJMUL)");
+    if (code === "FAJMUL") {
+      setSpecials(prev => prev.filter(s => s.id !== id));
+      setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+      playError();
+    } else if (code !== null) {
+      alert("Kode verifikasi salah!");
+    }
+  };
+
+  const handleDeleteMultiple = () => {
+    if (selectedIds.size === 0) return;
+    const code = window.prompt(`Kamu akan menghapus ${selectedIds.size} catatan. Masukkan kode verifikasi: (Hint: FAJMUL)`);
+    if (code === "FAJMUL") {
+      setSpecials(prev => prev.filter(s => !selectedIds.has(s.id)));
+      setSelectedIds(new Set());
+      playError();
+    } else if (code !== null) {
+      alert("Kode verifikasi salah!");
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    playClick();
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-500 pb-20 md:pb-0">
       <header>
         <h1 className="font-serif text-5xl font-bold text-stone-900 mb-2 flex items-center gap-4">
           Menu Spesial <Sparkles className="w-10 h-10 text-accent-orange" />
@@ -79,7 +112,17 @@ export function Special() {
       </div>
 
       <div className="space-y-6">
-        <h2 className="font-bold uppercase tracking-wider text-sm text-stone-500">Momen Tersimpan</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold uppercase tracking-wider text-sm text-stone-500">Momen Tersimpan</h2>
+          {selectedIds.size > 0 && (
+            <button 
+              onClick={handleDeleteMultiple}
+              className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-600 rounded-xl font-bold hover:bg-red-200 transition-colors text-sm"
+            >
+              <Trash2 className="w-4 h-4" /> Hapus Terpilih ({selectedIds.size})
+            </button>
+          )}
+        </div>
         
         {specials.length === 0 ? (
           <div className="p-12 border-2 border-dashed border-stone-200 rounded-3xl text-center text-stone-400">
@@ -87,20 +130,45 @@ export function Special() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {specials.map(special => (
-              <div key={special.id} className="bg-paper p-8 rounded-3xl border border-stone-200 shadow-sm relative group">
-                <p className="text-xs font-mono text-stone-400 mb-4">{format(special.createdAt, 'EEEE, d MMMM yyyy HH:mm', { locale: id })}</p>
-                <h3 className="font-serif text-2xl font-bold mb-3">{special.dayTitle}</h3>
-                <p className="text-stone-600 leading-relaxed font-medium">{special.content}</p>
-                
-                <button
-                  onClick={() => handleDelete(special.id)}
-                  className="absolute top-6 right-6 p-2 text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 rounded-full"
+            {specials.map(special => {
+              const isSelected = selectedIds.has(special.id);
+              return (
+                <div 
+                  key={special.id} 
+                  className={cn(
+                    "bg-paper p-8 rounded-3xl border shadow-sm relative group transition-colors cursor-pointer",
+                    isSelected ? "border-red-300 ring-2 ring-red-100 bg-red-50/20" : "border-stone-200"
+                  )}
+                  onClick={(e) => {
+                     // Prevent toggle when clicking the delete button
+                     if ((e.target as HTMLElement).closest('button')) return;
+                     toggleSelect(special.id);
+                  }}
                 >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            ))}
+                  <div className="flex justify-between items-start mb-4">
+                    <p className="text-xs font-mono text-stone-400">{format(special.createdAt, 'EEEE, d MMMM yyyy HH:mm', { locale: localeId })}</p>
+                    <div className={cn("text-stone-300", isSelected && "text-red-500")}>
+                      {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                    </div>
+                  </div>
+                  <h3 className="font-serif text-2xl font-bold mb-3">{special.dayTitle}</h3>
+                  <p className="text-stone-600 leading-relaxed font-medium line-clamp-4">{special.content}</p>
+                  
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteSingle(special.id);
+                    }}
+                    className={cn(
+                      "absolute bottom-6 right-6 p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all",
+                      isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

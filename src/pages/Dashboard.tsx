@@ -1,12 +1,41 @@
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
-import { ArrowRight, Wallet, NotebookPen } from 'lucide-react';
+import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export function Dashboard() {
   const { notes, financeRecords } = useAppContext();
+  const [docsCount, setDocsCount] = useState(0);
+  const [specialsCount, setSpecialsCount] = useState(0);
   
+  useEffect(() => {
+    // get firestore docs count
+    const fetchDocsCount = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "daily_docs"));
+        setDocsCount(querySnapshot.size);
+      } catch (e) {
+        console.error("Error fetching docs count", e);
+      }
+    };
+    fetchDocsCount();
+
+    // get specials count from localstorage
+    const localSpecials = localStorage.getItem('fajmuls-specials');
+    if (localSpecials) {
+      try {
+        const parsed = JSON.parse(localSpecials);
+        setSpecialsCount(Array.isArray(parsed) ? parsed.length : 0);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
   const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
 
   const totalFinance = financeRecords.reduce((acc, curr) => {
@@ -60,6 +89,44 @@ export function Dashboard() {
               {notes.length} <span className="text-xl text-stone-400 font-sans font-normal">entri</span>
             </h2>
             <p className="text-stone-500 mt-2">Pribadi, IG, Olahraga & Qadha</p>
+          </div>
+        </div>
+
+        {/* Docs Snippet */}
+        <div className="bg-paper p-6 rounded-3xl shadow-sm border border-stone-200">
+          <div className="flex justify-between items-start mb-12">
+            <div className="p-3 bg-stone-100 rounded-2xl">
+              <FileImage className="w-6 h-6 text-stone-700" />
+            </div>
+            <Link to="/docs" className="p-2 hover:bg-stone-50 rounded-full transition-colors">
+              <ArrowRight className="w-5 h-5 text-stone-400 hover:text-stone-900" />
+            </Link>
+          </div>
+          <div>
+            <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Dokumentasi</p>
+            <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
+              {docsCount} <span className="text-xl text-stone-400 font-sans font-normal">foto</span>
+            </h2>
+            <p className="text-stone-500 mt-2">Tersimpan di Cloud</p>
+          </div>
+        </div>
+
+        {/* Special Snippet */}
+        <div className="bg-paper p-6 rounded-3xl shadow-sm border border-stone-200">
+          <div className="flex justify-between items-start mb-12">
+            <div className="p-3 bg-red-50 text-red-500 rounded-2xl">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <Link to="/special" className="p-2 hover:bg-stone-50 rounded-full transition-colors">
+              <ArrowRight className="w-5 h-5 text-stone-400 hover:text-stone-900" />
+            </Link>
+          </div>
+          <div>
+            <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Spesial</p>
+            <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
+              {specialsCount} <span className="text-xl text-stone-400 font-sans font-normal">item</span>
+            </h2>
+            <p className="text-stone-500 mt-2">Catatan sangat penting & rahasia</p>
           </div>
         </div>
       </section>

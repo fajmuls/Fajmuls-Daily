@@ -31,6 +31,7 @@ export interface PersonalNote extends BaseNote {
   email: string;
   accountNumber: string;
   extraNotes: string;
+  customFields?: { key: string; value: string }[];
 }
 
 export interface WorkoutNote extends BaseNote {

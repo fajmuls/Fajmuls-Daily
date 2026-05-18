@@ -5,12 +5,19 @@ import { useAudio } from '../hooks/useAudio';
 import { useVoiceCommand } from '../hooks/useVoiceCommand';
 import { cn } from '../lib/utils';
 
-const navItems = [
+const desktopNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
   { icon: NotebookPen, label: 'Catatan Harian', path: '/notes' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
   { icon: Star, label: 'Spesial', path: '/special' },
+];
+
+const mobileNavItems = [
+  { icon: LayoutDashboard, label: 'Beranda', path: '/' },
+  { icon: Wallet, label: 'Keuangan', path: '/finance' },
+  { icon: NotebookPen, label: 'Catatan Harian', path: '/notes' },
+  { icon: FileText, label: 'Dokumen', path: '/docs' },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -48,7 +55,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
         
         <nav className="flex-1 px-4 space-y-2">
-          {navItems.map((item) => (
+          {desktopNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -98,19 +105,29 @@ export function Layout({ children }: { children: ReactNode }) {
           {children}
         </div>
 
+        {/* Floating Special Button for Mobile */}
+        <div className="md:hidden fixed bottom-24 right-4 z-50">
+          <button
+            onClick={() => { playClick(); navigate('/special'); }}
+            className="w-14 h-14 bg-gradient-to-br from-accent-orange to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+          >
+            <Star className="w-6 h-6" />
+          </button>
+        </div>
+
         {/* Mobile Bottom Bar */}
-        <nav className="md:hidden flex items-center justify-around bg-paper border-t border-stone-200 fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom,16px)] pt-2">
-          {navItems.map((item) => (
+        <nav className="md:hidden flex items-center justify-around bg-paper border-t border-stone-200 fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom,16px)] pt-2 px-2">
+          {mobileNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               onClick={playClick}
               className={({ isActive }) => cn(
-                "flex flex-col items-center gap-1 p-3 flex-1",
-                isActive ? "text-stone-900 font-bold" : "text-stone-500"
+                "flex flex-col items-center gap-1 p-2 flex-1 rounded-xl transition-colors",
+                isActive ? "text-stone-900 font-bold bg-stone-100" : "text-stone-500 hover:bg-stone-50"
               )}
             >
-              <item.icon className="w-5 h-5" />
+              <item.icon className={cn("w-5 h-5", isActive ? "scale-110" : "")} />
               <span className="text-[10px] uppercase tracking-wider">{item.label}</span>
             </NavLink>
           ))}

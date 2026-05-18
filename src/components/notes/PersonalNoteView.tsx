@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppContext } from '../../store';
 import { PersonalNote } from '../../types';
-import { ArrowLeft, Trash2, Save, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, ShieldCheck, Plus, X } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 
 export function PersonalNoteView() {
@@ -24,6 +24,8 @@ export function PersonalNoteView() {
     extraNotes: ''
   });
 
+  const [customFields, setCustomFields] = useState<{key: string, value: string}[]>([]);
+
   useEffect(() => {
     if (existingNote) {
       setFormData({
@@ -35,6 +37,9 @@ export function PersonalNoteView() {
         accountNumber: existingNote.accountNumber,
         extraNotes: existingNote.extraNotes
       });
+      if (existingNote.customFields) {
+        setCustomFields(existingNote.customFields);
+      }
     }
   }, [existingNote]);
 
@@ -42,11 +47,26 @@ export function PersonalNoteView() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleCustomFieldChange = (index: number, field: 'key' | 'value', val: string) => {
+    const newFields = [...customFields];
+    newFields[index][field] = val;
+    setCustomFields(newFields);
+  };
+
+  const addCustomField = () => {
+    setCustomFields(prev => [...prev, { key: '', value: '' }]);
+  };
+
+  const removeCustomField = (index: number) => {
+    setCustomFields(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSave = () => {
     if (existingNote) {
       updateNote({
         ...existingNote,
-        ...formData
+        ...formData,
+        customFields: customFields.filter(f => f.key.trim() !== '' || f.value.trim() !== '')
       });
     } else {
       addNote({
@@ -54,7 +74,8 @@ export function PersonalNoteView() {
         type: 'personal',
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        ...formData
+        ...formData,
+        customFields: customFields.filter(f => f.key.trim() !== '' || f.value.trim() !== '')
       });
     }
     playSuccess();
@@ -70,7 +91,7 @@ export function PersonalNoteView() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300">
+    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
         <button onClick={() => { playClick(); navigate('/notes'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
           <ArrowLeft className="w-5 h-5" />
@@ -123,6 +144,33 @@ export function PersonalNoteView() {
             <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Kode Pos</label>
             <input type="text" name="postalCode" value={formData.postalCode} onChange={handleChange} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
           </div>
+
+          {/* Kolom Kustom */}
+          {customFields.map((field, idx) => (
+            <div key={idx} className="md:col-span-2 flex items-start gap-4">
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Label Info</label>
+                    <input type="text" value={field.key} onChange={e => handleCustomFieldChange(idx, 'key', e.target.value)} placeholder="Contoh: Nama Pasangan" className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
+                 </div>
+                 <div className="md:col-span-2">
+                    <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Nilai / Isi</label>
+                    <input type="text" value={field.value} onChange={e => handleCustomFieldChange(idx, 'value', e.target.value)} placeholder="Isi informasi..." className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
+                 </div>
+              </div>
+              <button type="button" onClick={() => removeCustomField(idx)} className="mt-8 p-3 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-xl flex-shrink-0">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          ))}
+
+          <div className="md:col-span-2 pb-4">
+            <button type="button" onClick={addCustomField} className="flex items-center gap-2 text-emerald-600 font-bold hover:text-emerald-700 transition-colors bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm">
+               <Plus className="w-4 h-4" />
+               Tambah Info Kustom
+            </button>
+          </div>
+
           <div className="md:col-span-2">
             <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Catatan Lainnya</label>
             <textarea name="extraNotes" value={formData.extraNotes} onChange={handleChange} rows={4} className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" />
