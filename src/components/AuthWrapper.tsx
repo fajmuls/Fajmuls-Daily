@@ -64,8 +64,10 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
   const handleLoginGoogle = async () => {
     try {
       setLoading(true);
+      console.log("Starting Google Login...");
       const result = await signInWithPopup(auth, authProvider);
       const loggedInUser = result.user;
+      console.log("Login successful:", loggedInUser.uid);
       
       // Explicitly update profile on login too
       const userRef = doc(db, 'users', loggedInUser.uid);
@@ -78,6 +80,7 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
       };
       await setDoc(userRef, profileData, { merge: true });
       setProfile(prev => ({ ...prev, ...profileData }));
+      setLoading(false);
       
     } catch (e: any) {
       console.error("Login Error Details:", e);
@@ -88,15 +91,21 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
       } else if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') {
         // Just user closing it
       } else if (e.code === 'auth/unauthorized-domain') {
-        alert('Domain ini tidak diotorisasi. Tambahkan domain aplikasi ini ke "Authorized Domains" di Firebase Console Anda.');
+        alert('Domain ini tidak diotorisasi. Tambahkan domain (' + window.location.hostname + ') ke "Authorized Domains" di Firebase Console Anda.');
       } else {
         alert('Gagal login: ' + (e.message || 'Error tidak diketahui'));
       }
     }
   };
 
-  const handleLogout = () => {
-    signOut(auth);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      setProfile(null);
+    } catch (e) {
+      console.error("Logout error", e);
+    }
   };
 
   if (loading) {

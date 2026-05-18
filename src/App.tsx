@@ -38,7 +38,7 @@ export default function App() {
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <AuthWrapper>
         <AppProvider>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Layout>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
