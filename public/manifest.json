@@ -1,0 +1,21 @@
+{
+  "name": "Fajmul Daily",
+  "short_name": "Fajmul",
+  "description": "Aplikasi catatan harian Fajmul.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFCF7",
+  "theme_color": "#F37021",
+  "icons": [
+    {
+      "src": "https://files.catbox.moe/c1ebqe.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://files.catbox.moe/c1ebqe.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

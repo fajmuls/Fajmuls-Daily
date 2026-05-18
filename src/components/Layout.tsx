@@ -100,9 +100,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <h1 className="font-serif text-2xl font-bold tracking-tight text-accent-orange">Fajmul Daily</h1>
         </div>
         
-        <UserProfile />
-        
-        <nav className="flex-1 px-4 space-y-2">
+        <nav className="flex-1 px-4 space-y-2 pt-4">
           {desktopNavItems.map((item) => (
             <NavLink
               key={item.path}
@@ -145,14 +143,19 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+        {/* Desktop Top Bar */}
+        <header className="hidden md:flex items-center justify-end px-8 py-4 bg-paper/50 backdrop-blur-md border-b border-stone-100 shrink-0">
+           <UserProfile compact />
+        </header>
+
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 bg-paper border-b border-stone-200">
           <div className="flex items-center gap-3">
              <img src="https://files.catbox.moe/c1ebqe.png" alt="Logo" className="w-8 h-8 object-contain" />
-             <UserProfile compact />
              <h1 className="font-serif text-lg font-bold text-accent-orange">Fajmul Daily</h1>
           </div>
           <div className="flex items-center gap-2">
+             <UserProfile compact />
              <button 
                onClick={toggleVoice}
                className={cn("p-2 rounded-full", isListening ? "bg-accent-orange text-white animate-pulse" : "bg-stone-100 text-stone-600")}

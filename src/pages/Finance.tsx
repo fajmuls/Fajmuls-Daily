@@ -268,27 +268,26 @@ export function Finance() {
         <div className="lg:col-span-2 space-y-6">
           {financeRecords.length > 0 && (
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {incomeData.length > 0 && (
+                {incomeData.length > 0 && (
                   <div className="bg-paper rounded-3xl border border-stone-200 p-6 shadow-sm overflow-hidden flex flex-col">
                      <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pendapatan</h3>
                      <div className="h-72 sm:h-80 w-full min-w-0">
                         <ResponsiveContainer width="100%" height="100%" key={`income-${incomeData.length}`}>
-                          <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
+                          <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                             <Pie
                               data={incomeData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={45}
-                              outerRadius={85}
-                              paddingAngle={4}
+                              innerRadius="43%"
+                              outerRadius="95%"
+                              paddingAngle={3}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
-                              animationBegin={0}
-                              animationDuration={800}
+                              isAnimationActive={false}
                             >
                               {incomeData.map((_entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} stroke="rgba(255,255,255,0.3)" strokeWidth={2} />
+                                <Cell key={`cell-${index}`} fill={COLORS_INCOME[index % COLORS_INCOME.length]} stroke="rgba(255,255,255,0.3)" strokeWidth={1} />
                               ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
@@ -310,22 +309,21 @@ export function Finance() {
                      <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">Distribusi Pengeluaran</h3>
                      <div className="h-72 sm:h-80 w-full min-w-0">
                         <ResponsiveContainer width="100%" height="100%" key={`expense-${expenseData.length}`}>
-                          <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
+                          <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                             <Pie
                               data={expenseData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={45}
-                              outerRadius={85}
-                              paddingAngle={4}
+                              innerRadius="43%"
+                              outerRadius="95%"
+                              paddingAngle={3}
                               dataKey="value"
                               labelLine={false}
                               label={renderCustomizedLabel}
-                              animationBegin={0}
-                              animationDuration={800}
+                              isAnimationActive={false}
                             >
                               {expenseData.map((_entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} stroke="rgba(255,255,255,0.15)" strokeWidth={2} />
+                                <Cell key={`cell-${index}`} fill={COLORS_EXPENSE[index % COLORS_EXPENSE.length]} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
                               ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />

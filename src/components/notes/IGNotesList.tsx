@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, User, Plus, CheckSquare, Trash2, Edit3, Check, X } from 'lucide-react';
+import { ArrowLeft, User, Plus, CheckSquare, Trash2, Edit3, Check, X, Clock } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
@@ -160,9 +162,15 @@ export function IGNotesList() {
                                 playClick(); navigate(`/notes/ig/${note.id}`);
                              }
                            }} 
-                           className={cn("w-full text-left py-4 hover:bg-stone-50 transition-colors", selectionMode ? "pl-12 pr-6" : "px-6")}
+                           className={cn("w-full text-left py-4 hover:brightness-95 transition-all bg-[#F4F4F4]", selectionMode ? "pl-12 pr-6" : "px-6")}
                          >
-                            <p className="font-medium text-stone-700 truncate">{note.content || 'Catatan Kosong'}</p>
+                            <div className="flex justify-between items-start gap-4">
+                               <p className="font-medium text-stone-700 truncate flex-1">{note.content || 'Catatan Kosong'}</p>
+                               <span className="text-[10px] text-stone-400 font-bold shrink-0 uppercase tracking-tighter flex items-center gap-1 mt-1">
+                                  <Clock className="w-3 h-3" />
+                                  {format(note.createdAt, 'd MMM yyyy', { locale: localeId })}
+                               </span>
+                            </div>
                             {note.songTitle && <p className="text-xs text-stone-400 mt-1 truncate">🎵 {note.songTitle}</p>}
                          </button>
                       </li>

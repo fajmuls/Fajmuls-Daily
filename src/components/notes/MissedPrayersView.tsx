@@ -189,7 +189,7 @@ export function MissedPrayersView() {
                             e.stopPropagation(); 
                             showConfirm("Hapus qadha ini?", () => { deleteMissedPrayer(prayer.id); playError(); });
                          }}
-                         className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-stone-200 rounded-full flex items-center justify-center text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 z-10"
+                         className="absolute -top-2 -right-2 w-8 h-8 bg-white border border-stone-200 rounded-full flex items-center justify-center text-red-500 shadow-sm md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-50 z-10"
                       >
                          <Trash2 className="w-4 h-4" />
                       </button>

@@ -229,9 +229,9 @@ export function IGNoteView() {
               rows={6}
             />
           </div>
-          <div className="flex justify-between text-xs text-stone-400 font-mono mt-2 px-2">
-            <span>Dibuat: {existingNote ? format(existingNote.createdAt, 'd MMM yyyy HH:mm', { locale: idLocale }) : 'Belum Disimpan'}</span>
-            <span>Diedit: {existingNote ? format(existingNote.updatedAt, 'd MMM yyyy HH:mm', { locale: idLocale }) : 'Belum Disimpan'}</span>
+          <div className="flex flex-col md:flex-row justify-between gap-2 text-[10px] text-stone-400 font-bold uppercase tracking-widest mt-4 pt-4 border-t border-stone-100 px-2 opacity-60">
+            <span className="flex items-center gap-1">📅 Dibuat: {existingNote ? format(existingNote.createdAt, 'd MMM yyyy, HH:mm', { locale: idLocale }) : 'Baru'}</span>
+            <span className="flex items-center gap-1">⏱️ Diedit: {existingNote ? format(existingNote.updatedAt, 'd MMM yyyy, HH:mm', { locale: idLocale }) : 'Baru'}</span>
           </div>
         </div>
       </div>

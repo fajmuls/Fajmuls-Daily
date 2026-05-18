@@ -9,7 +9,7 @@ import { db } from '../lib/firebase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export function Dashboard() {
-  const { notes, financeRecords, docs, specials, loading } = useAppContext();
+  const { notes, financeRecords, docs, specials, missedPrayers, loading } = useAppContext();
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
 
   const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
@@ -17,6 +17,14 @@ export function Dashboard() {
   const totalFinance = financeRecords.reduce((acc, curr) => {
     return curr.type === 'income' ? acc + curr.amount : acc - curr.amount;
   }, 0);
+
+  const noteCounts = {
+    normal: notes.filter(n => n.type === 'normal').length,
+    ig: notes.filter(n => n.type === 'ig').length,
+    personal: notes.filter(n => n.type === 'personal').length,
+    workout: notes.filter(n => n.type === 'workout').length,
+    qadha: missedPrayers.length
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -69,7 +77,7 @@ export function Dashboard() {
 
         {/* Notes Snippet */}
         <div className="bg-paper p-6 rounded-3xl shadow-sm border border-stone-200">
-          <div className="flex justify-between items-start mb-12">
+          <div className="flex justify-between items-start mb-8">
             <div className="p-3 bg-stone-100 rounded-2xl">
               <NotebookPen className="w-6 h-6 text-stone-700" />
             </div>
@@ -77,12 +85,36 @@ export function Dashboard() {
               <ArrowRight className="w-5 h-5 text-stone-400 hover:text-stone-900" />
             </Link>
           </div>
-          <div>
-            <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Total Catatan</p>
-            <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
-              {notes.length} <span className="text-xl text-stone-400 font-sans font-normal">entri</span>
-            </h2>
-            <p className="text-stone-500 mt-2">Pribadi, IG, Olahraga & Qadha</p>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-1">Status Catatan</p>
+              <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
+                {notes.length + missedPrayers.length} <span className="text-xl text-stone-400 font-sans font-normal">total</span>
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-y-3 gap-x-4 pt-2 border-t border-stone-100">
+              <div className="flex flex-col bg-stone-50 p-2 rounded-xl">
+                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Biasa</span>
+                <span className="text-lg font-bold text-stone-800">{noteCounts.normal}</span>
+              </div>
+              <div className="flex flex-col bg-stone-50 p-2 rounded-xl">
+                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Instagram</span>
+                <span className="text-lg font-bold text-stone-800">{noteCounts.ig}</span>
+              </div>
+              <div className="flex flex-col bg-stone-50 p-2 rounded-xl">
+                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Pribadi</span>
+                <span className="text-lg font-bold text-stone-800">{noteCounts.personal}</span>
+              </div>
+              <div className="flex flex-col bg-stone-50 p-2 rounded-xl">
+                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Olahraga</span>
+                <span className="text-lg font-bold text-stone-800">{noteCounts.workout}</span>
+              </div>
+              <div className="flex flex-col col-span-2 pt-2 border-t border-stone-50">
+                <span className="text-[10px] font-bold text-accent-orange uppercase tracking-tighter">Qadha Shalat (Belum Lunas)</span>
+                <span className="text-xl font-bold text-stone-900">{noteCounts.qadha}</span>
+              </div>
+            </div>
           </div>
         </div>
 
