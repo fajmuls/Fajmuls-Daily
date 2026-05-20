@@ -278,7 +278,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await setDoc(doc(db, `users/${user.uid}/prayers`, id), { 
         ...prayer, 
         completed: !prayer.completed, 
-        completedAt: !prayer.completed ? Date.now() : undefined 
+        completedAt: !prayer.completed ? Date.now() : null 
       });
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/prayers/${id}`); }
   };

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../../store';
 import { format } from 'date-fns';
@@ -5,6 +6,7 @@ import { id } from 'date-fns/locale';
 import { FileText, Moon, Instagram, Lock, Dumbbell } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { NoteType } from '../../types';
+import { WorkspaceSyncModal } from '../WorkspaceSyncModal';
 
 const NOTE_TYPES: { type: NoteType | 'prayer-list'; icon: any; label: string; color: string; bg: string; link: string }[] = [
   { type: 'normal', icon: FileText, label: 'Biasa', color: 'text-stone-700', bg: 'bg-stone-100', link: '/notes/normal-list' },
@@ -16,6 +18,7 @@ const NOTE_TYPES: { type: NoteType | 'prayer-list'; icon: any; label: string; co
 
 export function NotesList() {
   const { notes } = useAppContext();
+  const [showSync, setShowSync] = useState(false);
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
@@ -23,6 +26,11 @@ export function NotesList() {
         <div>
           <h1 className="font-serif text-5xl font-bold text-stone-900">Catatan Harian</h1>
           <p className="text-stone-500 text-lg mt-2 font-medium">Pilih templat untuk ngebikin catatan baru.</p>
+        </div>
+        <div>
+           <button onClick={() => setShowSync(true)} className="p-3 px-6 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-all font-bold text-sm tracking-tight whitespace-nowrap">
+             Ekspor ke Google Tasks
+           </button>
         </div>
       </header>
 
@@ -82,6 +90,7 @@ export function NotesList() {
           </div>
         )}
       </div>
+      <WorkspaceSyncModal isOpen={showSync} onClose={() => setShowSync(false)} contextType="notes" />
     </div>
   );
 }

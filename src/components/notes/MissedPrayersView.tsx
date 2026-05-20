@@ -175,13 +175,14 @@ export function MissedPrayersView() {
                             : "bg-paper border-indigo-100 text-stone-900 hover:border-indigo-300 shadow-sm"
                         )}
                       >
-                        <div>
-                          <div className="text-xs text-stone-500 mb-1">{prayer.prayer}</div>
-                          <div className={cn("font-bold text-lg", prayer.completed && "line-through")}>
+                        <div className="min-w-0 pr-2">
+                          <div className={cn("font-bold text-base leading-tight break-words", prayer.completed && "line-through")}>
                             {prayer.dateInfo}
                           </div>
                         </div>
-                        {prayer.completed ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Circle className="w-6 h-6 text-stone-300" />}
+                        <div className="shrink-0">
+                          {prayer.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Circle className="w-5 h-5 text-stone-300" />}
+                        </div>
                       </button>
                       
                       <button 
