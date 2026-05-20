@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, User, Plus, CheckSquare, Trash2, Edit3, Check, X, Clock } from 'lucide-react';
+import { Search, SortAsc, SortDesc, ArrowLeft, User, Plus, CheckSquare, Trash2, Edit3, Check, X, Clock } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
@@ -17,10 +17,25 @@ export function IGNotesList() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingOwner, setEditingOwner] = useState<string | null>(null);
   const [newOwnerName, setNewOwnerName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
 
   // Filter only IG notes and group by owner
-  const igNotes = notes.filter(n => n.type === 'ig') as IGNote[];
-  const groupedByOwner = igNotes.reduce((acc, note) => {
+  const filteredNotes = notes.filter(n => {
+    if (n.type !== 'ig') return false;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const ig = n as IGNote;
+    return ig.owner.toLowerCase().includes(q) || 
+           ig.songTitle.toLowerCase().includes(q) || 
+           ig.content.toLowerCase().includes(q);
+  }) as IGNote[];
+
+  const sortedNotes = [...filteredNotes].sort((a, b) => {
+    return sortBy === 'newest' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt;
+  });
+
+  const groupedByOwner = sortedNotes.reduce((acc, note) => {
     if (!acc[note.owner]) acc[note.owner] = [];
     acc[note.owner].push(note);
     return acc;
@@ -86,7 +101,7 @@ export function IGNotesList() {
              </>
           ) : (
              <>
-               {igNotes.length > 0 && (
+               {filteredNotes.length > 0 && (
                  <button onClick={() => setSelectionMode(true)} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-all">
                    <CheckSquare className="w-5 h-5" />
                  </button>
@@ -99,9 +114,31 @@ export function IGNotesList() {
         </div>
       </div>
 
-      <header className="py-4">
-         <h1 className="text-4xl font-serif font-bold text-stone-900 mb-2 border-b border-stone-200 pb-4">Daftar Akun IG</h1>
-         <p className="text-stone-500 font-medium">Kumpulan catatan Instagram yang dikelompokkan per akun.</p>
+      <header className="py-4 space-y-4">
+         <div>
+            <h1 className="text-4xl font-serif font-bold text-stone-900 mb-2 border-b border-stone-200 pb-4">Daftar Akun IG</h1>
+            <p className="text-stone-500 font-medium">Kumpulan catatan Instagram yang dikelompokkan per akun.</p>
+         </div>
+
+         <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+               <input 
+                 type="text"
+                 placeholder="Cari lagu, pemilik, atau isi..."
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 className="w-full bg-paper border border-stone-200 rounded-2xl pl-11 pr-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm text-sm"
+               />
+            </div>
+            <button 
+              onClick={() => { setSortBy(sortBy === 'newest' ? 'oldest' : 'newest'); playClick(); }}
+              className="flex items-center gap-2 px-6 py-3 bg-paper border border-stone-200 rounded-2xl font-bold text-stone-700 hover:bg-stone-50 transition-all text-sm shrink-0"
+            >
+               {sortBy === 'newest' ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
+               {sortBy === 'newest' ? 'Terbaru' : 'Terlama'}
+            </button>
+         </div>
       </header>
 
       {Object.keys(groupedByOwner).length === 0 ? (
@@ -162,17 +199,27 @@ export function IGNotesList() {
                                 playClick(); navigate(`/notes/ig/${note.id}`);
                              }
                            }} 
-                           className={cn("w-full text-left py-4 hover:brightness-95 transition-all")}
+                           className={cn("w-full text-left p-6 hover:brightness-95 transition-all")}
                            style={{ backgroundColor: note.backgroundColor || '#F4F4F4' }}
                          >
-                            <div className="flex justify-between items-start gap-4">
-                               <p className={cn("font-medium truncate flex-1", (note.backgroundColor && note.backgroundColor !== '#F4F4F4') ? "text-white drop-shadow-sm" : "text-stone-700")}>{note.content || 'Catatan Kosong'}</p>
-                               <span className={cn("text-[10px] font-bold shrink-0 uppercase tracking-tighter flex items-center gap-1 mt-1", (note.backgroundColor && note.backgroundColor !== '#F4F4F4') ? "text-white/80" : "text-stone-400")}>
-                                  <Clock className="w-3 h-3" />
-                                  {format(note.createdAt, 'd MMM yyyy', { locale: localeId })}
-                               </span>
+                            <div className="flex flex-col gap-3">
+                               {note.songTitle && (
+                                  <div className="flex items-center gap-2">
+                                     <span className={cn("text-base font-bold truncate flex-1", (note.backgroundColor && note.backgroundColor !== '#F4F4F4') ? "text-white" : "text-stone-900")}>
+                                        🎵 {note.songTitle}
+                                     </span>
+                                  </div>
+                               )}
+                               <p className={cn("text-lg font-bold leading-tight break-words", (note.backgroundColor && note.backgroundColor !== '#F4F4F4') ? "text-white drop-shadow-sm" : "text-stone-700")}>
+                                  {note.content || '-'}
+                               </p>
+                               <div className="flex justify-end pt-1 border-t border-black/5">
+                                  <span className={cn("text-[10px] font-bold shrink-0 uppercase tracking-tighter flex items-center gap-1", (note.backgroundColor && note.backgroundColor !== '#F4F4F4') ? "text-white/80" : "text-stone-400")}>
+                                     <Clock className="w-3 h-3" />
+                                     {format(note.createdAt, 'd MMM yyyy', { locale: localeId })}
+                                  </span>
+                               </div>
                             </div>
-                            {note.songTitle && <p className={cn("text-xs mt-1 truncate", (note.backgroundColor && note.backgroundColor !== '#F4F4F4') ? "text-white/60" : "text-stone-400")}>🎵 {note.songTitle}</p>}
                          </button>
                       </li>
                    ))}

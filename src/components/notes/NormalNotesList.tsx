@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { NormalNote } from '../../types';
-import { ArrowLeft, Plus, FileText, CheckSquare, Trash2 } from 'lucide-react';
+import { Search, SortAsc, SortDesc, ArrowLeft, Plus, FileText, CheckSquare, Trash2 } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
@@ -15,8 +15,20 @@ export function NormalNotesList() {
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
 
-  const normalNotes = notes.filter(n => n.type === 'normal') as NormalNote[];
+  const filteredNotes = notes.filter(n => {
+    if (n.type !== 'normal') return false;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const note = n as NormalNote;
+    return note.title.toLowerCase().includes(q) || note.content.toLowerCase().includes(q);
+  }) as NormalNote[];
+
+  const sortedNotes = [...filteredNotes].sort((a, b) => {
+    return sortBy === 'newest' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt;
+  });
 
   const handleCreate = () => {
     playClick();
@@ -56,7 +68,7 @@ export function NormalNotesList() {
              </>
           ) : (
              <>
-               {normalNotes.length > 0 && (
+               {filteredNotes.length > 0 && (
                  <button onClick={() => setSelectionMode(true)} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-all">
                    <CheckSquare className="w-5 h-5" />
                  </button>
@@ -69,18 +81,40 @@ export function NormalNotesList() {
         </div>
       </div>
 
-      <header className="py-4">
-         <h1 className="text-4xl font-serif font-bold text-stone-900 mb-2 border-b border-stone-200 pb-4">Catatan Biasa</h1>
-         <p className="text-stone-500 font-medium">Kumpulan tulisan dan catatan harian.</p>
+      <header className="py-4 space-y-4">
+         <div>
+            <h1 className="text-4xl font-serif font-bold text-stone-900 mb-2 border-b border-stone-200 pb-4">Catatan Biasa</h1>
+            <p className="text-stone-500 font-medium">Kumpulan tulisan dan catatan harian.</p>
+         </div>
+
+         <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+               <input 
+                 type="text"
+                 placeholder="Cari judul atau isi..."
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 className="w-full bg-paper border border-stone-200 rounded-2xl pl-11 pr-4 py-3 outline-none focus:ring-2 focus:ring-stone-900 shadow-sm text-sm"
+               />
+            </div>
+            <button 
+              onClick={() => { setSortBy(sortBy === 'newest' ? 'oldest' : 'newest'); playClick(); }}
+              className="flex items-center gap-2 px-6 py-3 bg-paper border border-stone-200 rounded-2xl font-bold text-stone-700 hover:bg-stone-50 transition-all text-sm shrink-0"
+            >
+               {sortBy === 'newest' ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
+               {sortBy === 'newest' ? 'Terbaru' : 'Terlama'}
+            </button>
+         </div>
       </header>
 
-      {normalNotes.length === 0 ? (
+      {sortedNotes.length === 0 ? (
          <div className="p-12 text-center text-stone-400 bg-stone-50 rounded-3xl border border-stone-200 border-dashed">
-             Belum ada catatan biasa.
+             {searchQuery ? 'Tidak ada catatan yang cocok.' : 'Belum ada catatan biasa.'}
          </div>
       ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-           {normalNotes.map(note => (
+           {sortedNotes.map(note => (
              <button 
                key={note.id} 
                onClick={(e) => {

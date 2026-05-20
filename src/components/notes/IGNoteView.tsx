@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, Trash2, Save, History, Palette, ChevronDown, User, Edit3 } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, History, Palette, ChevronDown, User, Edit3, Calendar } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
@@ -32,9 +32,11 @@ export function IGNoteView() {
   const [songTitle, setSongTitle] = useState('');
   const [content, setContent] = useState('');
   const [bgColor, setBgColor] = useState('#171412');
+  const [customDate, setCustomDate] = useState(Date.now());
   const [showHistory, setShowHistory] = useState(false);
   const [showColors, setShowColors] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const ownerTemplates = useMemo(() => {
     const owners = new Set<string>();
@@ -52,6 +54,7 @@ export function IGNoteView() {
       setSongTitle(existingNote.songTitle);
       setContent(existingNote.content);
       setBgColor(existingNote.backgroundColor || '#171412');
+      setCustomDate(existingNote.createdAt);
     }
   }, [existingNote]);
 
@@ -74,6 +77,8 @@ export function IGNoteView() {
         songTitle,
         content,
         backgroundColor: bgColor,
+        createdAt: customDate,
+        updatedAt: Date.now(),
         history: existingNote.content !== content ? [existingNote.content, ...existingNote.history] : existingNote.history
       });
     } else {
@@ -81,7 +86,7 @@ export function IGNoteView() {
         id: uuidv4(),
         type: 'ig',
         owner,
-        createdAt: Date.now(),
+        createdAt: customDate,
         updatedAt: Date.now(),
         songTitle,
         content,
@@ -230,7 +235,22 @@ export function IGNoteView() {
             />
           </div>
           <div className="flex flex-col md:flex-row justify-between gap-2 text-[10px] text-stone-400 font-bold uppercase tracking-widest mt-4 pt-4 border-t border-stone-100 px-2 opacity-60">
-            <span className="flex items-center gap-1">📅 Dibuat: {existingNote ? format(existingNote.createdAt, 'd MMM yyyy, HH:mm', { locale: idLocale }) : 'Baru'}</span>
+            <button onClick={() => setShowDatePicker(!showDatePicker)} className="flex items-center gap-1 hover:text-stone-600 transition-colors">
+              <Calendar className="w-3 h-3" />
+              Dibuat: {format(customDate, 'd MMM yyyy, HH:mm', { locale: idLocale })}
+            </button>
+            {showDatePicker && (
+               <div className="absolute bottom-20 left-6 bg-white border border-stone-200 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95">
+                  <p className="text-[9px] mb-3">Pilih Waktu (Timestamp)</p>
+                  <input 
+                    type="datetime-local" 
+                    value={new Date(customDate).toISOString().slice(0, 16)}
+                    onChange={(e) => setCustomDate(new Date(e.target.value).getTime())}
+                    className="bg-stone-100 border border-stone-200 rounded-lg px-3 py-2 text-stone-900 font-medium font-sans text-xs outline-none focus:ring-2 focus:ring-stone-900"
+                  />
+                  <button onClick={() => setShowDatePicker(false)} className="w-full mt-3 py-2 bg-stone-900 text-white rounded-lg text-[10px]">Tutup</button>
+               </div>
+            )}
             <span className="flex items-center gap-1">⏱️ Diedit: {existingNote ? format(existingNote.updatedAt, 'd MMM yyyy, HH:mm', { locale: idLocale }) : 'Baru'}</span>
           </div>
         </div>

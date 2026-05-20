@@ -55,6 +55,7 @@ export function Finance() {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [showNewCatDropdown, setShowNewCatDropdown] = useState(false);
   const [showNewGroupDropdown, setShowNewGroupDropdown] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string>("All");
 
   // Group mappings management
   const [newGroupCategory, setNewGroupCategory] = useState("");
@@ -65,6 +66,11 @@ export function Finance() {
     financeRecords.forEach((r) => set.add(r.category));
     return Array.from(set).sort();
   }, [financeRecords]);
+
+  const filteredRecords = useMemo(() => {
+    if (filterCategory === "All") return financeRecords;
+    return financeRecords.filter((r) => r.category === filterCategory);
+  }, [financeRecords, filterCategory]);
 
   const existingGroups = useMemo(() => {
     const groups = new Set<string>([
@@ -581,8 +587,8 @@ export function Finance() {
                     <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">
                       Distribusi Pendapatan
                     </h3>
-                    <div className="flex-1 w-full relative">
-                      <ResponsiveContainer width="99%" height="99%">
+                    <div className="flex-1 w-full min-h-0 relative">
+                      <ResponsiveContainer width="99%" height={320}>
                         <PieChart
                           margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
                         >
@@ -636,8 +642,8 @@ export function Finance() {
                     <h3 className="font-bold text-stone-900 mb-2 text-center shrink-0">
                       Distribusi Pengeluaran
                     </h3>
-                    <div className="flex-1 w-full relative">
-                      <ResponsiveContainer width="99%" height="99%">
+                    <div className="flex-1 w-full min-h-0 relative">
+                      <ResponsiveContainer width="99%" height={320}>
                         <PieChart
                           margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
                         >
@@ -691,25 +697,54 @@ export function Finance() {
           )}
 
           <div className="bg-paper rounded-3xl border border-stone-200 overflow-hidden shadow-sm">
-            <div className="px-6 py-4 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
+            <div className="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-stone-50/50">
               <h3 className="font-bold text-stone-900">Transaksi Terakhir</h3>
+              <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+                <button
+                  onClick={() => setFilterCategory("All")}
+                  className={cn(
+                    "whitespace-nowrap px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-tight transition-all",
+                    filterCategory === "All"
+                      ? "bg-stone-900 text-white"
+                      : "bg-white border border-stone-200 text-stone-500",
+                  )}
+                >
+                  Semua
+                </button>
+                {allCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setFilterCategory(cat)}
+                    className={cn(
+                      "whitespace-nowrap px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-tight transition-all",
+                      filterCategory === cat
+                        ? "bg-stone-900 text-white"
+                        : "bg-white border border-stone-200 text-stone-500",
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
-            {financeRecords.length === 0 ? (
+            {filteredRecords.length === 0 ? (
               <div className="p-12 text-center text-stone-400">
-                Belum ada catatan yang ditemukan. Mulai tambahkan data!
+                {filterCategory === "All"
+                  ? "Belum ada catatan yang ditemukan."
+                  : `Tidak ada transaksi kategori "${filterCategory}".`}
               </div>
             ) : chartMode === "grouped" ? (
               <div className="divide-y divide-stone-100">
                 {Array.from(
                   new Set(
-                    financeRecords.map(
+                    filteredRecords.map(
                       (r) => financeMappings[r.category] || "Lainnya",
                     ),
                   ),
                 )
                   .sort()
                   .map((groupName) => {
-                    const groupRecords = financeRecords.filter(
+                    const groupRecords = filteredRecords.filter(
                       (r) =>
                         (financeMappings[r.category] || "Lainnya") ===
                         groupName,
@@ -793,7 +828,7 @@ export function Finance() {
               </div>
             ) : (
               <ul className="divide-y divide-stone-100">
-                {financeRecords.map((record) => (
+                {filteredRecords.map((record) => (
                   <li
                     key={record.id}
                     className="p-6 flex items-center justify-between hover:bg-stone-50 transition-colors group relative overflow-hidden"
