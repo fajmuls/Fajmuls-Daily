@@ -216,7 +216,7 @@ export function IGNotesList() {
                                <div className="flex justify-end pt-1 border-t border-black/5">
                                   <span className={cn("text-[10px] font-bold shrink-0 uppercase tracking-tighter flex items-center gap-1", (note.backgroundColor && note.backgroundColor !== '#F4F4F4') ? "text-white/80" : "text-stone-400")}>
                                      <Clock className="w-3 h-3" />
-                                     {format(note.createdAt, 'd MMM yyyy', { locale: localeId })}
+                                     {format(note.createdAt, 'd MMM yyyy - HH:mm', { locale: localeId })}
                                   </span>
                                </div>
                             </div>

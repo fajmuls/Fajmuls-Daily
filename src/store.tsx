@@ -23,18 +23,24 @@ interface AppState {
   loading: boolean;
   confirmDialog: { isOpen: boolean; message: string; onConfirm: () => void } | null;
   alertMessage: string | null;
-  financeMappings: { [key: string]: string };
+  financeMappings: { [key: string]: string[] };
+  financeCategoryPrefs: { [key: string]: { iconName: string; color: string } };
   hideAmounts: boolean;
   setHideAmounts: (hide: boolean) => void;
   setAlert: (message: string | null) => void;
   showConfirm: (message: string, onConfirm: () => void) => void;
   closeConfirm: () => void;
-  updateFinanceMapping: (category: string, group: string) => void;
-  deleteFinanceMapping: (category: string) => void;
+  updateFinanceMapping: (group: string, categories: string[]) => void;
+  deleteFinanceMapping: (group: string) => void;
+  updateCategoryPref: (category: string, pref: { iconName: string; color: string }) => void;
+  user: import('firebase/auth').User | null;
   addNote: (note: Note) => void;
   updateNote: (note: Note) => void;
   deleteNote: (id: string) => void;
   addFinanceRecord: (record: FinanceRecord) => void;
+  updateFinanceRecord: (record: FinanceRecord) => void;
+  updateFinanceCategoryBulk: (oldCategory: string, newCategory: string) => void;
+  addFinanceRecordsBulk: (records: FinanceRecord[]) => void;
   deleteFinanceRecord: (id: string) => void;
   togglePrayer: (id: string) => void;
   addMissedPrayer: (prayer: MissedPrayer) => void;
@@ -57,7 +63,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; message: string; onConfirm: () => void } | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  const [financeMappings, setFinanceMappings] = useState<{ [key: string]: string }>({});
+  const [financeMappings, setFinanceMappings] = useState<{ [key: string]: string[] }>({});
+  const [financeCategoryPrefs, setFinanceCategoryPrefs] = useState<{ [key: string]: { iconName: string; color: string } }>({});
   const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('fajmus-hide-amounts') === 'true');
 
   const setAlert = (message: string | null) => setAlertMessage(message);
@@ -80,7 +87,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     prayers: false,
     docs: false,
     specials: false,
-    mappings: false
+    mappings: false,
+    categoryPrefs: false
   });
 
   // Sync with Firestore
@@ -125,10 +133,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const unsubMappings = onSnapshot(doc(db, `${userPath}/settings/financeMappings`), (snapshot) => {
       if (snapshot.exists()) {
-        setFinanceMappings(snapshot.data() as { [key: string]: string });
+        const data = snapshot.data();
+        // Convert old structure if exists, or just use as is if already new
+        const mappedData: { [key: string]: string[] } = {};
+        Object.entries(data).forEach(([k, v]) => {
+          if (Array.isArray(v)) {
+            mappedData[k] = v;
+          } else {
+             // Legacy migration: { category: group } -> { group: [category] }
+             const group = v as string;
+             if (!mappedData[group]) mappedData[group] = [];
+             if (!mappedData[group].includes(k)) mappedData[group].push(k);
+          }
+        });
+        setFinanceMappings(mappedData);
       }
       setInitialLoaded(prev => ({ ...prev, mappings: true }));
     }, (err) => handleFirestoreError(err, OperationType.GET, `${userPath}/settings/financeMappings`));
+
+    const unsubCategoryPrefs = onSnapshot(doc(db, `${userPath}/settings/financeCategoryPrefs`), (snapshot) => {
+      if (snapshot.exists()) {
+        setFinanceCategoryPrefs(snapshot.data() as any);
+      }
+      setInitialLoaded(prev => ({ ...prev, categoryPrefs: true }));
+    }, (err) => handleFirestoreError(err, OperationType.GET, `${userPath}/settings/financeCategoryPrefs`));
 
     return () => {
       unsubNotes();
@@ -137,12 +165,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubDocs();
       unsubSpecials();
       unsubMappings();
+      unsubCategoryPrefs();
     };
   }, [user]);
 
   // Update loading state when all initial data is loaded
   useEffect(() => {
-    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials && initialLoaded.mappings) {
+    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials && initialLoaded.mappings && initialLoaded.categoryPrefs) {
       setLoading(false);
     }
   }, [initialLoaded]);
@@ -237,15 +266,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addNote = async (note: Note) => {
     if (!user) return;
+    const safeNote = Object.fromEntries(Object.entries(note).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/notes`, note.id), note);
+      await setDoc(doc(db, `users/${user.uid}/notes`, note.id), safeNote);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/notes/${note.id}`); }
   };
   
   const updateNote = async (updatedNote: Note) => {
     if (!user) return;
+    const safeNote = Object.fromEntries(Object.entries({ ...updatedNote, updatedAt: Date.now() }).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/notes`, updatedNote.id), { ...updatedNote, updatedAt: Date.now() });
+      await setDoc(doc(db, `users/${user.uid}/notes`, updatedNote.id), safeNote);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/notes/${updatedNote.id}`); }
   };
 
@@ -258,9 +289,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const addFinanceRecord = async (record: FinanceRecord) => {
     if (!user) return;
+    const safeRecord = Object.fromEntries(Object.entries(record).filter(([_, v]) => v !== undefined));
+    try {
+      await setDoc(doc(db, `users/${user.uid}/finance`, record.id), safeRecord);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/finance/${record.id}`); }
+  };
+
+  const addFinanceRecordsBulk = async (records: FinanceRecord[]) => {
+    if (!user) return;
+    const batch = writeBatch(db);
+    records.forEach(r => {
+      const safeRecord = Object.fromEntries(Object.entries(r).filter(([_, v]) => v !== undefined));
+      batch.set(doc(db, `users/${user.uid}/finance`, r.id), safeRecord);
+    });
+    try {
+      await batch.commit();
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/finance`); }
+  };
+
+  const updateFinanceRecord = async (record: FinanceRecord) => {
+    if (!user) return;
     try {
       await setDoc(doc(db, `users/${user.uid}/finance`, record.id), record);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/finance/${record.id}`); }
+  };
+
+  const updateFinanceCategoryBulk = async (oldCategory: string, newCategory: string) => {
+    if (!user) return;
+    const batch = writeBatch(db);
+    const recordsToUpdate = financeRecords.filter(r => r.category === oldCategory);
+    if (recordsToUpdate.length === 0) return;
+    
+    recordsToUpdate.forEach(r => {
+      const pDoc = doc(db, `users/${user.uid}/finance`, r.id);
+      batch.set(pDoc, { ...r, category: newCategory }, { merge: true });
+    });
+    try {
+      await batch.commit();
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/finance/bulkUpdate`); }
   };
 
   const deleteFinanceRecord = async (id: string) => {
@@ -285,8 +351,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addMissedPrayer = async (prayer: MissedPrayer) => {
     if (!user) return;
+    const safePrayer = Object.fromEntries(Object.entries(prayer).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/prayers`, prayer.id), prayer);
+      await setDoc(doc(db, `users/${user.uid}/prayers`, prayer.id), safePrayer);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/prayers/${prayer.id}`); }
   };
 
@@ -310,15 +377,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addDoc = async (docObj: DailyDoc) => {
     if (!user) return;
+    const safeDoc = Object.fromEntries(Object.entries(docObj).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/docs`, docObj.id), docObj);
+      await setDoc(doc(db, `users/${user.uid}/docs`, docObj.id), safeDoc);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/docs/${docObj.id}`); }
   };
 
   const addSpecial = async (special: SpecialNote) => {
     if (!user) return;
+    const safeSpecial = Object.fromEntries(Object.entries(special).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/specials`, special.id), special);
+      await setDoc(doc(db, `users/${user.uid}/specials`, special.id), safeSpecial);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/specials/${special.id}`); }
   };
 
@@ -329,28 +398,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/specials/${id}`); }
   };
 
-  const updateFinanceMapping = async (category: string, group: string) => {
+  const updateFinanceMapping = async (group: string, categories: string[]) => {
     if (!user) return;
-    const newMappings = { ...financeMappings, [category]: group };
+    const newMappings = { ...financeMappings, [group]: categories };
     try {
       await setDoc(doc(db, `users/${user.uid}/settings`, 'financeMappings'), newMappings);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/settings/financeMappings`); }
   };
 
-  const deleteFinanceMapping = async (category: string) => {
+  const deleteFinanceMapping = async (group: string) => {
     if (!user) return;
     const newMappings = { ...financeMappings };
-    delete newMappings[category];
+    delete newMappings[group];
     try {
       await setDoc(doc(db, `users/${user.uid}/settings`, 'financeMappings'), newMappings);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/settings/financeMappings`); }
+  };
+
+  const updateCategoryPref = async (category: string, pref: { iconName: string; color: string }) => {
+    if (!user) return;
+    const newPrefs = { ...financeCategoryPrefs, [category]: pref };
+    try {
+      await setDoc(doc(db, `users/${user.uid}/settings`, 'financeCategoryPrefs'), newPrefs);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/settings/financeCategoryPrefs`); }
   };
 
   return (
     <AppContext.Provider value={{
-      notes, financeRecords, missedPrayers, docs, specials, loading, 
-      confirmDialog, alertMessage, financeMappings, hideAmounts, setHideAmounts: toggleHideAmounts, setAlert, showConfirm, closeConfirm, updateFinanceMapping, deleteFinanceMapping,
-      addNote, updateNote, deleteNote, addFinanceRecord, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial
+      user, notes, financeRecords, missedPrayers, docs, specials, loading, 
+      confirmDialog, alertMessage, financeMappings, financeCategoryPrefs, hideAmounts, setHideAmounts: toggleHideAmounts, setAlert, showConfirm, closeConfirm, updateFinanceMapping, deleteFinanceMapping, updateCategoryPref,
+      addNote, updateNote, deleteNote, addFinanceRecord, updateFinanceRecord, updateFinanceCategoryBulk, addFinanceRecordsBulk, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial
     }}>
       {children}
     </AppContext.Provider>

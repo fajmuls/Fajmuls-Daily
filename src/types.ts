@@ -64,10 +64,11 @@ export interface FinanceRecord {
   parentCategory?: string; // This will now be derived from mappings
   note: string;
   createdAt: number;
+  iconName?: string;
 }
 
 export interface FinanceMapping {
-  [category: string]: string; // categoryName -> groupName
+  [groupName: string]: string[]; 
 }
 
 export type Fardhu = 'Subuh' | 'Dzuhur' | 'Ashar' | 'Maghrib' | 'Isya' | 'Belum Diketahui';

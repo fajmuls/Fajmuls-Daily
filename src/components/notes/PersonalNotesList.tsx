@@ -7,10 +7,11 @@ import { useAudio } from '../../hooks/useAudio';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
+import { decryptText } from '../../lib/crypto';
 
 export function PersonalNotesList() {
   const navigate = useNavigate();
-  const { notes, deleteNote, showConfirm } = useAppContext();
+  const { user, notes, deleteNote, showConfirm } = useAppContext();
   const { playClick, playSuccess, playError } = useAudio();
 
   const [selectionMode, setSelectionMode] = useState(false);
@@ -111,8 +112,12 @@ export function PersonalNotesList() {
                 </div>
               )}
 
-              <h3 className="font-bold text-xl text-stone-900 mb-2 relative z-10">{note.personName || 'Tanpa Nama'}</h3>
-              <p className="text-sm text-stone-500 font-mono mb-4">NIK: {note.nik || '-'}</p>
+              <h3 className="font-bold text-xl text-stone-900 mb-2 relative z-10">{user ? decryptText(note.personName || '', user.uid) : '' || 'Tanpa Nama'}</h3>
+              <p className="text-sm text-stone-500 font-mono mb-4 truncate text-ellipsis">
+                 {note.customFields && note.customFields.length > 0 && user
+                    ? `${decryptText(note.customFields[0].key, user.uid)}: ${decryptText(note.customFields[0].value, user.uid) || '-'}` 
+                    : `Data Belum Lengkap`}
+              </p>
               <div className="flex justify-between items-center text-xs text-stone-400 relative z-10">
                 <span>Diperbarui</span>
                 <span className="font-mono">{format(note.updatedAt, 'd MMM yyyy', { locale: idLocale })}</span>

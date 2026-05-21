@@ -28,7 +28,7 @@ export function IGNoteView() {
 
   const existingNote = notes.find(n => n.id === id && n.type === 'ig') as IGNote | undefined;
 
-  const [owner, setOwner] = useState('Xiaomi');
+  const [owner, setOwner] = useState('');
   const [songTitle, setSongTitle] = useState('');
   const [content, setContent] = useState('');
   const [bgColor, setBgColor] = useState('#171412');
@@ -40,8 +40,6 @@ export function IGNoteView() {
 
   const ownerTemplates = useMemo(() => {
     const owners = new Set<string>();
-    owners.add('Xiaomi');
-    owners.add('Mrachman');
     notes.filter(n => n.type === 'ig').forEach(n => {
        if ((n as IGNote).owner) owners.add((n as IGNote).owner);
     });
@@ -50,7 +48,7 @@ export function IGNoteView() {
 
   useEffect(() => {
     if (existingNote) {
-      setOwner(existingNote.owner || 'Xiaomi');
+      setOwner(existingNote.owner || '');
       setSongTitle(existingNote.songTitle);
       setContent(existingNote.content);
       setBgColor(existingNote.backgroundColor || '#171412');

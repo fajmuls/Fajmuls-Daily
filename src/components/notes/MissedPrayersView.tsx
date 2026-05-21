@@ -17,6 +17,7 @@ export function MissedPrayersView() {
   const { missedPrayers, addMissedPrayer, togglePrayer, deleteMissedPrayer, deleteAllMissedPrayers, showConfirm } = useAppContext();
   const { playClick, playSuccess, playError } = useAudio();
   const [filter, setFilter] = useState<Fardhu | 'Semua'>('Semua');
+  const [dateFilter, setDateFilter] = useState('');
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -27,10 +28,12 @@ export function MissedPrayersView() {
     e.preventDefault();
     if (!newDate) return;
 
-    // Formatting date to readable Id format like "14 Okt 2023"
     const dateObj = new Date(newDate);
-    const formattedDate = format(dateObj, 'd MMMM yyyy', { locale: localeId });
-
+    // Kita simpan yyyy-MM-dd di dateInfo agar mudah difilter secara algoritmik jika diperlukan, atau
+    // tetap gunakan "d MMMM yyyy" tetapi kita filter berdasarkan text include. 
+    // Untuk amannya, kita buat data yang disimpan standard date string, dan render secara lokal.
+    const formattedDate = format(dateObj, 'yyyy-MM-dd'); // Ubah local format ke standar agar mudah di parse saat filter by Date
+    
     addMissedPrayer({
       id: uuidv4(),
       prayer: newPrayerType,
@@ -49,7 +52,11 @@ export function MissedPrayersView() {
     });
   };
 
-  const filteredPrayers = missedPrayers.filter(p => filter === 'Semua' || p.prayer === filter);
+  const filteredPrayers = missedPrayers.filter(p => {
+     let matchType = filter === 'Semua' || p.prayer === filter;
+     let matchDate = dateFilter ? p.dateInfo.includes(dateFilter) : true;
+     return matchType && matchDate;
+  });
 
   // Group by Fardhu
   const grouped = FARDHU_ORDER.reduce((acc, fardhu) => {
@@ -135,22 +142,42 @@ export function MissedPrayersView() {
           </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          <button
-            onClick={() => setFilter('Semua')}
-            className={cn("px-4 py-2 rounded-full font-bold whitespace-nowrap text-sm transition-colors", filter === 'Semua' ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200")}
-          >
-            Semua
-          </button>
-          {FARDHU_ORDER.map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={cn("px-4 py-2 rounded-full font-bold whitespace-nowrap text-sm transition-colors", filter === f ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100")}
-            >
-              {f}
-            </button>
-          ))}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between pb-4 border-b border-stone-100">
+           <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
+             <button
+               onClick={() => setFilter('Semua')}
+               className={cn("px-4 py-2 rounded-full font-bold whitespace-nowrap text-sm transition-colors", filter === 'Semua' ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200")}
+             >
+               Semua
+             </button>
+             {FARDHU_ORDER.map(f => (
+               <button
+                 key={f}
+                 onClick={() => setFilter(f)}
+                 className={cn("px-4 py-2 rounded-full font-bold whitespace-nowrap text-sm transition-colors", filter === f ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100")}
+               >
+                 {f}
+               </button>
+             ))}
+           </div>
+           
+           <div className="w-full md:w-auto relative shrink-0">
+             <input
+               type="date"
+               value={dateFilter}
+               onChange={(e) => setDateFilter(e.target.value)}
+               className="w-full md:w-[180px] bg-stone-50 border border-stone-200 text-stone-600 font-bold rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+               title="Filter berdasarkan tanggal"
+             />
+             {dateFilter && (
+                <button 
+                  onClick={() => setDateFilter('')} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                >
+                  <Plus className="w-4 h-4 rotate-45" />
+                </button>
+             )}
+           </div>
         </div>
 
         <div className="space-y-8">

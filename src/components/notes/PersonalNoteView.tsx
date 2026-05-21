@@ -6,11 +6,12 @@ import { PersonalNote } from '../../types';
 import { ArrowLeft, Trash2, Save, ShieldCheck, Plus, X, Copy, ClipboardPaste } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
+import { encryptText, decryptText } from '../../lib/crypto';
 
 export function PersonalNoteView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { notes, addNote, updateNote, deleteNote, showConfirm, setAlert } = useAppContext();
+  const { user, notes, addNote, updateNote, deleteNote, showConfirm, setAlert } = useAppContext();
   const { playSuccess, playClick, playError } = useAudio();
 
   const existingNote = notes.find(n => n.id === id && n.type === 'personal') as PersonalNote | undefined;
@@ -23,29 +24,34 @@ export function PersonalNoteView() {
   const [customFields, setCustomFields] = useState<{key: string, value: string}[]>([]);
 
   useEffect(() => {
-    if (existingNote) {
+    if (existingNote && user) {
       setFormData({
-        personName: existingNote.personName || '',
-        extraNotes: existingNote.extraNotes || ''
+        personName: decryptText(existingNote.personName || '', user.uid),
+        extraNotes: decryptText(existingNote.extraNotes || '', user.uid)
       });
       if (existingNote.customFields) {
-        setCustomFields(existingNote.customFields);
+        setCustomFields(
+          existingNote.customFields.map(f => ({
+            key: decryptText(f.key, user.uid),
+            value: decryptText(f.value, user.uid)
+          }))
+        );
       } else {
          // Migration/Default: if it's an old note with explicit fields, move them to customFields
          const legacyFields = [
-            { key: 'NIK', value: (existingNote as any).nik },
-            { key: 'SSN/NISN', value: (existingNote as any).ssn },
-            { key: 'Email', value: (existingNote as any).email },
-            { key: 'No. Rekening', value: (existingNote as any).accountNumber },
-            { key: 'Alamat', value: (existingNote as any).address },
-            { key: 'Kode Pos', value: (existingNote as any).postalCode }
+            { key: 'NIK', value: decryptText((existingNote as any).nik || '', user.uid) },
+            { key: 'SSN/NISN', value: decryptText((existingNote as any).ssn || '', user.uid) },
+            { key: 'Email', value: decryptText((existingNote as any).email || '', user.uid) },
+            { key: 'No. Rekening', value: decryptText((existingNote as any).accountNumber || '', user.uid) },
+            { key: 'Alamat', value: decryptText((existingNote as any).address || '', user.uid) },
+            { key: 'Kode Pos', value: decryptText((existingNote as any).postalCode || '', user.uid) }
          ].filter(f => f.value);
          setCustomFields(legacyFields.length > 0 ? legacyFields : [{ key: 'NIK 1', value: '' }]);
       }
-    } else {
+    } else if (!existingNote) {
        setCustomFields([{ key: 'NIK 1', value: '' }]);
     }
-  }, [existingNote]);
+  }, [existingNote, user]);
 
   const handleCopy = () => {
     const text = `Profil: ${formData.personName}\n` + 
@@ -88,14 +94,23 @@ export function PersonalNoteView() {
   };
 
   const handleSave = () => {
+    if (!user) {
+      setAlert("Autentikasi gagal, tidak dapat menyimpan data!");
+      return;
+    }
+    const filteredFields = customFields.filter(f => f.key.trim() !== '' || f.value.trim() !== '');
+
     const dataToSave = {
         id: existingNote?.id || uuidv4(),
         type: 'personal' as const,
         createdAt: existingNote?.createdAt || Date.now(),
         updatedAt: Date.now(),
-        personName: formData.personName,
-        extraNotes: formData.extraNotes,
-        customFields: customFields.filter(f => f.key.trim() !== '' || f.value.trim() !== ''),
+        personName: encryptText(formData.personName, user.uid),
+        extraNotes: encryptText(formData.extraNotes, user.uid),
+        customFields: filteredFields.map(f => ({
+          key: encryptText(f.key, user.uid),
+          value: encryptText(f.value, user.uid)
+        })),
         // Keep legacy fields empty or as placeholders so types don't break if they are mandatory
         nik: '', ssn: '', postalCode: '', address: '', email: '', accountNumber: '', notes: []
     };
@@ -190,15 +205,27 @@ export function PersonalNoteView() {
                        />
                        <span className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black uppercase text-stone-400">Label</span>
                     </div>
-                    <div className="md:col-span-2 relative">
+                    <div className="md:col-span-2 relative flex bg-white border border-stone-200 rounded-xl focus-within:ring-2 focus-within:ring-emerald-500">
                        <input 
                          type="text" 
                          value={field.value} 
                          onChange={e => handleCustomFieldChange(idx, 'value', e.target.value)} 
                          placeholder="Nilai Informasi" 
-                         className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-stone-900" 
+                         className="w-full bg-transparent px-4 py-2 outline-none font-mono text-stone-900" 
                        />
-                       <span className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black uppercase text-stone-400">Value</span>
+                       <button 
+                         type="button"
+                         onClick={() => {
+                            navigator.clipboard.writeText(field.value);
+                            playSuccess();
+                            setAlert(`Berhasil menyalin ${field.key}!`);
+                         }}
+                         className="px-3 text-stone-400 hover:text-stone-900 transition-colors flex flex-shrink-0 items-center justify-center bg-transparent"
+                         title={`Salin ${field.key}`}
+                       >
+                          <Copy className="w-4 h-4" />
+                       </button>
+                       <span className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black uppercase text-stone-400 z-10">Value</span>
                     </div>
                  </div>
                  <button type="button" onClick={() => removeCustomField(idx)} className="p-2 text-stone-300 hover:text-red-500 transition-colors">
