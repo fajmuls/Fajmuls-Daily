@@ -9,6 +9,7 @@ import { PersonalNoteView } from '../components/notes/PersonalNoteView';
 import { PersonalNotesList } from '../components/notes/PersonalNotesList';
 import { WorkoutNoteView } from '../components/notes/WorkoutNoteView';
 import { WorkoutNotesList } from '../components/notes/WorkoutNotesList';
+import { DailyGoalsView } from '../components/notes/DailyGoalsView';
 
 export function Notes() {
   return (
@@ -23,6 +24,7 @@ export function Notes() {
       <Route path="/personal/:id?" element={<PersonalNoteView />} />
       <Route path="/workout-list" element={<WorkoutNotesList />} />
       <Route path="/workout/:id?" element={<WorkoutNoteView />} />
+      <Route path="/daily-goals" element={<DailyGoalsView />} />
     </Routes>
   );
 }

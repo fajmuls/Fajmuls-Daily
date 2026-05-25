@@ -2,30 +2,30 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F2F1ED; /* Soft Pearl */
-  --paper: #ffffff;
-  --text-main: #161616; /* Obsidian Black */
-  --border-main: #161616;
-  --border-subtle: #dbdad4;
+  --background: #f8fafc;     /* Off-White / Light Slate Grey (Abu-abu bersih) */
+  --paper: #ffffff;          /* Putih bersih */
+  --text-main: #1e293b;      /* Slate-850 (Abu tua maskulin) */
+  --border-main: #0f172a;    /* Biru Dongker Sangat Tua (Deep Navy Border) */
+  --border-subtle: #e2e8f0;  /* Cool Slate Glass Border (Slate-200) */
   --card-bg: #ffffff; 
-  --shadow-color: #161616;
+  --shadow-color: #0f172a;   /* Biru Dongker (Navy) shadow */
   /* Palette */
-  --accent-crimson: #710014;
-  --accent-sand: #B38F6F;
-  --text-inverse: #F2F1ED;
+  --accent-crimson: #14b8a6; /* Biru Toska (Turquoise / Teal premium) */
+  --accent-sand: #1e40af;    /* Biru Dongker (Navy Blue) */
+  --text-inverse: #ffffff;
 }
 
 .dark {
-  --background: #161616; /* Obsidian Black */
-  --paper: #202020;
-  --text-main: #F2F1ED; /* Soft Pearl */
-  --border-main: #B38F6F; /* Warm Sand */
-  --border-subtle: #404040;
-  --card-bg: #202020; 
-  --shadow-color: #B38F6F;
-  --accent-crimson: #710014;
-  --accent-sand: #B38F6F;
-  --text-inverse: #161616;
+  --background: #0b1329;     /* Deep Midnight Navy Dongker */
+  --paper: #1c2541;          /* Abu tua slate/navy */
+  --text-main: #f1f5f9;      /* Putih abu soft */
+  --border-main: #14b8a6;    /* Biru toska border */
+  --border-subtle: #334155;  /* Slate border */
+  --card-bg: #1c2541; 
+  --shadow-color: #14b8a6;   /* Biru toska brutal shadow */
+  --accent-crimson: #14b8a6; /* Biru toska */
+  --accent-sand: #2563eb;    /* Light Navy */
+  --text-inverse: #0b1329;
 }
 
 @theme {

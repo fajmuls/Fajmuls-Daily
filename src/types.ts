@@ -1,4 +1,4 @@
-export type NoteType = 'normal' | 'ig' | 'personal' | 'workout';
+export type NoteType = 'normal' | 'ig' | 'personal' | 'workout' | 'daily-goal';
 
 export interface BaseNote {
   id: string;
@@ -54,7 +54,20 @@ export interface WorkoutNote extends BaseNote {
   details?: WorkoutDetail[];
 }
 
-export type Note = NormalNote | IGNote | PersonalNote | WorkoutNote;
+export interface DailyGoalItem {
+  id: string;
+  text: string;
+  category: string;
+  completed: boolean;
+}
+
+export interface DailyGoalNote extends BaseNote {
+  type: 'daily-goal';
+  dateStr: string;
+  goals: DailyGoalItem[];
+}
+
+export type Note = NormalNote | IGNote | PersonalNote | WorkoutNote | DailyGoalNote;
 
 export interface FinanceRecord {
   id: string;

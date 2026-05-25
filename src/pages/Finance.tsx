@@ -32,6 +32,7 @@ import {
   ListFilter,
   CheckCircle2,
   Download,
+  Printer,
   Sparkles,
   MessageSquare,
   Utensils,
@@ -107,6 +108,11 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from "recharts";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -299,11 +305,15 @@ function CustomDropdown({
           </>
         )}
       </AnimatePresence>
-    </div>
+
+          </div>
   );
 }
 
+
 export function Finance() {
+  const [showPrintView, setShowPrintView] = useState(false);
+
   const {
     financeRecords,
     addFinanceRecord,
@@ -918,6 +928,57 @@ export function Finance() {
     return mainData;
   }, [incomeData]);
 
+  const trend6MonthsData = useMemo(() => {
+    const list = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = subMonths(now, i);
+      list.push({
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        label: format(d, "MMM yyyy", { locale: id }),
+        pemasukan: 0,
+        pengeluaran: 0,
+        tabungan: 0,
+      });
+    }
+
+    financeRecords.forEach((record) => {
+      const recordDate = new Date(record.createdAt);
+      const rYear = recordDate.getFullYear();
+      const rMonth = recordDate.getMonth();
+
+      const item = list.find((m) => m.year === rYear && m.month === rMonth);
+      if (item) {
+        if (record.type === "income") {
+          item.pemasukan += record.amount;
+        } else {
+          item.pengeluaran += record.amount;
+        }
+      }
+    });
+
+    list.forEach((item) => {
+      item.tabungan = item.pemasukan - item.pengeluaran;
+    });
+
+    return list;
+  }, [financeRecords]);
+
+  const trendTotals = useMemo(() => {
+    let totalPemasukan = 0;
+    let totalPengeluaran = 0;
+    trend6MonthsData.forEach((item) => {
+      totalPemasukan += item.pemasukan;
+      totalPengeluaran += item.pengeluaran;
+    });
+    return {
+      totalPemasukan,
+      totalPengeluaran,
+      totalTabungan: totalPemasukan - totalPengeluaran,
+    };
+  }, [trend6MonthsData]);
+
   // Helper to get color for a category
   const getCategoryColor = (catName: string, catType: "income" | "expense") => {
     if (financeCategoryPrefs[catName]?.color)
@@ -1050,6 +1111,40 @@ export function Finance() {
     return null;
   };
 
+  const CustomTrendTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const p1 = payload[0];
+      const p2 = payload[1];
+      const val1 = p1 ? p1.value : 0;
+      const val2 = p2 ? p2.value : 0;
+      return (
+        <div className="bg-stone-900 text-white p-4 rounded-2xl border border-stone-800 shadow-xl space-y-1.5 font-sans">
+          <p className="font-mono text-xs text-stone-400 font-black uppercase tracking-wider">{label}</p>
+          {payload.map((p: any, idx: number) => (
+            <div key={idx} className="flex items-center gap-6 justify-between text-xs">
+              <span className="flex items-center gap-1.5 font-bold text-stone-200">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                {p.name}:
+              </span>
+              <span className="font-mono font-bold text-stone-100">
+                Rp {p.value.toLocaleString("id-ID")}
+              </span>
+            </div>
+          ))}
+          {payload.length >= 2 && (
+            <div className="border-t border-stone-800 mt-2 pt-1.5 flex items-center justify-between text-xs">
+              <span className="font-bold text-yellow-400">Net Tabungan:</span>
+              <span className="font-mono font-bold text-yellow-400">
+                Rp {(val1 - val2).toLocaleString("id-ID")}
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20 md:pb-0">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6">
@@ -1128,10 +1223,19 @@ export function Finance() {
 
           <ActionMenu
             items={[
+
               {
                 label: "AI Input Finance",
                 icon: <Sparkles className="w-4 h-4" />,
                 onClick: () => setShowAIModal(true),
+              },
+              {
+                label: "Cetak Laporan Keuangan",
+                icon: <Printer className="w-4 h-4" />,
+                onClick: () => {
+                  setShowPrintView(true);
+                  playClick();
+                },
               },
               {
                 label: "Ekspor Akun Workspace",
@@ -1871,8 +1975,8 @@ export function Finance() {
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2 mt-1">
-                                        <p className="text-xs text-stone-400 font-medium">
-                                          {format(record.createdAt, "HH:mm")}
+                                        <p className="text-xs text-stone-400 font-medium whitespace-nowrap">
+                                          {format(record.createdAt, "d MMM yyyy, HH:mm", { locale: id })}
                                         </p>
                                         {record.note && (
                                           <p className="text-xs text-stone-500 truncate italic">
@@ -1962,6 +2066,125 @@ export function Finance() {
               Semua Detail
             </button>
           </div>
+
+          {/* Tren Aliran Kas (6 Bulan Terakhir) */}
+          <div className="bg-paper rounded-[2.5rem] border-2 border-stone-950 p-6 md:p-8 shadow-brutal flex flex-col space-y-8">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-stone-900 text-white rounded-2xl shadow-lg">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-2xl font-bold text-stone-900">
+                    Tren Aliran Kas (6 Bulan Terakhir)
+                  </h3>
+                  <p className="text-xs text-stone-500 font-bold uppercase tracking-widest mt-0.5">
+                    Laporan pergerakan arus kas masuk (pemasukan) dan keluar (pengeluaran).
+                  </p>
+                </div>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-black tracking-widest bg-stone-900 text-white px-3.5 py-1.5 rounded-full border border-stone-200 shadow-sm">
+                  Metrik Real-time
+                </span>
+              </div>
+            </header>
+
+            {/* Metric Blocks */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pemasukan</span>
+                  </div>
+                  <p className="text-2xl font-black text-stone-900 tracking-tight">
+                    Rp {trendTotals.totalPemasukan.toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wider mt-3">Akumulasi Arus Masuk</p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pengeluaran</span>
+                  </div>
+                  <p className="text-2xl font-black text-stone-900 tracking-tight">
+                    Rp {trendTotals.totalPengeluaran.toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wider mt-3">Akumulasi Arus Keluar</p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Net Tabungan (Selisih)</span>
+                  </div>
+                  <p className={cn(
+                    "text-2xl font-black tracking-tight",
+                    trendTotals.totalTabungan >= 0 ? "text-emerald-700" : "text-rose-700"
+                  )}>
+                    {trendTotals.totalTabungan >= 0 ? "+" : ""}Rp {trendTotals.totalTabungan.toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wider mt-3">Kondisi Neraca 6 Bulan</p>
+              </div>
+            </div>
+
+            {/* Line Chart Component */}
+            <div className="w-full h-[350px] min-w-0 bg-white/40 p-4 rounded-3xl border border-stone-200">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <LineChart
+                  data={trend6MonthsData}
+                  margin={{ top: 20, right: 25, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+                  <XAxis 
+                    dataKey="label" 
+                    tick={{ fill: '#44403c', fontSize: 10, fontWeight: 'bold' }} 
+                    axisLine={{ stroke: '#2F343D', strokeWidth: 1.5 }}
+                    tickLine={{ stroke: '#2F343D' }}
+                  />
+                  <YAxis 
+                    tick={{ fill: '#44403c', fontSize: 10, fontWeight: 'bold' }} 
+                    axisLine={{ stroke: '#2F343D', strokeWidth: 1.5 }}
+                    tickLine={{ stroke: '#2F343D' }}
+                    tickFormatter={(val) => `Rp ${val >= 1000000 ? (val/1000000).toFixed(1) + 'jt' : val >= 1000 ? (val/1000).toFixed(0) + 'rb' : val}`}
+                  />
+                  <Tooltip content={<CustomTrendTooltip />} />
+                  <Legend 
+                    verticalAlign="top" 
+                    height={36} 
+                    iconType="circle"
+                    formatter={(value) => <span className="text-xs font-black uppercase tracking-wider text-stone-700">{value}</span>}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="pemasukan" 
+                    name="Pemasukan" 
+                    stroke="#10b981" 
+                    strokeWidth={4}
+                    activeDot={{ r: 8, strokeWidth: 2, fill: '#10b981' }}
+                    dot={{ r: 4, strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="pengeluaran" 
+                    name="Pengeluaran" 
+                    stroke="#ef4444" 
+                    strokeWidth={4}
+                    activeDot={{ r: 8, strokeWidth: 2, fill: '#ef4444' }}
+                    dot={{ r: 4, strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-paper rounded-3xl border border-stone-200 p-6 md:p-8 shadow-sm flex flex-col">
               <header className="w-full flex justify-between items-center mb-6">
@@ -2322,7 +2545,7 @@ export function Finance() {
               </div>
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-pink-500 text-white rounded-2xl shadow-lg shadow-pink-100 ring-4 ring-pink-50">
+                  <div className="p-3 bg-teal-600 text-white rounded-2xl shadow-lg shadow-teal-100/50 ring-4 ring-teal-50">
                     <Heart className="w-6 h-6" />
                   </div>
                   <div>
@@ -2346,39 +2569,39 @@ export function Finance() {
               {/* Saving Form */}
               <div
                 id="saving-form"
-                className="p-6 bg-pink-50/50 rounded-3xl border border-pink-100 space-y-4 relative z-10"
+                className="p-6 bg-teal-50/10 rounded-3xl border border-teal-100/60 space-y-4 relative z-10"
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2 col-span-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-pink-400 pl-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 pl-1">
                       Nama Simpanan
                     </label>
                     <input
                       id="new-saving-name"
                       type="text"
-                      className="w-full bg-white border border-pink-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-pink-500"
+                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500"
                       placeholder="Cth. Dana Darurat"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-pink-400 pl-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 pl-1">
                       Saldo
                     </label>
                     <input
                       id="new-saving-amt"
                       type="number"
-                      className="w-full bg-white border border-pink-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-pink-500"
+                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500"
                       placeholder="0"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-pink-400 pl-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 pl-1">
                       Target (Ops)
                     </label>
                     <input
                       id="new-saving-target"
                       type="number"
-                      className="w-full bg-white border border-pink-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-pink-500"
+                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500"
                       placeholder="0"
                     />
                   </div>
@@ -2427,7 +2650,7 @@ export function Finance() {
                       playSuccess();
                     }
                   }}
-                  className="w-full py-3 bg-pink-500 text-white rounded-xl font-bold transition-all hover:bg-pink-600 shadow-lg shadow-pink-100"
+                  className="w-full py-3 bg-teal-600 text-white rounded-xl font-bold transition-all hover:bg-teal-700 shadow-lg shadow-teal-100/30"
                 >
                   Buka Tabungan Baru
                 </button>
@@ -2444,7 +2667,7 @@ export function Finance() {
                   savings.map((s) => (
                     <div
                       key={s.id}
-                      className="p-6 bg-white rounded-3xl border border-stone-100 relative group overflow-hidden shadow-sm hover:border-pink-200 transition-all"
+                      className="p-6 bg-white rounded-3xl border border-stone-100 relative group overflow-hidden shadow-sm hover:border-teal-200 transition-all"
                     >
                       <div className="flex justify-between items-start relative z-10">
                         <div className="flex-1">
@@ -2468,7 +2691,7 @@ export function Finance() {
                                   Target: Rp{" "}
                                   {s.targetAmount.toLocaleString("id-ID")}
                                 </span>
-                                <span className="text-pink-600">
+                                <span className="text-teal-600 font-bold">
                                   {Math.min(
                                     100,
                                     Math.round(
@@ -2484,7 +2707,7 @@ export function Finance() {
                                   animate={{
                                     width: `${Math.min(100, (s.currentAmount / s.targetAmount) * 100)}%`,
                                   }}
-                                  className="h-full bg-pink-500 rounded-full shadow-sm"
+                                  className="h-full bg-teal-600 rounded-full shadow-sm"
                                 />
                               </div>
                             </div>
@@ -3710,6 +3933,8 @@ export function Finance() {
         financeMappings={financeMappings}
         categoryToGroup={categoryToGroup}
         financeCategoryPrefs={financeCategoryPrefs}
+        updateCategoryPref={updateCategoryPref}
+        updateFinanceMapping={updateFinanceMapping}
         playSuccess={playSuccess}
         playClick={playClick}
         initialRecord={editingRecord}
@@ -3726,6 +3951,109 @@ export function Finance() {
           <Plus className="w-8 h-8" />
         </button>
       )}
+
+      {showPrintView && (
+        <div className="fixed inset-0 z-[100] bg-white text-stone-900 overflow-y-auto p-6 md:p-12 print:p-0">
+          <div className="max-w-4xl mx-auto space-y-8">
+            {/* Controls Bar */}
+            <div className="flex items-center justify-between border-b border-stone-100 pb-4 print:hidden">
+              <button 
+                onClick={() => setShowPrintView(false)} 
+                className="px-4 py-2 border border-stone-200 rounded-xl hover:bg-stone-50 font-bold transition-all text-xs flex items-center gap-1.5"
+              >
+                ← Kembali
+              </button>
+              <button 
+                onClick={() => window.print()} 
+                className="px-6 py-2 bg-stone-900 text-white rounded-xl hover:bg-stone-805 font-bold tracking-wider text-xs flex items-center gap-2 shadow-md transition-all active:scale-95"
+              >
+                <Printer className="w-4 h-4" /> Cetak Laporan (PDF)
+              </button>
+            </div>
+
+            {/* Print Header */}
+            <div className="text-center md:text-left flex flex-col md:flex-row justify-between items-start md:items-center border-b border-stone-200 pb-6 gap-4">
+              <div>
+                <h1 className="text-2xl font-black uppercase tracking-widest text-stone-950">Laporan Histori Keuangan</h1>
+                <p className="text-xs text-stone-400 mt-1 font-mono uppercase">Dicetak pada {new Date().toLocaleDateString("id-ID", { dateStyle: "full" })}</p>
+              </div>
+              <div className="border border-stone-200 p-4 rounded-2xl bg-stone-50 text-right shrink-0">
+                <p className="text-[10px] uppercase tracking-widest text-stone-400 font-black">Total Transaksi</p>
+                <p className="text-xl font-black text-stone-900 mt-0.5">{filteredRecords.length} Catatan</p>
+              </div>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 border border-stone-200 rounded-2xl bg-stone-50/50">
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 block leading-none">Total Arus Masuk</span>
+                <span className="text-lg font-black mt-1 block text-stone-900">Rp {filteredRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
+              </div>
+              <div className="p-5 border border-stone-200 rounded-2xl bg-stone-50/50">
+                <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 block leading-none">Total Arus Keluar</span>
+                <span className="text-lg font-black mt-1 block text-stone-900">Rp {filteredRecords.filter(r => r.type === "expense").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
+              </div>
+              <div className="p-5 border border-stone-900 bg-stone-900 rounded-2xl text-white shadow-lg">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-300 block leading-none">Selisih Bersih</span>
+                <span className="text-lg font-black mt-1 block">
+                  Rp {(
+                    filteredRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0) -
+                    filteredRecords.filter(r => r.type === "expense").reduce((acc, r) => acc + r.amount, 0)
+                  ).toLocaleString("id-ID")}
+                </span>
+              </div>
+            </div>
+
+            {/* Financial Details Table */}
+            <div className="border border-stone-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider w-12 text-center">No</th>
+                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider">Tanggal & Waktu</th>
+                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider">Kategori</th>
+                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider">Tipe</th>
+                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider">Catatan / Keterangan</th>
+                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider text-right">Jumlah (IDR)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {filteredRecords.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center p-8 text-stone-400 font-medium">Tidak ada data transaksi ditemukan</td>
+                    </tr>
+                  ) : (
+                    filteredRecords.map((r, i) => (
+                      <tr key={r.id} className="hover:bg-stone-50 transition-colors">
+                        <td className="p-3 text-center text-stone-400 font-mono font-bold">{i + 1}</td>
+                        <td className="p-3 font-medium text-stone-600">{format(r.createdAt, "d MMM yyyy, HH:mm", { locale: id })}</td>
+                        <td className="p-3 font-black text-stone-900">{r.category}</td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${r.type === 'income' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                            {r.type === 'income' ? 'Masuk' : 'Keluar'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-stone-500 italic font-medium">{r.note || '—'}</td>
+                        <td className={`p-3 font-mono font-black text-right ${r.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {r.type === 'income' ? '+' : '-'}Rp {r.amount.toLocaleString("id-ID")}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Elegant footer for print only */}
+            <div className="hidden print:flex justify-between items-center text-[10px] text-stone-400 pt-8 border-t border-dashed border-stone-200 font-mono">
+              <span>Dibuat secara aman melalui Catatan Keuangan Pribadi</span>
+              <span>Verifikasi Otoritas Mandiri</span>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+

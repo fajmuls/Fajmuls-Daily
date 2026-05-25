@@ -23,13 +23,11 @@ const desktopNavItems = [
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
   { icon: NotebookPen, label: 'Catatan', path: '/notes' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
-  { icon: Star, label: 'Spesial', path: '/special' },
 ];
 
 const mobileNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
-  { icon: Star, label: 'Spesial', path: '/special' }, // Move special here
   { icon: NotebookPen, label: 'Catatan', path: '/notes' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
 ];

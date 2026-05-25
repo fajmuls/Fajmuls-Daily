@@ -11,6 +11,34 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Fajmul Daily" />
+    <script>
+      // Silence Vite WebSocket connection errors
+      window.addEventListener('unhandledrejection', function(event) {
+        if (event.reason && (
+          String(event.reason).includes('WebSocket') || 
+          String(event.reason).includes('websocket') || 
+          (event.reason.message && (
+            String(event.reason.message).includes('WebSocket') || 
+            String(event.reason.message).includes('websocket')
+          ))
+        )) {
+          event.preventDefault();
+          event.stopPropagation();
+          console.warn('Silenced unhandled WebSocket rejection:', event.reason);
+        }
+      });
+      window.addEventListener('error', function(event) {
+        if (event.message && (
+          event.message.includes('WebSocket') || 
+          event.message.includes('websocket') || 
+          event.message.includes('vite')
+        )) {
+          event.preventDefault();
+          event.stopPropagation();
+          console.warn('Silenced error:', event.message);
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

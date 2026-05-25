@@ -10,7 +10,6 @@ import { Dashboard } from './pages/Dashboard';
 import { Finance } from './pages/Finance';
 import { Notes } from './pages/Notes';
 import { Docs } from './pages/Docs';
-import { Special } from './pages/Special';
 import { AuthWrapper } from './components/AuthWrapper';
 import { CustomDialogs } from './components/CustomDialogs';
 
@@ -26,7 +25,7 @@ export default function App() {
               <Route path="/finance" element={<Finance />} />
               <Route path="/notes/*" element={<Notes />} />
               <Route path="/docs" element={<Docs />} />
-              <Route path="/special" element={<Special />} />
+              <Route path="/special" element={<Navigate to="/notes" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>
