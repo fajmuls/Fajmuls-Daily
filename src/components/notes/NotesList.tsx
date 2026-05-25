@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAppContext } from '../../store';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText, Moon, Instagram, Lock, Dumbbell } from 'lucide-react';
+import { FileText, Moon, Instagram, Lock, Dumbbell, NotebookPen } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { NoteType } from '../../types';
 import { WorkspaceSyncModal } from '../WorkspaceSyncModal';
@@ -22,13 +22,22 @@ export function NotesList() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="font-serif text-5xl font-bold text-stone-900">Catatan Harian</h1>
-          <p className="text-stone-500 text-lg mt-2 font-medium">Pilih templat untuk ngebikin catatan baru.</p>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-stone-900 text-white rounded-2xl shadow-lg ring-4 ring-stone-100">
+            <NotebookPen className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
+              Catatan Harian
+            </h1>
+            <p className="text-stone-500 text-sm font-medium">
+              Pilih templat untuk membuat catatan baru.
+            </p>
+          </div>
         </div>
-        <div>
-           <button onClick={() => setShowSync(true)} className="p-3 px-6 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-all font-bold text-sm tracking-tight whitespace-nowrap">
+        <div className="flex items-center gap-2">
+           <button onClick={() => setShowSync(true)} className="p-3 px-6 bg-stone-100 text-stone-700 rounded-2xl hover:bg-stone-200 transition-all font-bold text-xs md:text-sm tracking-tight whitespace-nowrap">
              Ekspor ke Google Tasks
            </button>
         </div>

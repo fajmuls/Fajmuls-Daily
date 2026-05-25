@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
 import { PersonalNote } from '../../types';
-import { ArrowLeft, Plus, ShieldCheck, CheckSquare, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, ShieldCheck, CheckSquare, Trash2, Lock } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -62,7 +62,7 @@ export function PersonalNotesList() {
                    <CheckSquare className="w-5 h-5" />
                  </button>
                )}
-               <button onClick={handleCreateNew} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
+               <button onClick={handleCreateNew} className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all">
                  <Plus className="w-5 h-5" /> Profil Baru
                </button>
              </>
@@ -70,11 +70,20 @@ export function PersonalNotesList() {
         </div>
       </div>
 
-      <header className="mb-8">
-        <h1 className="font-serif text-3xl font-bold text-stone-900 flex items-center gap-3">
-          <ShieldCheck className="w-8 h-8 text-emerald-500" /> Profil Pribadi
-        </h1>
-        <p className="text-stone-500 mt-2">Daftar informasi penting untuk setiap orang.</p>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-stone-200 mb-8 mt-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg ring-4 ring-emerald-100 shrink-0">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
+              Profil Pribadi
+            </h1>
+            <p className="text-stone-500 text-sm font-medium">
+              Daftar informasi penting untuk setiap orang terenkripsi.
+            </p>
+          </div>
+        </div>
       </header>
 
       {personalNotes.length === 0 ? (
@@ -112,15 +121,15 @@ export function PersonalNotesList() {
                 </div>
               )}
 
-              <h3 className="font-bold text-xl text-stone-900 mb-2 relative z-10">{user ? decryptText(note.personName || '', user.uid) : '' || 'Tanpa Nama'}</h3>
-              <p className="text-sm text-stone-500 font-mono mb-4 truncate text-ellipsis">
+              <h3 className="font-bold text-xl text-stone-900 mb-2 relative z-10">{user ? (decryptText(note.personName || '', user.uid) || 'Tanpa Nama') : 'Tanpa Nama'}</h3>
+              <p className="text-sm text-stone-500 font-medium mb-4 truncate text-ellipsis">
                  {note.customFields && note.customFields.length > 0 && user
                     ? `${decryptText(note.customFields[0].key, user.uid)}: ${decryptText(note.customFields[0].value, user.uid) || '-'}` 
                     : `Data Belum Lengkap`}
               </p>
               <div className="flex justify-between items-center text-xs text-stone-400 relative z-10">
                 <span>Diperbarui</span>
-                <span className="font-mono">{format(note.updatedAt, 'd MMM yyyy', { locale: idLocale })}</span>
+                <span className="font-bold">{format(note.updatedAt, 'd MMM yyyy', { locale: idLocale })}</span>
               </div>
             </button>
           ))}

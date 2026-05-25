@@ -77,7 +77,7 @@ export function IGNoteView() {
         backgroundColor: bgColor,
         createdAt: customDate,
         updatedAt: Date.now(),
-        history: existingNote.content !== content ? [existingNote.content, ...existingNote.history] : existingNote.history
+        history: existingNote.content !== content ? [existingNote.content, ...(existingNote.history || [])] : (existingNote.history || [])
       });
     } else {
       addNote({
@@ -126,7 +126,7 @@ export function IGNoteView() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex gap-2">
-          {existingNote && existingNote.history.length > 0 && (
+          {existingNote && (existingNote.history?.length || 0) > 0 && (
             <button onClick={() => setShowHistory(!showHistory)} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors" title="Riwayat Edit">
               <History className="w-5 h-5" />
             </button>
@@ -136,7 +136,7 @@ export function IGNoteView() {
               <Trash2 className="w-5 h-5" />
             </button>
           )}
-          <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
+          <button onClick={() => handleSave(false)} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
             <Save className="w-5 h-5" /> Simpan
           </button>
         </div>
@@ -254,13 +254,13 @@ export function IGNoteView() {
         </div>
       </div>
 
-      {showHistory && existingNote && existingNote.history.length > 0 && (
+      {showHistory && existingNote && (existingNote.history?.length || 0) > 0 && (
         <div className="bg-stone-100 rounded-3xl p-6 space-y-4 animate-in slide-in-from-top-4">
           <h3 className="font-bold text-stone-900 flex items-center gap-2">
             <History className="w-5 h-5"/> Riwayat Edit
           </h3>
           <ul className="space-y-3">
-            {existingNote.history.map((past, i) => (
+            {(existingNote.history || []).map((past, i) => (
               <li key={i} className="p-4 bg-paper rounded-2xl text-stone-600 text-sm italic border border-stone-200">
                 "{past}"
               </li>

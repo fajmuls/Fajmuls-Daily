@@ -1,11 +1,22 @@
 import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic, LogOut, Search, X, Command, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic, LogOut, Search, X, Command, User as UserIcon, Plus } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
 import { useVoiceCommand } from '../hooks/useVoiceCommand';
 import { useAuth } from './AuthWrapper';
 import { cn } from '../lib/utils';
+import { useAppContext } from '../store';
+import { v4 as uuidv4 } from 'uuid';
+
+const parseAmount = (text: string): number => {
+  const clean = text.replace(/[^0-9kKrbRBjtJT]/g, '').toLowerCase();
+  let num = parseInt(clean);
+  if (!num) return 0;
+  if (clean.includes('k') || clean.includes('rb')) num *= 1000;
+  if (clean.includes('jt')) num *= 1000000;
+  return isNaN(num) ? 0 : num;
+};
 
 const desktopNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
@@ -35,9 +46,59 @@ export function Layout({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const { addFinanceRecord, addNote } = useAppContext();
+
   const handleVoiceCommand = (text: string) => {
     const lower = text.toLowerCase();
     console.log("Mendeteksi suara:", lower);
+
+    // 1. Parse Finance (Expense/Income)
+    // Example: "Tambah pengeluaran 50rb untuk kopi" or "Add expense 50k for coffee"
+    if (lower.includes('tambah pengeluaran') || lower.includes('add expense') || lower.includes('tambah pemasukan') || lower.includes('add income')) {
+      const isExpense = lower.includes('pengeluaran') || lower.includes('expense');
+      const match = lower.match(/(?:pengeluaran|expense|pemasukan|income)\s+(\d+[^\s]*)\s+(?:untuk|for)?\s*(.*)/);
+      
+      if (match) {
+        const amtStr = match[1];
+        const note = match[2] || 'Catatan suara';
+        const amount = parseAmount(amtStr);
+        
+        if (amount > 0) {
+          addFinanceRecord({
+            id: uuidv4(),
+            amount,
+            type: isExpense ? 'expense' : 'income',
+            category: 'Lainnya',
+            note: note.trim(),
+            createdAt: Date.now(),
+            iconName: isExpense ? 'TrendingDown' : 'TrendingUp'
+          });
+          setVoiceHint(`Ditambah: ${isExpense ? 'Pengeluaran' : 'Pemasukan'} Rp ${amount.toLocaleString('id-ID')}`);
+          playSuccess();
+          return;
+        }
+      }
+    }
+
+    // 2. Parse Notes/Tasks
+    // Example: "Tambah catatan beli susu" or "Add task buy milk"
+    if (lower.includes('tambah catatan') || lower.includes('add note') || lower.includes('tambah tugas') || lower.includes('add task')) {
+      const match = lower.match(/(?:catatan|note|tugas|task)\s+(.*)/);
+      if (match) {
+        const content = match[1];
+        addNote({
+          id: uuidv4(),
+          type: 'normal',
+          title: 'Catatan Suara',
+          content: content.trim(),
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+        setVoiceHint(`Catatan ditambahkan: ${content}`);
+        playSuccess();
+        return;
+      }
+    }
     
     if (lower.includes('keuangan') || lower.includes('uang')) {
       navigate('/finance');
@@ -123,7 +184,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: compact ? 10 : -10 }}
                 className={cn(
-                  "absolute z-50 bg-white border border-stone-200 rounded-2xl shadow-xl p-2 w-48 overflow-hidden",
+                  "absolute z-50 bg-paper border border-stone-200 rounded-2xl shadow-xl p-2 w-48 overflow-hidden",
                   compact ? "top-full right-0 mt-2" : "bottom-full left-4 mb-2"
                 )}
               >
@@ -207,7 +268,7 @@ export function Layout({ children }: { children: ReactNode }) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari fitur... (Cth: Keuangan)"
-                  className="w-full bg-stone-100/50 border border-transparent focus:border-stone-200 rounded-2xl pl-11 pr-4 py-2.5 text-sm outline-none transition-all placeholder:text-stone-400 focus:bg-white focus:shadow-sm"
+                  className="w-full bg-stone-100/50 border border-transparent focus:border-stone-200 rounded-2xl pl-11 pr-4 py-2.5 text-sm outline-none transition-all placeholder:text-stone-400 focus:bg-paper focus:shadow-sm"
                 />
                 {searchQuery && (
                   <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
@@ -222,7 +283,7 @@ export function Layout({ children }: { children: ReactNode }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full left-0 right-0 mt-3 bg-white border border-stone-200 rounded-3xl shadow-2xl z-50 overflow-hidden"
+                    className="absolute top-full left-0 right-0 mt-3 bg-paper border border-stone-200 rounded-3xl shadow-2xl z-50 overflow-hidden"
                   >
                     <div className="p-3 border-b border-stone-50 bg-stone-50/50 flex items-center justify-between">
                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-2">Hasil Pencarian</span>
@@ -278,7 +339,7 @@ export function Layout({ children }: { children: ReactNode }) {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="md:hidden absolute top-[73px] left-0 right-0 z-40 bg-white border-b border-stone-200 p-4 shadow-lg"
+              className="md:hidden absolute top-[73px] left-0 right-0 z-40 bg-paper border-b border-stone-200 p-4 shadow-lg"
             >
                <div className="relative">
                   <input 

@@ -10,7 +10,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './lib/firebase';
-import { Note, FinanceRecord, MissedPrayer, DailyDoc, SpecialNote } from './types';
+import { Note, FinanceRecord, MissedPrayer, DailyDoc, SpecialNote, Budget, SavingGoal } from './types';
 import { INITIAL_MISSED_PRAYERS, INITIAL_IG_NOTES } from './data';
 import { useAuth } from './components/AuthWrapper';
 
@@ -20,12 +20,16 @@ interface AppState {
   missedPrayers: MissedPrayer[];
   docs: DailyDoc[];
   specials: SpecialNote[];
+  budgets: Budget[];
+  savings: SavingGoal[];
   loading: boolean;
   confirmDialog: { isOpen: boolean; message: string; onConfirm: () => void } | null;
   alertMessage: string | null;
   financeMappings: { [key: string]: string[] };
   financeCategoryPrefs: { [key: string]: { iconName: string; color: string } };
   hideAmounts: boolean;
+  darkMode: boolean;
+  setDarkMode: (dark: boolean) => void;
   setHideAmounts: (hide: boolean) => void;
   setAlert: (message: string | null) => void;
   showConfirm: (message: string, onConfirm: () => void) => void;
@@ -33,6 +37,11 @@ interface AppState {
   updateFinanceMapping: (group: string, categories: string[]) => void;
   deleteFinanceMapping: (group: string) => void;
   updateCategoryPref: (category: string, pref: { iconName: string; color: string }) => void;
+  addBudget: (budget: Budget) => void;
+  deleteBudget: (id: string) => void;
+  addSaving: (saving: SavingGoal) => void;
+  updateSaving: (saving: SavingGoal) => void;
+  deleteSaving: (id: string) => void;
   user: import('firebase/auth').User | null;
   addNote: (note: Note) => void;
   updateNote: (note: Note) => void;
@@ -60,14 +69,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [missedPrayers, setMissedPrayers] = useState<MissedPrayer[]>([]);
   const [docs, setDocs] = useState<DailyDoc[]>([]);
   const [specials, setSpecials] = useState<SpecialNote[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [savings, setSavings] = useState<SavingGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; message: string; onConfirm: () => void } | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [financeMappings, setFinanceMappings] = useState<{ [key: string]: string[] }>({});
   const [financeCategoryPrefs, setFinanceCategoryPrefs] = useState<{ [key: string]: { iconName: string; color: string } }>({});
   const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('fajmus-hide-amounts') === 'true');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('fajmus-dark-mode') === 'true');
 
-  const setAlert = (message: string | null) => setAlertMessage(message);
+  const setAlert = (message: string | null) => {
+    setAlertMessage(message);
+    if (message) {
+      setTimeout(() => {
+        setAlertMessage((prev) => prev === message ? null : prev);
+      }, 3000);
+    }
+  };
   const showConfirm = (message: string, onConfirm: () => void) => {
     setConfirmDialog({ isOpen: true, message, onConfirm });
   };
@@ -80,6 +99,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('fajmus-hide-amounts', hide ? 'true' : 'false');
   };
 
+  const toggleDarkMode = (dark: boolean) => {
+    setDarkMode(dark);
+    localStorage.setItem('fajmus-dark-mode', dark ? 'true' : 'false');
+    if (dark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // Sync dark mode on mount
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   // Track if initial data has loaded
   const [initialLoaded, setInitialLoaded] = useState({
     notes: false,
@@ -87,6 +125,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     prayers: false,
     docs: false,
     specials: false,
+    budgets: false,
+    savings: false,
     mappings: false,
     categoryPrefs: false
   });
@@ -131,6 +171,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setInitialLoaded(prev => ({ ...prev, specials: true }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/specials`));
 
+    const unsubBudgets = onSnapshot(collection(db, `${userPath}/budgets`), (snapshot) => {
+      setBudgets(snapshot.docs.map(d => d.data() as Budget));
+      setInitialLoaded(prev => ({ ...prev, budgets: true }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/budgets`));
+
+    const unsubSavings = onSnapshot(collection(db, `${userPath}/savings`), (snapshot) => {
+      setSavings(snapshot.docs.map(d => d.data() as SavingGoal));
+      setInitialLoaded(prev => ({ ...prev, savings: true }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/savings`));
+
     const unsubMappings = onSnapshot(doc(db, `${userPath}/settings/financeMappings`), (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
@@ -164,6 +214,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubPrayers();
       unsubDocs();
       unsubSpecials();
+      unsubBudgets();
+      unsubSavings();
       unsubMappings();
       unsubCategoryPrefs();
     };
@@ -171,7 +223,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Update loading state when all initial data is loaded
   useEffect(() => {
-    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials && initialLoaded.mappings && initialLoaded.categoryPrefs) {
+    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials && initialLoaded.budgets && initialLoaded.savings && initialLoaded.mappings && initialLoaded.categoryPrefs) {
       setLoading(false);
     }
   }, [initialLoaded]);
@@ -398,6 +450,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/specials/${id}`); }
   };
 
+  const addBudget = async (budget: Budget) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, `users/${user.uid}/budgets`, budget.id), budget);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/budgets/${budget.id}`); }
+  };
+
+  const deleteBudget = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, `users/${user.uid}/budgets`, id));
+    } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/budgets/${id}`); }
+  };
+
+  const addSaving = async (saving: SavingGoal) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, `users/${user.uid}/savings`, saving.id), saving);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/savings/${saving.id}`); }
+  };
+
+  const updateSaving = async (saving: SavingGoal) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, `users/${user.uid}/savings`, saving.id), saving);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/savings/${saving.id}`); }
+  };
+
+  const deleteSaving = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, `users/${user.uid}/savings`, id));
+    } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/savings/${id}`); }
+  };
+
   const updateFinanceMapping = async (group: string, categories: string[]) => {
     if (!user) return;
     const newMappings = { ...financeMappings, [group]: categories };
@@ -425,9 +512,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      user, notes, financeRecords, missedPrayers, docs, specials, loading, 
-      confirmDialog, alertMessage, financeMappings, financeCategoryPrefs, hideAmounts, setHideAmounts: toggleHideAmounts, setAlert, showConfirm, closeConfirm, updateFinanceMapping, deleteFinanceMapping, updateCategoryPref,
-      addNote, updateNote, deleteNote, addFinanceRecord, updateFinanceRecord, updateFinanceCategoryBulk, addFinanceRecordsBulk, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial
+      user, notes, financeRecords, missedPrayers, docs, specials, budgets, savings, loading, 
+      confirmDialog, alertMessage, financeMappings, financeCategoryPrefs, hideAmounts, setHideAmounts: toggleHideAmounts,
+      darkMode, setDarkMode: toggleDarkMode,
+      setAlert, showConfirm, closeConfirm, updateFinanceMapping, deleteFinanceMapping, updateCategoryPref,
+      addNote, updateNote, deleteNote, addFinanceRecord, updateFinanceRecord, updateFinanceCategoryBulk, addFinanceRecordsBulk, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial,
+      addBudget, deleteBudget, addSaving, updateSaving, deleteSaving
     }}>
       {children}
     </AppContext.Provider>

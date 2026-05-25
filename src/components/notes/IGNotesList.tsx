@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { Search, SortAsc, SortDesc, ArrowLeft, User, Plus, CheckSquare, Trash2, Edit3, Check, X, Clock } from 'lucide-react';
+import { Search, SortAsc, SortDesc, ArrowLeft, User, Plus, CheckSquare, Trash2, Edit3, Check, X, Clock, Instagram } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
@@ -106,7 +106,7 @@ export function IGNotesList() {
                    <CheckSquare className="w-5 h-5" />
                  </button>
                )}
-               <button onClick={handleCreate} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
+               <button onClick={handleCreate} className="flex items-center gap-2 px-6 py-3 bg-pink-500 text-white rounded-full font-bold hover:bg-pink-600 transition-all shadow-md shadow-pink-100">
                  <Plus className="w-5 h-5" /> Catatan Baru
                </button>
              </>
@@ -114,13 +114,23 @@ export function IGNotesList() {
         </div>
       </div>
 
-      <header className="py-4 space-y-4">
-         <div>
-            <h1 className="text-4xl font-serif font-bold text-stone-900 mb-2 border-b border-stone-200 pb-4">Daftar Akun IG</h1>
-            <p className="text-stone-500 font-medium">Kumpulan catatan Instagram yang dikelompokkan per akun.</p>
-         </div>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6 mb-6 mt-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-pink-500 text-white rounded-2xl shadow-lg ring-4 ring-pink-50 shrink-0">
+            <Instagram className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
+              Catatan IG
+            </h1>
+            <p className="text-stone-500 text-sm font-medium">
+              Kumpulan catatan Instagram yang dikelompokkan per akun.
+            </p>
+          </div>
+        </div>
+      </header>
 
-         <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                <input 
@@ -128,7 +138,7 @@ export function IGNotesList() {
                  placeholder="Cari lagu, pemilik, atau isi..."
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
-                 className="w-full bg-paper border border-stone-200 rounded-2xl pl-11 pr-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm text-sm"
+                 className="w-full bg-paper border border-stone-200 rounded-2xl pl-11 pr-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 shadow-sm text-sm"
                />
             </div>
             <button 
@@ -139,7 +149,6 @@ export function IGNotesList() {
                {sortBy === 'newest' ? 'Terbaru' : 'Terlama'}
             </button>
          </div>
-      </header>
 
       {Object.keys(groupedByOwner).length === 0 ? (
          <div className="p-12 text-center text-stone-400 bg-stone-50 rounded-3xl border border-stone-200 border-dashed">
@@ -150,7 +159,7 @@ export function IGNotesList() {
            {Object.entries(groupedByOwner).map(([owner, ownerNotes]) => (
              <div key={owner} className="bg-paper rounded-3xl border border-stone-200 overflow-hidden shadow-sm flex flex-col group">
                 <div className="p-6 border-b border-stone-100 flex items-center gap-4 bg-stone-50/50">
-                   <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
+                   <div className="w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center shrink-0">
                       <User className="w-6 h-6" />
                    </div>
                    <div className="truncate flex-1">
@@ -173,7 +182,7 @@ export function IGNotesList() {
                       ) : (
                          <div className="flex items-center gap-2 group/title">
                             <h3 className="font-bold text-lg text-stone-900 truncate">@{owner || 'Anonim'}</h3>
-                            <button onClick={(e) => handleStartEditOwner(owner, e)} className="p-1 text-stone-300 hover:text-indigo-500 opacity-0 group-hover/title:opacity-100 transition-opacity">
+                            <button onClick={(e) => handleStartEditOwner(owner, e)} className="p-1 text-stone-300 hover:text-pink-500 opacity-0 group-hover/title:opacity-100 transition-opacity">
                                <Edit3 className="w-4 h-4" />
                             </button>
                          </div>

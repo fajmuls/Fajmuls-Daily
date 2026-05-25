@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useAppContext } from '../../store';
-import { ArrowLeft, CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Plus, Trash2, Moon } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 import confetti from 'canvas-confetti';
@@ -126,9 +126,21 @@ export function MissedPrayersView() {
       )}
 
       <div className="bg-paper rounded-3xl p-8 border border-stone-200 shadow-sm space-y-8">
-        <div>
-          <h1 className="text-4xl font-serif font-bold text-stone-900 mb-2">Qadha Shalat</h1>
-          <p className="text-stone-500">Daftar hutang shalat fardhu yang harus diganti.</p>
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-stone-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-indigo-900 text-white rounded-2xl shadow-lg ring-4 ring-indigo-50 shrink-0">
+              <Moon className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
+                Qadha Shalat
+              </h1>
+              <p className="text-stone-500 text-sm font-medium">
+                Daftar hutang shalat fardhu yang harus diganti.
+              </p>
+            </div>
+          </div>
+        </header>
           
           <div className="mt-4 p-4 bg-indigo-50 rounded-2xl flex justify-between items-center text-indigo-900 border border-indigo-100">
             <div>
@@ -140,7 +152,6 @@ export function MissedPrayersView() {
               <span className="text-2xl font-bold">{totalCount - completedCount}</span>
             </div>
           </div>
-        </div>
 
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between pb-4 border-b border-stone-100">
            <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">

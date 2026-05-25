@@ -211,7 +211,7 @@ export function PersonalNoteView() {
                          value={field.value} 
                          onChange={e => handleCustomFieldChange(idx, 'value', e.target.value)} 
                          placeholder="Nilai Informasi" 
-                         className="w-full bg-transparent px-4 py-2 outline-none font-mono text-stone-900" 
+                         className="w-full bg-transparent px-4 py-2 outline-none font-bold text-stone-900" 
                        />
                        <button 
                          type="button"

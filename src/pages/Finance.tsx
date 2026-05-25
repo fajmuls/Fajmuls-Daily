@@ -1,10 +1,12 @@
 import React, { useState, FormEvent, useMemo, ReactNode } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { ICON_GROUPS } from "../data";
 import { format, isSameDay, startOfMonth, subMonths, subYears, isAfter } from "date-fns";
 import { id } from "date-fns/locale";
 import { useAppContext } from "../store";
 import { FinanceRecord } from "../types";
 import {
+
   Plus,
   Minus,
   Trash2,
@@ -86,6 +88,8 @@ import {
   ChevronRight,
   ChevronUp,
   Folder,
+  Calculator,
+  Edit3
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { cn } from "../lib/utils";
@@ -102,6 +106,11 @@ import { motion, AnimatePresence } from "motion/react";
 
 import { WorkspaceSyncModal } from "../components/WorkspaceSyncModal";
 import { ActionMenu } from "../components/ActionMenu";
+import { AddFinanceModal } from "../components/AddFinanceModal";
+
+const AVAILABLE_ICONS = [
+  "Utensils", "Coffee", "Pizza", "Sandwich", "Beer", "Fuel", "ShoppingBag", "Smartphone", "Zap", "Droplet", "Wifi", "Tag", "Wallet", "CreditCard", "Home", "Car", "Bus", "Plane", "Train", "Bike", "MapPin", "User", "Heart", "Star", "Camera", "Film", "Tv", "Music", "Gamepad", "Laptop", "Headphones", "Gift", "PartyPopper", "Sprout", "Stethoscope", "Pill", "Palette", "Cloud", "Sun", "Moon", "Bell", "Ticket", "Globe", "Book", "Briefcase", "Dumbbell", "Shield", "Search", "PenTool", "Scissors", "Shirt", "Video", "Mic", "Printer", "Compass", "Key", "Activity", "BookOpen", "Box", "Feather", "Flag", "Map", "Package", "Smile", "Watch", "Thermometer", "Umbrella", "Wine", "CupSoda", "Bed", "Anchor", "Cat", "Dog", "Fish", "Bone", "Ghost", "Bug", "Rocket", "PlaneTakeoff", "Apple", "Carrot", "Egg", "Trophy", "Award", "Medal", "Crown", "Coins", "Banknote", "Percent", "Receipt", "Calculator", "PiggyBank", "Wrench", "Hammer", "Drill", "Screwdriver"
+];
 
 function CustomDropdown({ value, options, onChange, icon }: { value: string, options: { value: string, label: string, iconComponent?: React.ReactNode }[], onChange: (val: string) => void, icon?: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -172,20 +181,34 @@ export function Finance() {
     setAlert,
     financeCategoryPrefs,
     updateCategoryPref,
-    updateFinanceCategoryBulk
+    updateFinanceCategoryBulk,
+    updateFinanceRecord,
+    budgets,
+    addBudget,
+    deleteBudget,
+    savings,
+    addSaving,
+    updateSaving,
+    deleteSaving,
+    darkMode,
+    setDarkMode
   } = useAppContext();
   const { playSuccess, playError, playClick } = useAudio();
 
-  const [activeTab, setActiveTab] = useState<"records" | "analysis" | "settings">("records");
+  const [activeTab, setActiveTab] = useState<"records" | "analysis" | "settings" | "planning">("records");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
   const [type, setType] = useState<"income" | "expense">("expense");
   const [showCatDropdown, setShowCatDropdown] = useState(false);
-  const [chartMode, setChartMode] = useState<"detail" | "grouped">("grouped");
+  const [chartMode, setChartMode] = useState<"detail" | "grouped">("detail");
   const [showSettings, setShowSettings] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<FinanceRecord | null>(null);
+  const [addRecordDate, setAddRecordDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<string>("Tag");
@@ -193,8 +216,46 @@ export function Finance() {
   
   const [editingCategory, setEditingCategory] = useState<{oldName: string; newName: string; type: "income" | "expense"; iconName: string; color: string} | null>(null);
 
+  const [highlightedCategory, setHighlightedCategory] = useState<string | null>(null);
+  
+  const handleChartClick = (data: any, type: 'expense' | 'income') => {
+    if(data?.payload?.name) {
+      let targetName = data.payload.name;
+      const originalData = type === 'expense' ? expenseData : incomeData;
+      
+      // If clicking "Lainnya", find the first category in Lainnya
+      if (targetName === "Lainnya") {
+        const others = originalData.filter(d => parseFloat(d.displayPercent) < 3);
+        if (others.length > 0) {
+          // Highlight all categories in "Lainnya" or just scroll to the first one
+          // The user said: "Yang disorot adalah yang sudah dikelompokkan ke dalam lainnya."
+          // We'll set a special state to highlight all of them
+          setHighlightedCategory("Lainnya");
+          const el = document.getElementById(`detail-${type}-Lainnya-Header`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => setHighlightedCategory(null), 5000);
+          return;
+        }
+      }
+      
+      const el = document.getElementById(`detail-${type}-${targetName}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightedCategory(targetName);
+        setTimeout(() => setHighlightedCategory(null), 3000);
+      }
+    }
+  };
+
   const [filterCategory, setFilterCategory] = useState<string>("All");
   const [filterRange, setFilterRange] = useState<string>("all");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+  
+  const [selectedSlice, setSelectedSlice] = useState<any>(null);
+  const [showCalc, setShowCalc] = useState(false);
+  const [calcValue, setCalcValue] = useState("");
+  
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
   const toggleDateExpansion = (date: number) => {
@@ -206,6 +267,19 @@ export function Finance() {
   const [newGroupCategory, setNewGroupCategory] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
   const [managedGroup, setManagedGroup] = useState<string | null>(null);
+
+  const [categoryEdits, setCategoryEdits] = useState<Record<string, {name: string, iconName: string, color: string}>>({});
+  const [pickingIconFor, setPickingIconFor] = useState<string | null>(null);
+  
+  const getCatEdit = (cat: string, isIncome: boolean) => {
+    if (categoryEdits[cat]) return categoryEdits[cat];
+    const fpColor = getCategoryColor(cat, isIncome ? 'income' : 'expense');
+    return {
+      name: cat,
+      iconName: financeCategoryPrefs[cat]?.iconName || categoryToIcon[cat] || (isIncome ? 'TrendingUp' : 'TrendingDown'),
+      color: financeCategoryPrefs[cat]?.color || fpColor
+    };
+  };
 
   // Memoized category to group map for easy lookup
   const categoryToGroup = useMemo(() => {
@@ -232,6 +306,12 @@ export function Finance() {
     if (filterRange === "current_month") {
       const start = startOfMonth(now);
       records = records.filter(r => isAfter(new Date(r.createdAt), start));
+    } else if (filterRange === "this_week") {
+      const currentDay = now.getDay();
+      const diff = now.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+      const start = new Date(now.setDate(diff));
+      start.setHours(0, 0, 0, 0);
+      records = records.filter(r => new Date(r.createdAt).getTime() >= start.getTime());
     } else if (filterRange === "last_month") {
       const start = startOfMonth(subMonths(now, 1));
       const end = startOfMonth(now);
@@ -239,6 +319,17 @@ export function Finance() {
     } else if (filterRange === "last_year") {
       const start = subYears(now, 1);
       records = records.filter(r => isAfter(new Date(r.createdAt), start));
+    } else if (filterRange === "last_2_years") {
+      const start = subYears(now, 2);
+      records = records.filter(r => isAfter(new Date(r.createdAt), start));
+    } else if (filterRange === "custom") {
+      const start = customStartDate ? new Date(customStartDate) : new Date(0);
+      const end = customEndDate ? new Date(customEndDate) : new Date(now);
+      end.setHours(23, 59, 59, 999);
+      records = records.filter(r => {
+        const d = new Date(r.createdAt);
+        return d >= start && d <= end;
+      });
     }
 
     // Filter by Category
@@ -247,7 +338,7 @@ export function Finance() {
     }
     
     return records;
-  }, [financeRecords, filterCategory, filterRange]);
+  }, [financeRecords, filterCategory, filterRange, customStartDate, customEndDate]);
 
   // Group records by date
   const groupedRecordsByDate = useMemo(() => {
@@ -441,7 +532,7 @@ export function Finance() {
       parentCategory,
       note,
       type,
-      createdAt: Date.now(),
+      createdAt: addRecordDate.getTime(),
       iconName: selectedIcon,
     });
 
@@ -449,6 +540,7 @@ export function Finance() {
     setCategory("");
     setNote("");
     setSelectedIcon("Tag");
+    setShowAddModal(false);
     playSuccess();
   };
 
@@ -550,6 +642,52 @@ export function Finance() {
       .sort((a, b) => b.value - a.value);
   }, [filteredRecords, chartMode, categoryToGroup]);
 
+  const expenseChartData = useMemo(() => {
+    const mainData: typeof expenseData = [];
+    let lainnyaValue = 0;
+    let lainnyaPercent = 0;
+    expenseData.forEach(item => {
+      const p = parseFloat(item.displayPercent);
+      if (p < 3) {
+        lainnyaValue += item.value;
+        lainnyaPercent += p;
+      } else {
+        mainData.push(item);
+      }
+    });
+    if (lainnyaValue > 0) {
+      mainData.push({
+        name: "Lainnya",
+        value: lainnyaValue,
+        displayPercent: lainnyaPercent.toFixed(1)
+      });
+    }
+    return mainData;
+  }, [expenseData]);
+
+  const incomeChartData = useMemo(() => {
+    const mainData: typeof incomeData = [];
+    let lainnyaValue = 0;
+    let lainnyaPercent = 0;
+    incomeData.forEach(item => {
+      const p = parseFloat(item.displayPercent);
+      if (p < 3) {
+        lainnyaValue += item.value;
+        lainnyaPercent += p;
+      } else {
+        mainData.push(item);
+      }
+    });
+    if (lainnyaValue > 0) {
+      mainData.push({
+        name: "Lainnya",
+        value: lainnyaValue,
+        displayPercent: lainnyaPercent.toFixed(1)
+      });
+    }
+    return mainData;
+  }, [incomeData]);
+
   // Helper to get color for a category
   const getCategoryColor = (catName: string, catType: "income" | "expense") => {
     if (financeCategoryPrefs[catName]?.color) return financeCategoryPrefs[catName].color;
@@ -568,32 +706,49 @@ export function Finance() {
     cx,
     cy,
     midAngle,
-    innerRadius,
     outerRadius,
     percent,
+    payload,
+    name
   }: any) => {
     const RADIAN = Math.PI / 180;
-    // Move labels slightly further out to avoid crowding
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.7;
+    // Move labels strictly outside the pie circle
+    const radius = outerRadius + 20;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-    // Only show if slice is large enough
-    if (percent < 0.08) return null;
+    if (percent < 0.01) return null; // Very tiny slice is hard to render clearly, but 1% is okay
+
+    const actualName = payload?.payload?.name || name || payload?.name;
+    const isExpense = expenseData.some(d => d.name === actualName);
+    const catType = isExpense ? 'expense' : 'income';
+    const prefIcon = financeCategoryPrefs[actualName]?.iconName || categoryToIcon[actualName] || (catType === 'income' ? 'TrendingUp' : 'TrendingDown');
+    const color = financeCategoryPrefs[actualName]?.color || getCategoryColor(actualName, catType);
+    const IconProps = (LucideIcons as any)[prefIcon] || (catType === 'income' ? TrendingUp : TrendingDown);
 
     return (
-      <text
-        x={x}
-        y={y}
-        fill="white"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize="11"
-        fontWeight="bold"
-        className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] pointer-events-none"
-      >
-        {`${(percent * 100).toFixed(1)}%`}
-      </text>
+      <g className="pointer-events-none">
+        <foreignObject x={x - 14} y={y - 14} width={28} height={28}>
+           <div 
+             className="flex items-center justify-center bg-paper rounded-full w-full h-full border border-stone-200 shadow-sm"
+             style={{ color }}
+           >
+              <IconProps className="w-4 h-4" />
+           </div>
+        </foreignObject>
+        <text
+          x={x}
+          y={y + 24}
+          fill="currentColor"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="10"
+          fontWeight="900"
+          className="drop-shadow-sm font-sans tracking-widest text-stone-500"
+        >
+          {`${(percent * 100).toFixed(1)}%`}
+        </text>
+      </g>
     );
   };
 
@@ -605,7 +760,7 @@ export function Finance() {
           <p className="font-bold mb-1 flex items-center gap-2">
             <Tag className="w-3 h-3" /> {data.name}
           </p>
-          <p className="font-mono">Rp {data.value.toLocaleString("id-ID")}</p>
+          <p className="font-bold tracking-tight">Rp {data.value.toLocaleString("id-ID")}</p>
           <p className="text-stone-400 text-xs mt-1">
             {data.displayPercent}% dari total
           </p>
@@ -624,7 +779,7 @@ export function Finance() {
           </div>
           <div>
             <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
-              Finance
+              Catatan Keuangan
             </h1>
             <p className="text-stone-500 text-sm font-medium">
               Manajemen keuangan mandiri.
@@ -652,6 +807,15 @@ export function Finance() {
                 <BarChart3 className="w-4 h-4" /> Analisis
               </button>
               <button 
+                onClick={() => { setActiveTab('planning'); playClick(); }}
+                className={cn(
+                  "flex items-center gap-2 px-4 md:px-6 py-2 rounded-xl font-bold text-xs md:text-sm transition-all",
+                  activeTab === 'planning' ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                )}
+              >
+                <TrendingUp className="w-4 h-4" /> Perencanaan
+              </button>
+              <button 
                 onClick={() => { setActiveTab('settings'); playClick(); }}
                 className={cn(
                   "flex items-center gap-2 px-4 md:px-6 py-2 rounded-xl font-bold text-xs md:text-sm transition-all",
@@ -672,8 +836,8 @@ export function Finance() {
       </header>
 
       {activeTab === 'records' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
+        <div className="space-y-8">
+          <div className="w-full">
             <div className="bg-stone-900 text-white rounded-3xl p-8 shadow-xl relative overflow-hidden group border border-white/5">
               <div className="absolute top-0 right-0 p-6 opacity-10 scale-150 rotate-12 transition-transform group-hover:rotate-0">
                 <Wallet className="w-24 h-24" />
@@ -696,48 +860,27 @@ export function Finance() {
                    </button>
                 </div>
               </div>
-              <h2 className="text-4xl font-sans font-black tracking-tighter mb-8 relative z-10">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 relative z-10">
                 {hideAmounts ? "Rp •••••••" : `Rp ${balance.toLocaleString("id-ID")}`}
               </h2>
 
-              <div className="grid grid-cols-1 gap-6 border-t border-white/10 pt-6">
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
-                         <TrendingUp className="w-4 h-4" />
-                      </div>
-                      <div>
-                         <p className="text-[10px] uppercase font-black text-stone-500 mb-0.5">Keluar Hari Ini</p>
-                         <p className="font-bold text-sm text-white">{hideAmounts ? "Rp •••" : `Rp ${dayStats.todayTotal.toLocaleString('id-ID')}`}</p>
-                      </div>
+              <div className="flex items-center justify-between border-t border-white/10 pt-6">
+                <div>
+                   <div className="text-stone-400 text-[10px] uppercase font-black tracking-widest mb-1 flex items-center gap-1.5">
+                     <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center"><TrendingUp className="w-2.5 h-2.5 text-green-400" /></div> Pemasukan
                    </div>
+                   <p className="font-bold text-sm text-green-400">{hideAmounts ? "Rp •••" : `Rp ${totalIncome.toLocaleString('id-ID')}`}</p>
                 </div>
-                <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                  <div>
-                    <p className="text-stone-500 text-[10px] uppercase tracking-widest font-bold mb-1">Total Pemasukan</p>
-                    <p className="text-green-400 font-bold font-sans text-xl">
-                      {hideAmounts ? "Rp •••" : `Rp ${totalIncome.toLocaleString("id-ID")}`}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center border border-green-500/20">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-stone-500 text-[10px] uppercase tracking-widest font-bold mb-1">Total Pengeluaran</p>
-                    <p className="text-red-500 font-bold font-sans text-xl">
-                      {hideAmounts ? "Rp •••" : `Rp ${totalExpense.toLocaleString("id-ID")}`}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center border border-red-500/20">
-                    <TrendingUp className="w-5 h-5 rotate-180" />
-                  </div>
+                <div className="text-right">
+                   <div className="text-stone-400 text-[10px] uppercase font-black tracking-widest mb-1 flex items-center justify-end gap-1.5">
+                     Pengeluaran <div className="w-4 h-4 rounded-full bg-red-500/20 flex items-center justify-center"><TrendingDown className="w-2.5 h-2.5 text-red-400" /></div>
+                   </div>
+                   <p className="font-bold text-sm text-red-400">{hideAmounts ? "Rp •••" : `Rp ${totalExpense.toLocaleString('id-ID')}`}</p>
                 </div>
               </div>
             </div>
 
-            <form
+            {false && <form
               onSubmit={handleSubmit}
               className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-5"
             >
@@ -780,9 +923,70 @@ export function Finance() {
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       required
-                      className="w-full bg-stone-50 border border-stone-100 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-4 focus:ring-stone-900/5 font-mono text-xl font-bold transition-all"
+                      className="w-full bg-stone-50 border border-stone-100 rounded-2xl pl-12 pr-12 py-4 outline-none focus:ring-4 focus:ring-stone-900/5 text-xl font-bold tracking-tight transition-all"
                       placeholder="0"
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCalcValue(amount || "0");
+                        setShowCalc(!showCalc);
+                      }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-stone-200 rounded-xl transition-all text-stone-500"
+                    >
+                      <Calculator className="w-5 h-5" />
+                    </button>
+                    
+                    {showCalc && (
+                      <div className="absolute top-full right-0 mt-2 p-4 bg-white border border-stone-200 rounded-3xl shadow-xl z-50 w-64 animate-in fade-in slide-in-from-top-2">
+                         <div className="flex justify-between items-center mb-4">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kalkulator Mini</span>
+                           <button onClick={() => setShowCalc(false)} className="text-stone-400 hover:text-stone-900"><X className="w-4 h-4"/></button>
+                         </div>
+                         <input 
+                           type="text" 
+                           value={calcValue}
+                           readOnly
+                           className="w-full bg-stone-50 rounded-xl p-3 text-right text-xl font-bold tracking-tight mb-4 focus:outline-none"
+                         />
+                         <div className="grid grid-cols-4 gap-2">
+                           {['7','8','9','/','4','5','6','*','1','2','3','-','C','0','.','+'].map(btn => (
+                             <button
+                               type="button"
+                               key={btn}
+                               onClick={() => {
+                                 if (btn === 'C') setCalcValue('0');
+                                 else {
+                                    setCalcValue(prev => prev === '0' ? btn : prev + btn);
+                                 }
+                               }}
+                               className="p-3 bg-stone-50 hover:bg-stone-100 rounded-xl font-bold text-lg transition-colors border border-stone-100"
+                             >
+                               {btn}
+                             </button>
+                           ))}
+                           <button
+                             type="button"
+                             onClick={() => {
+                               try {
+                                 // Basic evaluation using Function is safe here since it's local isolated input from buttons above
+                                 // eslint-disable-next-line no-new-func
+                                 const val = new Function('return ' + calcValue)();
+                                 if (Number.isFinite(val)) {
+                                   setAmount(val.toString());
+                                   setShowCalc(false);
+                                 }
+                               } catch (e) {
+                                  // ignore invalid expr
+                               }
+                             }}
+                             className="col-span-4 p-3 bg-stone-900 text-white rounded-xl font-bold transition-transform active:scale-[0.98]"
+                           >
+                             Terapkan ( = )
+                           </button>
+                         </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -896,7 +1100,7 @@ export function Finance() {
                                 <button onClick={() => setShowIconPicker(false)} className="text-stone-300 hover:text-stone-900"><X className="w-4 h-4" /></button>
                              </div>
                              <div className="grid grid-cols-5 gap-2 max-h-[200px] overflow-y-auto p-1 custom-scrollbar">
-                               {["Utensils", "Coffee", "Pizza", "Sandwich", "Beer", "Fuel", "ShoppingBag", "Smartphone", "Zap", "Droplet", "Wifi", "Pocket", "Tag", "Wallet", "CreditCard", "Banknote", "Coins", "Briefcase", "Home", "Car", "Bus", "Plane", "Train", "Bike", "MapPin", "User", "Heart", "Star", "Smile", "Camera", "Film", "Tv", "Music", "Gamepad", "Laptop", "Headphones", "Gift", "PartyPopper", "Sprout", "Stethoscope", "Pill", "Gamepad2", "Brush", "Palette", "Cloud", "Sun", "Moon", "Bell", "Mail", "Users", "Scissors", "Ticket", "Dumbbell", "Globe"]
+                               {Array.from(new Set(["Utensils", "Coffee", "Pizza", "Sandwich", "Beer", "Fuel", "ShoppingBag", "Smartphone", "Zap", "Droplet", "Wifi", "Pocket", "Tag", "Wallet", "CreditCard", "Banknote", "Coins", "Briefcase", "Home", "Car", "Bus", "Plane", "Train", "Bike", "MapPin", "User", "Heart", "Star", "Smile", "Camera", "Film", "Tv", "Music", "Gamepad", "Laptop", "Headphones", "Gift", "PartyPopper", "Sprout", "Stethoscope", "Pill", "Gamepad2", "Brush", "Palette", "Cloud", "Sun", "Moon", "Bell", "Mail", "Users", "Scissors", "Ticket", "Dumbbell", "Globe"]))
                                 .map((iconName) => {
                                  const IconComp = (LucideIcons as any)[iconName] || Tag;
                                  return (
@@ -940,22 +1144,42 @@ export function Finance() {
               >
                 <Save className="w-5 h-5" /> Simpan Transaksi
               </button>
-            </form>
+            </form>}
           </div>
 
-          <div className="lg:col-span-8 space-y-6">
+          <div className="w-full space-y-6">
             <div className="flex flex-row gap-2 md:gap-4">
                <CustomDropdown
                  value={filterRange}
                  options={[
                    { value: "all", label: "Semua Waktu" },
+                   { value: "this_week", label: "Minggu Ini" },
                    { value: "current_month", label: "Bulan Ini" },
                    { value: "last_month", label: "Bulan Lalu" },
                    { value: "last_year", label: "1 Tahun Terakhir" },
+                   { value: "last_2_years", label: "2 Tahun Terakhir" },
+                   { value: "custom", label: "Rentang Tanggal" }
                  ]}
                  onChange={(val) => setFilterRange(val)}
                  icon={<Calendar className="w-4 h-4" />}
                />
+               {filterRange === "custom" && (
+                 <div className="flex gap-2">
+                   <input 
+                     type="date" 
+                     value={customStartDate} 
+                     onChange={e => setCustomStartDate(e.target.value)}
+                     className="bg-paper border border-stone-200 rounded-2xl px-4 py-3 font-bold text-sm text-stone-700 outline-none focus:border-stone-400"
+                   />
+                   <span className="self-center font-bold text-stone-400">-</span>
+                   <input 
+                     type="date" 
+                     value={customEndDate} 
+                     onChange={e => setCustomEndDate(e.target.value)}
+                     className="bg-paper border border-stone-200 rounded-2xl px-4 py-3 font-bold text-sm text-stone-700 outline-none focus:border-stone-400"
+                   />
+                 </div>
+               )}
                <CustomDropdown
                  value={filterCategory}
                  options={[
@@ -995,10 +1219,10 @@ export function Finance() {
                   const isExpanded = expandedDates[dateKey] !== false; // Default expanded
 
                   return (
-                    <section key={groupIdx} className="space-y-4">
+                    <section key={groupIdx} className="bg-paper border border-stone-200 rounded-[2rem] shadow-sm overflow-hidden mb-6">
                        <button 
                          onClick={() => toggleDateExpansion(group.date)}
-                         className="w-full flex items-center justify-between px-6 py-4 bg-paper rounded-3xl border border-stone-200 shadow-sm hover:border-stone-400 transition-all group"
+                         className={cn("w-full flex items-center justify-between px-6 py-5 hover:bg-stone-50 transition-all group", isExpanded && "border-b border-stone-100")}
                        >
                           <div className="flex items-center gap-4">
                              <div className={cn("p-2 rounded-xl transition-colors", isExpanded ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-400")}>
@@ -1013,7 +1237,6 @@ export function Finance() {
                                 {dailyIncome > 0 && <span className="text-green-600 font-bold text-sm tracking-tight">{hideAmounts ? '+Rp •••' : `+Rp ${dailyIncome.toLocaleString('id-ID')}`}</span>}
                                 {dailyExpense > 0 && <span className="text-red-500 font-bold text-sm tracking-tight">{hideAmounts ? '-Rp •••' : `-Rp ${dailyExpense.toLocaleString('id-ID')}`}</span>}
                              </div>
-                             <ArrowRight className="w-5 h-5 text-stone-200 group-hover:text-stone-400 transition-colors" />
                           </div>
                        </button>
                        
@@ -1025,7 +1248,7 @@ export function Finance() {
                              exit={{ height: 0, opacity: 0 }}
                              className="overflow-hidden"
                            >
-                             <div className="bg-paper rounded-3xl border border-stone-200 overflow-hidden shadow-md divide-y divide-stone-100">
+                             <div className="divide-y divide-stone-100/60">
                                {group.records.map((record) => (
                                   <div key={record.id} className="p-5 flex items-center justify-between hover:bg-stone-50 transition-all group relative">
                                      <div 
@@ -1060,12 +1283,14 @@ export function Finance() {
                                         )}>
                                            {hideAmounts ? 'Rp •••' : `${record.type === 'income' ? '+' : '-'}Rp ${record.amount.toLocaleString('id-ID')}`}
                                         </p>
-                                        <button 
-                                          onClick={() => showConfirm("Hapus transaksi ini?", () => { deleteFinanceRecord(record.id); playError(); })}
-                                          className="p-2 text-stone-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                        >
-                                          <Trash2 className="w-5 h-5" />
-                                        </button>
+                                        <ActionMenu 
+                                          items={[
+                                            { label: 'Ubah Data', icon: <Edit3 className="w-4 h-4" />, onClick: () => { setEditingRecord(record); setShowAddModal(true); } },
+                                            { label: 'Hapus', icon: <Trash2 className="w-4 h-4" />, onClick: () => showConfirm("Hapus transaksi ini?", () => { deleteFinanceRecord(record.id); playError(); }), variant: 'danger' }
+                                          ]}
+                                          className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                                          headerTitle="Opsi Transaksi"
+                                        />
                                      </div>
                                   </div>
                                ))}
@@ -1103,19 +1328,21 @@ export function Finance() {
                      <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={expenseData}
+                            data={expenseChartData}
                             cx="50%"
                             cy="50%"
-                            innerRadius="50%"
-                            outerRadius="85%"
-                            paddingAngle={0}
+                            innerRadius="40%"
+                            outerRadius="60%"
+                            paddingAngle={2}
                             dataKey="value"
                             stroke="none"
                             labelLine={false}
                             label={renderCustomizedLabel}
+                            onClick={(data) => handleChartClick(data, 'expense')}
+                            className="cursor-pointer"
                           >
-                            {expenseData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, 'expense')} />
+                            {expenseChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.name === "Lainnya" ? "#a8a29e" : getCategoryColor(entry.name, 'expense')} />
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
@@ -1123,16 +1350,28 @@ export function Finance() {
                      </ResponsiveContainer>
                   </div>
                   
-                  <div className="mt-8 space-y-3">
-                    <h4 className="font-black text-[10px] uppercase tracking-widest text-stone-400 mb-4 px-2">Analisis Kategori</h4>
+                  <div className="mt-8 space-y-3 max-h-[500px] overflow-y-auto px-1 custom-scrollbar">
+                    <div className="sticky top-0 bg-paper pt-2 pb-4 z-10">
+                      <h4 className="font-black text-[10px] uppercase tracking-widest text-stone-400 px-2">Analisis Kategori</h4>
+                    </div>
                     {expenseData.length === 0 ? (
                       <p className="text-center text-stone-400 text-sm font-bold py-8">Belum ada data pengeluaran.</p>
                     ) : expenseData.map((data, i) => {
-                      const iconName = getCategoryIcon(data.name, 'expense');
+                      const pref = financeCategoryPrefs[data.name];
+                      const iconName = pref?.iconName || getCategoryIcon(data.name, 'expense');
                       const Icon = (LucideIcons as any)[iconName] || TrendingDown;
-                      const catColor = getCategoryColor(data.name, 'expense');
+                      const catColor = pref?.color || getCategoryColor(data.name, 'expense');
                       return (
-                         <div key={i} className="flex items-center justify-between p-3 rounded-2xl hover:bg-stone-50 transition-colors group border border-transparent hover:border-stone-100">
+                         <div
+                           id={`detail-expense-${data.name}${parseFloat(data.displayPercent) < 3 ? '-Lainnya-Header' : ''}`}
+                           key={i}
+                           className={cn(
+                             "flex items-center justify-between p-3 rounded-2xl transition-all group border",
+                             (highlightedCategory === data.name || (highlightedCategory === 'Lainnya' && parseFloat(data.displayPercent) < 3))
+                               ? "bg-stone-100 border-stone-300 ring-4 ring-stone-900/5 shadow-inner scale-[0.98]"
+                               : "border-transparent hover:bg-stone-50 hover:border-stone-100"
+                           )}
+                         >
                            <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: catColor }}>
                                  <Icon className="w-5 h-5" />
@@ -1142,7 +1381,7 @@ export function Finance() {
                                  <p className="text-[10px] font-black tracking-widest uppercase text-stone-400">{data.displayPercent}%</p>
                               </div>
                            </div>
-                           <p className="font-bold font-sans tracking-tight text-red-600">Rp {data.value.toLocaleString('id-ID')}</p>
+                           <p className="font-bold tracking-tight text-red-600">Rp {data.value.toLocaleString('id-ID')}</p>
                          </div>
                       );
                     })}
@@ -1159,19 +1398,21 @@ export function Finance() {
                      <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={incomeData}
+                            data={incomeChartData}
                             cx="50%"
                             cy="50%"
-                            innerRadius="50%"
-                            outerRadius="85%"
-                            paddingAngle={0}
+                            innerRadius="40%"
+                            outerRadius="60%"
+                            paddingAngle={2}
                             dataKey="value"
                             stroke="none"
                             labelLine={false}
                             label={renderCustomizedLabel}
+                            onClick={(data) => handleChartClick(data, 'income')}
+                            className="cursor-pointer"
                           >
-                            {incomeData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, 'income')} />
+                            {incomeChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.name === "Lainnya" ? "#a8a29e" : getCategoryColor(entry.name, 'income')} />
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
@@ -1179,16 +1420,28 @@ export function Finance() {
                      </ResponsiveContainer>
                   </div>
 
-                  <div className="mt-8 space-y-3">
-                    <h4 className="font-black text-[10px] uppercase tracking-widest text-stone-400 mb-4 px-2">Analisis Kategori</h4>
+                  <div className="mt-8 space-y-3 max-h-[500px] overflow-y-auto px-1 custom-scrollbar">
+                    <div className="sticky top-0 bg-paper pt-2 pb-4 z-10">
+                      <h4 className="font-black text-[10px] uppercase tracking-widest text-stone-400 px-2">Analisis Kategori</h4>
+                    </div>
                     {incomeData.length === 0 ? (
                       <p className="text-center text-stone-400 text-sm font-bold py-8">Belum ada data pemasukan.</p>
                     ) : incomeData.map((data, i) => {
-                      const iconName = getCategoryIcon(data.name, 'income');
+                      const pref = financeCategoryPrefs[data.name];
+                      const iconName = pref?.iconName || getCategoryIcon(data.name, 'income');
                       const Icon = (LucideIcons as any)[iconName] || TrendingUp;
-                      const catColor = getCategoryColor(data.name, 'income');
+                      const catColor = pref?.color || getCategoryColor(data.name, 'income');
                       return (
-                         <div key={i} className="flex items-center justify-between p-3 rounded-2xl hover:bg-stone-50 transition-colors group border border-transparent hover:border-stone-100">
+                         <div
+                           id={`detail-income-${data.name}${parseFloat(data.displayPercent) < 3 ? '-Lainnya-Header' : ''}`}
+                           key={i}
+                           className={cn(
+                             "flex items-center justify-between p-3 rounded-2xl transition-all group border",
+                             (highlightedCategory === data.name || (highlightedCategory === 'Lainnya' && parseFloat(data.displayPercent) < 3))
+                               ? "bg-stone-100 border-stone-300 ring-4 ring-stone-900/5 shadow-inner scale-[0.98]"
+                               : "border-transparent hover:bg-stone-50 hover:border-stone-100"
+                           )}
+                         >
                            <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: catColor }}>
                                  <Icon className="w-5 h-5" />
@@ -1198,7 +1451,7 @@ export function Finance() {
                                  <p className="text-[10px] font-black tracking-widest uppercase text-stone-400">{data.displayPercent}%</p>
                               </div>
                            </div>
-                           <p className="font-bold font-sans tracking-tight text-green-600">Rp {data.value.toLocaleString('id-ID')}</p>
+                           <p className="font-bold tracking-tight text-green-600">Rp {data.value.toLocaleString('id-ID')}</p>
                          </div>
                       );
                     })}
@@ -1206,8 +1459,225 @@ export function Finance() {
                </div>
            </div>
         </div>
+      ) : activeTab === 'planning' ? (
+        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <section className="bg-paper p-8 rounded-[2.5rem] border border-stone-200 shadow-sm space-y-8 flex flex-col">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                       <div className="p-3 bg-stone-900 text-white rounded-2xl shadow-lg ring-4 ring-stone-100">
+                          <TrendingUp className="w-6 h-6" />
+                       </div>
+                       <div>
+                          <h3 className="font-serif text-2xl font-bold">Anggaran</h3>
+                          <p className="text-xs text-stone-400 font-bold uppercase tracking-widest">Kontrol Pengeluaran</p>
+                       </div>
+                    </div>
+                    <button onClick={() => {
+                        const nameEl = document.getElementById('budget-form');
+                        if (nameEl) nameEl.scrollIntoView({ behavior: 'smooth' });
+                    }} className="p-3 bg-stone-100 hover:bg-stone-200 rounded-2xl transition-all shadow-sm active:scale-95">
+                       <Plus className="w-5 h-5 text-stone-700" />
+                    </button>
+                 </div>
+
+                 {/* Budget Form */}
+                 <div id="budget-form" className="p-6 bg-stone-50 rounded-3xl border border-stone-200/50 space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-1">Kategori</label>
+                          <input id="new-budget-cat" type="text" className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-stone-900" placeholder="Cth. Makanan" />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-1">Nominal</label>
+                          <input id="new-budget-amt" type="number" className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-stone-900" placeholder="0" />
+                       </div>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const c = (document.getElementById('new-budget-cat') as HTMLInputElement).value;
+                        const a = (document.getElementById('new-budget-amt') as HTMLInputElement).value;
+                        if(c && a) {
+                           addBudget({ id: uuidv4(), category: c, amount: parseFloat(a), period: 'monthly', createdAt: Date.now() });
+                           (document.getElementById('new-budget-cat') as HTMLInputElement).value = '';
+                           (document.getElementById('new-budget-amt') as HTMLInputElement).value = '';
+                           playSuccess();
+                        }
+                      }}
+                      className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold transition-all hover:bg-stone-800"
+                    >
+                      Tambah Anggaran
+                    </button>
+                 </div>
+                 
+                 <div className="flex-1 space-y-4 max-h-[400px] overflow-y-auto px-1 custom-scrollbar">
+                    {budgets.length === 0 ? (
+                       <div className="text-center py-20 bg-stone-50/50 rounded-3xl border border-stone-100 border-dashed">
+                          <p className="text-stone-400 italic text-sm">Belum ada anggaran.</p>
+                       </div>
+                    ) : budgets.map(b => (
+                       <div key={b.id} className="p-6 bg-stone-50 rounded-3xl border border-stone-100 flex items-center justify-between hover:border-stone-300 transition-all group">
+                          <div>
+                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">{b.category}</p>
+                             <p className="font-black text-2xl text-stone-900 tracking-tighter">Rp {b.amount.toLocaleString('id-ID')}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                             <button onClick={() => showConfirm(`Hapus anggaran "${b.category}"?`, () => { deleteBudget(b.id); playError(); })} className="p-3 text-stone-300 hover:text-red-500 hover:bg-white rounded-2xl transition-all opacity-100">
+                                <Trash2 className="w-5 h-5"/>
+                             </button>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </section>
+
+              <section className="bg-paper p-8 rounded-[2.5rem] border border-stone-200 shadow-sm space-y-8 flex flex-col relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
+                    <Heart className="w-48 h-48" />
+                 </div>
+                 <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-4">
+                       <div className="p-3 bg-pink-500 text-white rounded-2xl shadow-lg shadow-pink-100 ring-4 ring-pink-50">
+                          <Heart className="w-6 h-6" />
+                       </div>
+                       <div>
+                          <h3 className="font-serif text-2xl font-bold">Tabungan</h3>
+                          <p className="text-xs text-stone-400 font-bold uppercase tracking-widest">Simpanan & Investasi</p>
+                       </div>
+                    </div>
+                    <button onClick={() => {
+                        const el = document.getElementById('saving-form');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }} className="p-3 bg-stone-100 hover:bg-stone-200 rounded-2xl transition-all shadow-sm active:scale-95">
+                       <Plus className="w-5 h-5 text-stone-700" />
+                    </button>
+                 </div>
+
+                 {/* Saving Form */}
+                 <div id="saving-form" className="p-6 bg-pink-50/50 rounded-3xl border border-pink-100 space-y-4 relative z-10">
+                    <div className="grid grid-cols-2 gap-3">
+                       <div className="space-y-2 col-span-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-pink-400 pl-1">Nama Simpanan</label>
+                          <input id="new-saving-name" type="text" className="w-full bg-white border border-pink-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-pink-500" placeholder="Cth. Dana Darurat" />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-pink-400 pl-1">Saldo</label>
+                          <input id="new-saving-amt" type="number" className="w-full bg-white border border-pink-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-pink-500" placeholder="0" />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-pink-400 pl-1">Target (Ops)</label>
+                          <input id="new-saving-target" type="number" className="w-full bg-white border border-pink-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-pink-500" placeholder="0" />
+                       </div>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const n = (document.getElementById('new-saving-name') as HTMLInputElement).value;
+                        const s = (document.getElementById('new-saving-amt') as HTMLInputElement).value;
+                        const t = (document.getElementById('new-saving-target') as HTMLInputElement).value;
+                        if(n && s) {
+                           addSaving({ id: uuidv4(), name: n, currentAmount: parseFloat(s), targetAmount: parseFloat(t || '0'), location: 'Bank', createdAt: Date.now() });
+                           (document.getElementById('new-saving-name') as HTMLInputElement).value = '';
+                           (document.getElementById('new-saving-amt') as HTMLInputElement).value = '';
+                           (document.getElementById('new-saving-target') as HTMLInputElement).value = '';
+                           playSuccess();
+                        }
+                      }}
+                      className="w-full py-3 bg-pink-500 text-white rounded-xl font-bold transition-all hover:bg-pink-600 shadow-lg shadow-pink-100"
+                    >
+                      Buka Tabungan Baru
+                    </button>
+                 </div>
+
+                 <div className="flex-1 space-y-4 max-h-[400px] overflow-y-auto px-1 custom-scrollbar relative z-10">
+                    {savings.length === 0 ? (
+                       <div className="text-center py-20 bg-stone-50/50 rounded-3xl border border-stone-100 border-dashed">
+                          <p className="text-stone-400 italic text-sm">Belum ada catatan simpanan.</p>
+                       </div>
+                    ) : savings.map(s => (
+                       <div key={s.id} className="p-6 bg-white rounded-3xl border border-stone-100 relative group overflow-hidden shadow-sm hover:border-pink-200 transition-all">
+                          <div className="flex justify-between items-start relative z-10">
+                             <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                   <div className="px-2 py-0.5 bg-stone-100 text-stone-500 rounded text-[9px] font-black uppercase tracking-widest">{s.location}</div>
+                                   <div className="w-1 h-1 rounded-full bg-stone-300" />
+                                   <p className="text-xs font-bold text-stone-900">{s.name}</p>
+                                </div>
+                                <p className="font-black text-2xl text-stone-900 tracking-tighter">Rp {s.currentAmount.toLocaleString('id-ID')}</p>
+                                
+                                {s.targetAmount > 0 && (
+                                   <div className="mt-4 space-y-2">
+                                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                                         <span className="text-stone-400">Target: Rp {s.targetAmount.toLocaleString('id-ID')}</span>
+                                         <span className="text-pink-600">{Math.min(100, Math.round((s.currentAmount / s.targetAmount) * 100))}%</span>
+                                      </div>
+                                      <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden p-0.5 border border-stone-50">
+                                         <motion.div 
+                                           initial={{ width: 0 }}
+                                           animate={{ width: `${Math.min(100, (s.currentAmount / s.targetAmount) * 100)}%` }}
+                                           className="h-full bg-pink-500 rounded-full shadow-sm"
+                                         />
+                                      </div>
+                                   </div>
+                                )}
+                             </div>
+                             <div className="flex gap-1 ml-4 transition-opacity">
+                                <button onClick={() => {
+                                   const newAmt = prompt("Update Saldo:", s.currentAmount.toString());
+                                   if(newAmt) {
+                                      updateSaving({...s, currentAmount: parseFloat(newAmt)});
+                                      playSuccess();
+                                   }
+                                }} className="p-2.5 bg-stone-50 text-stone-400 hover:text-stone-900 rounded-xl transition-all"><Edit3 className="w-4 h-4"/></button>
+                                <button onClick={() => showConfirm(`Hapus tabungan "${s.name}"?`, () => { deleteSaving(s.id); playError(); })} className="p-2.5 bg-red-50 text-red-300 hover:text-red-500 rounded-xl transition-all"><Trash2 className="w-4 h-4"/></button>
+                             </div>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </section>
+           </div>
+        </div>
       ) : activeTab === 'settings' ? (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+           {/* Theme Settings */}
+           <div className="bg-paper border border-stone-200 rounded-3xl p-6 md:p-8 shadow-sm">
+             <header className="mb-6 flex items-center justify-between">
+               <div>
+                 <h2 className="font-serif text-2xl font-bold text-stone-900 flex items-center gap-2">
+                    {darkMode ? <LucideIcons.Moon className="w-6 h-6 text-accent-purple" /> : <LucideIcons.Sun className="w-6 h-6 text-accent-orange" />}
+                    Tampilan
+                 </h2>
+                 <p className="text-stone-500 text-sm mt-1">Personalisasi antarmuka aplikasi.</p>
+               </div>
+               <button 
+                 onClick={() => setDarkMode(!darkMode)}
+                 className={cn(
+                   "relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ring-2 ring-offset-2 ring-transparent",
+                   darkMode ? "bg-accent-purple" : "bg-stone-200"
+                 )}
+               >
+                 <span className={cn(
+                   "inline-block h-6 w-6 transform rounded-full bg-white transition-transform shadow-sm",
+                   darkMode ? "translate-x-7" : "translate-x-1"
+                 )} />
+               </button>
+             </header>
+             <div className="flex items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-100">
+                <div className="flex items-center gap-3">
+                   <div className={cn("p-2 rounded-xl", darkMode ? "bg-accent-purple/10 text-accent-purple" : "bg-accent-orange/10 text-accent-orange")}>
+                      {darkMode ? <LucideIcons.Moon className="w-4 h-4" /> : <LucideIcons.Sun className="w-4 h-4" />}
+                   </div>
+                   <div>
+                      <p className="font-bold text-sm">Mode Gelap</p>
+                      <p className="text-[10px] text-stone-500 uppercase tracking-widest font-black">Aktifkan untuk kenyamanan mata</p>
+                   </div>
+                </div>
+                <div className="text-xs font-bold text-stone-400">
+                   {darkMode ? "Aktif" : "Nonaktif"}
+                </div>
+             </div>
+           </div>
+
            <div className="bg-paper border border-stone-200 rounded-3xl p-6 md:p-8 shadow-sm">
              <header className="mb-8">
                <h2 className="font-serif text-2xl font-bold text-stone-900">Grup & Kategori</h2>
@@ -1217,49 +1687,103 @@ export function Finance() {
              <div className="space-y-12">
                {/* Categories Section */}
                <section>
-                 <h3 className="font-black text-xs uppercase tracking-widest text-stone-400 mb-4 flex items-center gap-2">
-                   <Tag className="w-4 h-4" /> Kustomisasi Kategori
-                 </h3>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                   {allCategories.map((cat, idx) => {
-                     const isIncome = incomeData.some(d => d.name === cat);
-                     const fallbackColor = getCategoryColor(cat, isIncome ? 'income' : 'expense');
-                     const fallbackIcon = categoryToIcon[cat] || (isIncome ? 'TrendingUp' : 'TrendingDown');
-                     const customPref = financeCategoryPrefs[cat] || { iconName: fallbackIcon, color: fallbackColor };
-                     
-                     const Icon = (LucideIcons as any)[customPref.iconName] || TrendingDown;
+                 <div className="flex items-center justify-between mb-6">
+                   <h3 className="font-black text-xs uppercase tracking-widest text-stone-400 flex items-center gap-2">
+                     <Tag className="w-4 h-4" /> Kustomisasi Kategori
+                   </h3>
+                   <button
+                     onClick={() => {
+                        Object.keys(categoryEdits).forEach(oldCat => {
+                          const edits = categoryEdits[oldCat];
+                          if (edits.name.trim() !== oldCat && edits.name.trim() !== "") {
+                            updateFinanceCategoryBulk(oldCat, edits.name.trim());
+                          }
+                          updateCategoryPref(edits.name.trim() || oldCat, {
+                            iconName: edits.iconName,
+                            color: edits.color
+                          });
+                        });
+                        setAlert("Perubahan kategori disimpan!");
+                        playSuccess();
+                     }}
+                     className="px-6 py-2 bg-stone-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-stone-800 transition-colors shadow-sm"
+                   >
+                     Simpan Perubahan
+                   </button>
+                 </div>
+
+                 <div className="space-y-8">
+                   {["income", "expense"].map(type => {
+                     const isIncome = type === "income";
+                     const filteredCategories = allCategories.filter(cat => {
+                       const inIncome = incomeData.some(d => d.name === cat);
+                       return isIncome ? inIncome : !inIncome;
+                     });
+
+                     if (filteredCategories.length === 0) return null;
 
                      return (
-                       <div key={idx} className="bg-stone-50 border border-stone-100 rounded-2xl p-4 flex flex-col gap-3 group">
-                         <div className="flex items-center gap-3">
-                           <div 
-                             className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0"
-                             style={{ backgroundColor: customPref.color }}
-                           >
-                             <Icon className="w-5 h-5" />
-                           </div>
-                           <p className="font-bold text-sm text-stone-800 line-clamp-1 flex-1">{cat}</p>
-                           <ActionMenu 
-                             items={[
-                               { 
-                                 label: "Edit Kategori", 
-                                 icon: <Settings className="w-4 h-4" />, 
-                                 onClick: () => {
-                                   setEditingCategory({
-                                     oldName: cat,
-                                     newName: cat,
-                                     type: isIncome ? 'income' : 'expense',
-                                     iconName: customPref.iconName || 'Tag',
-                                     color: customPref.color || '#000000'
-                                   });
-                                   playClick();
-                                 } 
-                               }
-                             ]}
-                           />
+                       <div key={type} className="space-y-4">
+                         <h4 className="font-bold text-sm text-stone-700 flex items-center gap-2">
+                           <div className={cn("w-2 h-2 rounded-full", isIncome ? "bg-green-500" : "bg-red-500")} />
+                           Kategori {isIncome ? "Pemasukan" : "Pengeluaran"}
+                         </h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                           {filteredCategories.map(cat => {
+                             const editObj = getCatEdit(cat, isIncome);
+                             const Icon = (LucideIcons as any)[editObj.iconName] || (isIncome ? TrendingUp : TrendingDown);
+
+                             return (
+                               <div key={cat} className="bg-stone-50 border border-stone-100 rounded-2xl p-3 flex flex-col gap-3 group relative">
+                                  <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                      <button 
+                                        type="button"
+                                        onClick={() => setPickingIconFor(pickingIconFor === cat ? null : cat)}
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 active:scale-95 transition-transform"
+                                        style={{ backgroundColor: editObj.color }}
+                                      >
+                                        <Icon className="w-5 h-5" />
+                                      </button>
+                                      {pickingIconFor === cat && (
+                                        <div className="absolute top-12 left-0 w-64 bg-white border border-stone-200 shadow-xl rounded-2xl p-3 z-50 animate-in fade-in zoom-in-95 grid grid-cols-6 gap-2">
+                                           {AVAILABLE_ICONS.map(i => {
+                                              const Ico = (LucideIcons as any)[i];
+                                              return (
+                                                <button
+                                                  key={i}
+                                                  onClick={() => {
+                                                    setCategoryEdits(p => ({...p, [cat]: {...editObj, iconName: i}}));
+                                                    setPickingIconFor(null);
+                                                  }}
+                                                  className="p-2 hover:bg-stone-100 rounded-lg flex items-center justify-center text-stone-600 transition-colors"
+                                                >
+                                                  {Ico && <Ico className="w-4 h-4" />}
+                                                </button>
+                                              )
+                                           })}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <input 
+                                      type="text"
+                                      value={editObj.name}
+                                      onChange={(e) => setCategoryEdits(p => ({...p, [cat]: {...editObj, name: e.target.value}}))}
+                                      className="flex-1 bg-transparent border-b border-stone-200 outline-none focus:border-stone-900 font-bold text-sm pb-1 text-stone-800 focus:bg-white px-2 rounded-t transition-colors"
+                                    />
+                                    <input 
+                                      type="color"
+                                      value={editObj.color}
+                                      onChange={(e) => setCategoryEdits(p => ({...p, [cat]: {...editObj, color: e.target.value}}))}
+                                      className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 overflow-hidden shrink-0"
+                                    />
+                                  </div>
+                               </div>
+                             );
+                           })}
                          </div>
                        </div>
-                     );
+                     )
                    })}
                  </div>
                </section>
@@ -1290,98 +1814,116 @@ export function Finance() {
                     </button>
                   </div>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {existingGroups.length === 0 ? (
-                      <div className="col-span-2 py-10 bg-stone-50 rounded-3xl border border-stone-100 border-dashed text-center">
-                         <p className="text-stone-400 font-bold text-sm">Belum ada pengelompokan grup.</p>
-                      </div>
-                    ) : existingGroups.map((group) => {
-                      const categories = financeMappings[group] || [];
-                      const isManaged = managedGroup === group;
-                      
-                      return (
-                        <div key={group} className="bg-stone-50 border border-stone-200 rounded-3xl p-5 flex flex-col space-y-4 hover:border-stone-400 transition-all shadow-sm">
-                          <header className="flex items-center justify-between">
-                            <h5 className="font-serif text-lg font-bold text-stone-800">
-                              {group}
-                            </h5>
-                            <button
-                              onClick={() => {
-                                showConfirm(`Hapus grup "${group}"?`, () => {
-                                  deleteFinanceMapping(group);
-                                  playError();
-                                });
-                              }}
-                              className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-white rounded-xl transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </header>
+                  <div className="space-y-8">
+                    {["income", "expense"].map(type => {
+                       const isIncome = type === "income";
+                       const filteredGroups = existingGroups.filter(g => {
+                           const cats = financeMappings[g] || [];
+                           const hasIncomeCat = cats.some(c => incomeData.some(d => d.name === c));
+                           if (cats.length === 0) return !isIncome;
+                           return isIncome ? hasIncomeCat : !hasIncomeCat;
+                       });
 
-                          <div className="flex flex-wrap gap-1.5 min-h-[2rem]">
-                            {categories.length === 0 ? (
-                              <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest italic">— Kosong</span>
-                            ) : categories.map((cat, idx) => {
-                              const customPref = financeCategoryPrefs[cat];
-                              const fallbackIcon = categoryToIcon[cat];
-                              const IconName = customPref?.iconName || fallbackIcon;
-                              const IconComp = IconName ? (LucideIcons as any)[IconName] : null;
+                       if (filteredGroups.length === 0) return null;
 
-                              return (
-                                <div key={idx} className="group relative flex items-center gap-1.5 bg-white border border-stone-200 px-2 py-1 rounded-lg">
-                                  {IconComp && <IconComp className="w-3 h-3 text-stone-400" />}
-                                  <span className="text-[10px] font-bold text-stone-700">{cat}</span>
-                                  <button
-                                    onClick={() => {
-                                      const newCats = categories.filter(c => c !== cat);
-                                      updateFinanceMapping(group, newCats);
-                                      playClick();
-                                    }}
-                                    className="ml-1 w-3.5 h-3.5 bg-red-50 text-red-400 rounded flex items-center justify-center hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                  >
-                                    <X className="w-2.5 h-2.5" />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
+                       return (
+                         <div key={type} className="space-y-4">
+                            <h4 className="font-bold text-sm text-stone-700 flex items-center gap-2">
+                              <div className={cn("w-2 h-2 rounded-full", isIncome ? "bg-green-500" : "bg-red-500")} />
+                              Grup {isIncome ? "Pemasukan" : "Pengeluaran"}
+                            </h4>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                              {filteredGroups.map(group => {
+                                const categories = financeMappings[group] || [];
+                                const isManaged = managedGroup === group;
+                                
+                                return (
+                                  <div key={group} className="bg-stone-50 border border-stone-200 rounded-3xl p-5 flex flex-col space-y-4 hover:border-stone-400 transition-all shadow-sm">
+                                    <header className="flex items-center justify-between">
+                                      <h5 className="font-serif text-lg font-bold text-stone-800">
+                                        {group}
+                                      </h5>
+                                      <button
+                                        onClick={() => {
+                                          showConfirm(`Hapus grup "${group}"?`, () => {
+                                            deleteFinanceMapping(group);
+                                            playError();
+                                          });
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-white rounded-xl transition-all"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </header>
 
-                          <div className="pt-2 border-t border-stone-200/50">
-                            {isManaged ? (
-                               <div className="flex gap-2">
-                                  <div className="flex-1">
-                                    <select
-                                      autoFocus
-                                      value={newGroupCategory}
-                                      onChange={(e) => {
-                                        const val = e.target.value;
-                                        setNewGroupCategory(val);
-                                        if (val && !categories.includes(val)) {
-                                          updateFinanceMapping(group, [...categories, val]);
-                                          setNewGroupCategory("");
-                                        }
-                                      }}
-                                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-xs outline-none focus:ring-2 focus:ring-stone-900 font-bold"
-                                    >
-                                      <option value="" disabled>Pilih kategori...</option>
-                                      {allCategories.filter(c => !categories.includes(c)).map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                      ))}
-                                    </select>
+                                    <div className="flex flex-wrap gap-1.5 min-h-[2rem]">
+                                      {categories.length === 0 ? (
+                                        <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest italic">— Kosong</span>
+                                      ) : categories.map((cat, idx) => {
+                                        const customPref = financeCategoryPrefs[cat];
+                                        const fallbackIcon = categoryToIcon[cat];
+                                        const IconName = customPref?.iconName || fallbackIcon;
+                                        const IconComp = IconName ? (LucideIcons as any)[IconName] : null;
+
+                                        return (
+                                          <div key={idx} className="group relative flex items-center gap-1.5 bg-white border border-stone-200 px-2 py-1 rounded-lg">
+                                            {IconComp && <IconComp className="w-3 h-3 text-stone-400" />}
+                                            <span className="text-[10px] font-bold text-stone-700">{cat}</span>
+                                            <button
+                                              onClick={() => {
+                                                const newCats = categories.filter(c => c !== cat);
+                                                updateFinanceMapping(group, newCats);
+                                                playClick();
+                                              }}
+                                              className="ml-1 w-3.5 h-3.5 bg-red-50 text-red-400 rounded flex items-center justify-center hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                            >
+                                              <X className="w-2.5 h-2.5" />
+                                            </button>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+
+                                    <div className="pt-2 border-t border-stone-200/50">
+                                      {isManaged ? (
+                                        <div className="flex gap-2">
+                                            <div className="flex-1">
+                                              <select
+                                                autoFocus
+                                                value={newGroupCategory}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  setNewGroupCategory(val);
+                                                  if (val && !categories.includes(val)) {
+                                                    updateFinanceMapping(group, [...categories, val]);
+                                                    setNewGroupCategory("");
+                                                  }
+                                                }}
+                                                className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-xs outline-none focus:ring-2 focus:ring-stone-900 font-bold"
+                                              >
+                                                <option value="" disabled>Pilih kategori...</option>
+                                                {allCategories.filter(c => !categories.includes(c) && (isIncome ? incomeData.some(d => d.name === c) : !incomeData.some(d => d.name === c))).map(cat => (
+                                                  <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                            <button onClick={() => { setManagedGroup(null); setNewGroupCategory(""); }} className="p-2 bg-stone-100 rounded-xl"><X className="w-4 h-4" /></button>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => { setManagedGroup(group); setNewGroupCategory(""); playClick(); }}
+                                          className="w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-stone-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-600 hover:border-stone-400 transition-all bg-stone-50/50"
+                                        >
+                                            <Plus className="w-3 h-3" /> Tambah Kategori
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-                                  <button onClick={() => { setManagedGroup(null); setNewGroupCategory(""); }} className="p-2 bg-stone-100 rounded-xl"><X className="w-4 h-4" /></button>
-                               </div>
-                            ) : (
-                               <button
-                                 onClick={() => { setManagedGroup(group); setNewGroupCategory(""); playClick(); }}
-                                 className="w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-stone-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-600 hover:border-stone-400 transition-all bg-stone-50/50"
-                               >
-                                  <Plus className="w-3 h-3" /> Tambah Kategori
-                               </button>
-                            )}
-                          </div>
-                        </div>
-                      );
+                                );
+                              })}
+                            </div>
+                         </div>
+                       );
                     })}
                   </div>
                </section>
@@ -1436,28 +1978,71 @@ export function Finance() {
                   <p className="text-[10px] text-orange-500 mt-2 italic font-medium leading-relaxed">Peringatan: Mengubah nama akan mengupdate semua riwayat transaksi yang menggunakan kategori ini.</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                   <div>
-                     <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-2 font-sans">Nama Ikon (Lucide)</label>
-                     <input
-                       type="text"
-                       value={editingCategory.iconName}
-                       onChange={(e) => setEditingCategory(prev => prev ? { ...prev, iconName: e.target.value } : null)}
-                       className="w-full bg-stone-50 border border-stone-100 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-stone-900/5 font-bold text-sm"
-                     />
-                   </div>
-                   <div>
-                     <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-2 font-sans">Warna Latar (Hex/CSS)</label>
-                     <div className="flex gap-2 items-center relative">
-                        <input
-                          type="text"
-                          value={editingCategory.color}
-                          onChange={(e) => setEditingCategory(prev => prev ? { ...prev, color: e.target.value } : null)}
-                          className="w-full bg-stone-50 border border-stone-100 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-stone-900/5 font-bold text-sm"
-                        />
-                        <div className="w-8 h-8 rounded-full border border-stone-200 shrink-0 shadow-inner absolute right-2" style={{ backgroundColor: editingCategory.color }} />
-                     </div>
-                   </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-4 font-sans">Pilih Ikon Baru</label>
+                    <div className="p-4 bg-stone-50 rounded-[2rem] border border-stone-100">
+                      <div className="grid grid-cols-1 gap-6 max-h-[30vh] overflow-y-auto pr-2 custom-scrollbar">
+                        {ICON_GROUPS.map(group => (
+                          <div key={group.name} className="space-y-3">
+                             <h4 className="text-[9px] font-black uppercase tracking-widest text-stone-400 pl-1">{group.name}</h4>
+                             <div className="grid grid-cols-6 sm:grid-cols-6 lg:grid-cols-8 gap-2">
+                               {group.icons.map(icon => {
+                                 const IconComp = (LucideIcons as any)[icon] || Tag;
+                                 const isSelected = editingCategory?.iconName === icon;
+                                 return (
+                                   <button
+                                     key={icon}
+                                     onClick={() => setEditingCategory(prev => prev ? {...prev, iconName: icon} : null)}
+                                     className={cn(
+                                       "aspect-square rounded-xl flex items-center justify-center border transition-all",
+                                       isSelected ? "bg-stone-900 border-stone-900 text-white shadow-md scale-110" : "bg-white border-stone-100 text-stone-400 hover:border-stone-300"
+                                     )}
+                                   >
+                                     <IconComp className="w-5 h-5" />
+                                   </button>
+                                 );
+                               })}
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-4 font-sans">Warna Kategori (Hue)</label>
+                    <div className="space-y-4">
+                       <div className="flex flex-wrap gap-3 p-4 bg-stone-50 rounded-3xl border border-stone-100">
+                          {[0, 25, 45, 80, 140, 190, 220, 270, 300, 330, 350].map(hue => {
+                             const color = `hsl(${hue}, 70%, 50%)`;
+                             const isSelected = editingCategory?.color === color;
+                             return (
+                               <button
+                                 key={hue}
+                                 onClick={() => setEditingCategory(prev => prev ? {...prev, color: color} : null)}
+                                 className={cn(
+                                   "w-10 h-10 rounded-full border-4 transition-all shadow-sm active:scale-95",
+                                   isSelected ? "border-stone-900 scale-110" : "border-white hover:scale-105"
+                                 )}
+                                 style={{ backgroundColor: color }}
+                               />
+                             );
+                          })}
+                       </div>
+                       <div className="flex gap-4 items-center">
+                          <input 
+                            type="range" 
+                            min="0" 
+                            max="360" 
+                            className="flex-1 accent-stone-900"
+                            onChange={(e) => {
+                               const hue = e.target.value;
+                               setEditingCategory(prev => prev ? {...prev, color: `hsl(${hue}, 70%, 50%)`} : null);
+                            }}
+                          />
+                          <div className="w-12 h-12 rounded-2xl border-4 border-white shadow-xl shrink-0" style={{ backgroundColor: editingCategory?.color }} />
+                       </div>
+                    </div>
                 </div>
 
                 <button
@@ -1576,6 +2161,27 @@ export function Finance() {
           </div>
         )}
       </AnimatePresence>
+
+      <AddFinanceModal
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); setEditingRecord(null); }}
+        addFinanceRecord={editingRecord ? updateFinanceRecord : addFinanceRecord}
+        financeRecords={financeRecords}
+        categoryToGroup={categoryToGroup}
+        financeCategoryPrefs={financeCategoryPrefs}
+        playSuccess={playSuccess}
+        playClick={playClick}
+        initialRecord={editingRecord}
+      />
+
+      {activeTab === 'records' && (
+        <button
+          onClick={() => { setShowAddModal(true); playClick(); }}
+          className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-16 h-16 bg-stone-900 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all z-40 ring-4 ring-white"
+        >
+          <Plus className="w-8 h-8" />
+        </button>
+      )}
     </div>
   );
 }

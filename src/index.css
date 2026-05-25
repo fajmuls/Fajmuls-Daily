@@ -1,14 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
 @import "tailwindcss";
 
+:root {
+  --background: #fbf9f4;
+  --paper: #ffffff;
+  --text-main: #171412;
+  --border-subtle: #e7e5e4; /* stone-200 */
+  --card-bg: #f5f5f4; /* stone-100 */
+}
+
+.dark {
+  --background: #171412; /* stone-900 */
+  --paper: #1c1917; /* stone-850-ish */
+  --text-main: #fbf9f4; /* cream */
+  --border-subtle: #44403c; /* stone-700 */
+  --card-bg: #292524; /* stone-800 */
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
   
-  --color-stone-850: #1f1a17;
-  --color-stone-900: #171412;
-  --color-cream: #fbf9f4;
-  --color-paper: #ffffff;
+  --color-stone-900: var(--text-main);
+  --color-stone-850: var(--paper);
+  --color-stone-100: var(--card-bg);
+  --color-stone-200: var(--border-subtle);
+  --color-stone-50: var(--background);
+  
+  --color-white: var(--paper);
+  --color-cream: var(--background);
+  --color-paper: var(--paper);
   
   /* More vibrant, engaging colors */
   --color-accent-orange: #ff5f1f;
@@ -29,11 +50,18 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-cream);
-  color: var(--color-stone-900);
+  background-color: var(--background);
+  color: var(--text-main);
   margin: 0;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
 }
 
 /* Scrollbar styling for a cleaner look */

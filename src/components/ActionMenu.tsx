@@ -14,9 +14,10 @@ interface ActionItem {
 interface ActionMenuProps {
   items: ActionItem[];
   className?: string;
+  headerTitle?: string;
 }
 
-export function ActionMenu({ items, className }: ActionMenuProps) {
+export function ActionMenu({ items, className, headerTitle = "Opsi Halaman" }: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { playClick } = useAudio();
@@ -53,7 +54,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
           >
             <div className="p-2 border-b border-stone-50 bg-stone-50/50 flex items-center gap-2 px-4 py-2">
                <Settings className="w-3 h-3 text-stone-400" />
-               <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Opsi Halaman</span>
+               <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{headerTitle}</span>
             </div>
             <div className="p-1.5">
               {items.map((item, i) => (

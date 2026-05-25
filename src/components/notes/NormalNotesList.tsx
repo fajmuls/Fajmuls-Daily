@@ -81,32 +81,41 @@ export function NormalNotesList() {
         </div>
       </div>
 
-      <header className="py-4 space-y-4">
-         <div>
-            <h1 className="text-4xl font-serif font-bold text-stone-900 mb-2 border-b border-stone-200 pb-4">Catatan Biasa</h1>
-            <p className="text-stone-500 font-medium">Kumpulan tulisan dan catatan harian.</p>
-         </div>
-
-         <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-               <input 
-                 type="text"
-                 placeholder="Cari judul atau isi..."
-                 value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
-                 className="w-full bg-paper border border-stone-200 rounded-2xl pl-11 pr-4 py-3 outline-none focus:ring-2 focus:ring-stone-900 shadow-sm text-sm"
-               />
-            </div>
-            <button 
-              onClick={() => { setSortBy(sortBy === 'newest' ? 'oldest' : 'newest'); playClick(); }}
-              className="flex items-center gap-2 px-6 py-3 bg-paper border border-stone-200 rounded-2xl font-bold text-stone-700 hover:bg-stone-50 transition-all text-sm shrink-0"
-            >
-               {sortBy === 'newest' ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
-               {sortBy === 'newest' ? 'Terbaru' : 'Terlama'}
-            </button>
-         </div>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6 mb-6 mt-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-stone-900 text-white rounded-2xl shadow-lg ring-4 ring-stone-100 shrink-0">
+            <FileText className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
+              Catatan Biasa
+            </h1>
+            <p className="text-stone-500 text-sm font-medium">
+              Kumpulan tulisan dan catatan harian.
+            </p>
+          </div>
+        </div>
       </header>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+         <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input 
+              type="text"
+              placeholder="Cari judul atau isi..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-paper border border-stone-200 rounded-2xl pl-11 pr-4 py-3 outline-none focus:ring-2 focus:ring-stone-900 shadow-sm text-sm"
+            />
+         </div>
+         <button 
+           onClick={() => { setSortBy(sortBy === 'newest' ? 'oldest' : 'newest'); playClick(); }}
+           className="flex items-center gap-2 px-6 py-3 bg-paper border border-stone-200 rounded-2xl font-bold text-stone-700 hover:bg-stone-50 transition-all text-sm shrink-0"
+         >
+            {sortBy === 'newest' ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
+            {sortBy === 'newest' ? 'Terbaru' : 'Terlama'}
+         </button>
+      </div>
 
       {sortedNotes.length === 0 ? (
          <div className="p-12 text-center text-stone-400 bg-stone-50 rounded-3xl border border-stone-200 border-dashed">

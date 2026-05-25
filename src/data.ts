@@ -51,3 +51,42 @@ export const INITIAL_MISSED_PRAYERS: MissedPrayer[] = MISSED_PRAYERS_DATA.map(it
   dateInfo: item.date,
   completed: false,
 }));
+
+export const ICON_GROUPS = [
+  {
+    name: 'Dasar',
+    icons: ['Tag', 'Wallet', 'CreditCard', 'Coins', 'Banknote', 'Receipt', 'Calculator', 'PiggyBank', 'Shield', 'Key', 'Lock', 'TrendingUp', 'TrendingDown', 'Activity', 'BarChart3', 'PieChart', 'Percent', 'Gavel', 'Wallet2']
+  },
+  {
+    name: 'Makanan & Jajan',
+    icons: ['Utensils', 'Coffee', 'Pizza', 'Sandwich', 'Beer', 'Wine', 'CupSoda', 'Apple', 'Carrot', 'Egg', 'IceCream', 'Popcorn', 'Cake', 'Cherry', 'Cookie', 'Beef', 'Soup', 'Grape', 'GlassWater']
+  },
+  {
+    name: 'Transportasi',
+    icons: ['Fuel', 'Car', 'Bus', 'Plane', 'Train', 'Bike', 'MapPin', 'Compass', 'Rocket', 'PlaneTakeoff', 'Anchor', 'Ship', 'Truck', 'CarTaxiFront', 'Milestone']
+  },
+  {
+    name: 'Belanja',
+    icons: ['ShoppingBag', 'Tag', 'Gift', 'Ticket', 'Shirt', 'Watch', 'ShoppingBasket', 'Package', 'Sparkles', 'Trophy', 'Crown', 'Glasses', 'Gem', 'Umbrella', 'Suitcase']
+  },
+  {
+    name: 'Utilitas & Rumah',
+    icons: ['Zap', 'Droplet', 'Wifi', 'Smartphone', 'Home', 'Tv', 'Mic', 'Printer', 'Laptop', 'Headphones', 'Speaker', 'Umbrella', 'Bed', 'Sofa', 'Bath', 'Lamp', 'Thermometer', 'Trash2', 'Warehouse', 'Key', 'Fan']
+  },
+  {
+    name: 'Peralatan & Hobby',
+    icons: ['Wrench', 'Hammer', 'PenTool', 'Scissors', 'Palette', 'Camera', 'Film', 'Gamepad', 'Music', 'Piano', 'Drum', 'Mic2', 'Sword', 'Telescope', 'Microscope', 'Drill', 'Screwdriver', 'Plug2', 'Cpu']
+  },
+  {
+    name: 'Kesehatan & Perawatan',
+    icons: ['Heart', 'Stethoscope', 'Pill', 'Activity', 'Thermometer', 'Hospital', 'Syringe', 'Baby', 'Dog', 'Cat', 'Fish', 'Bird', 'Bone', 'Footprints', 'ShowerHead', 'Sprout', 'Brain', 'Smile']
+  },
+  {
+    name: 'Hiburan & Edukasi',
+    icons: ['GraduationCap', 'Book', 'BookOpen', 'Library', 'Globe', 'Map', 'Languages', 'Dumbbell', 'Bicycle', 'Play', 'Video', 'CassetteTape', 'Clapperboard', 'Gamepad2', 'Headset']
+  },
+  {
+    name: 'Lainnya',
+    icons: ['User', 'Users', 'Star', 'Cloud', 'Sun', 'Moon', 'Bell', 'Flag', 'Smile', 'Box', 'Feather', 'Briefcase', 'Sprout', 'Bug', 'Ghost', 'Wind', 'Snowflake', 'Flame', 'Sparkly', 'Rainbow']
+  }
+];

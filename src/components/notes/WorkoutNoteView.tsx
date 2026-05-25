@@ -143,7 +143,7 @@ export function WorkoutNoteView() {
                </button>
             </>
           )}
-          <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-full font-bold hover:bg-stone-800 transition-all">
+          <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-full font-bold hover:bg-orange-700 transition-all">
             <Save className="w-5 h-5" /> Simpan
           </button>
         </div>
@@ -155,7 +155,7 @@ export function WorkoutNoteView() {
               <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Pilih Tanggal</label>
               <div className="flex items-center gap-2 bg-stone-50 px-4 py-3 rounded-xl focus-within:ring-2 ring-orange-500">
                  <Calendar className="w-5 h-5 text-stone-400" />
-                 <input type="date" value={dateStr} onChange={e => setDateStr(e.target.value)} className="bg-transparent outline-none flex-1 font-mono font-medium text-stone-700" />
+                 <input type="date" value={dateStr} onChange={e => setDateStr(e.target.value)} className="bg-transparent outline-none flex-1 font-bold text-stone-700" />
               </div>
            </div>
            <div className="flex-1">

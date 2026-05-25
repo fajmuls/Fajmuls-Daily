@@ -65,6 +65,30 @@ export interface FinanceRecord {
   note: string;
   createdAt: number;
   iconName?: string;
+  isDetailed?: boolean; // New: mark for detailed records
+}
+
+export interface Budget {
+  id: string;
+  category: string;
+  amount: number;
+  period: 'weekly' | 'monthly' | 'yearly';
+  createdAt: number;
+}
+
+export interface SavingGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  location: string; // e.g., 'Bank', 'Cash', 'Investment'
+  createdAt: number;
+}
+
+export interface BalanceSheet {
+  cash: number;
+  bank: number;
+  investment: number;
 }
 
 export interface FinanceMapping {
