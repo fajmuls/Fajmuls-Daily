@@ -2,19 +2,30 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fbf9f4;
+  --background: #F2F1ED; /* Soft Pearl */
   --paper: #ffffff;
-  --text-main: #171412;
-  --border-subtle: #e7e5e4; /* stone-200 */
-  --card-bg: #f5f5f4; /* stone-100 */
+  --text-main: #161616; /* Obsidian Black */
+  --border-main: #161616;
+  --border-subtle: #dbdad4;
+  --card-bg: #ffffff; 
+  --shadow-color: #161616;
+  /* Palette */
+  --accent-crimson: #710014;
+  --accent-sand: #B38F6F;
+  --text-inverse: #F2F1ED;
 }
 
 .dark {
-  --background: #171412; /* stone-900 */
-  --paper: #1c1917; /* stone-850-ish */
-  --text-main: #fbf9f4; /* cream */
-  --border-subtle: #44403c; /* stone-700 */
-  --card-bg: #292524; /* stone-800 */
+  --background: #161616; /* Obsidian Black */
+  --paper: #202020;
+  --text-main: #F2F1ED; /* Soft Pearl */
+  --border-main: #B38F6F; /* Warm Sand */
+  --border-subtle: #404040;
+  --card-bg: #202020; 
+  --shadow-color: #B38F6F;
+  --accent-crimson: #710014;
+  --accent-sand: #B38F6F;
+  --text-inverse: #161616;
 }
 
 @theme {
@@ -23,6 +34,7 @@
   
   --color-stone-900: var(--text-main);
   --color-stone-850: var(--paper);
+  --color-stone-800: var(--shadow-color);
   --color-stone-100: var(--card-bg);
   --color-stone-200: var(--border-subtle);
   --color-stone-50: var(--background);
@@ -31,12 +43,21 @@
   --color-cream: var(--background);
   --color-paper: var(--paper);
   
-  /* More vibrant, engaging colors */
-  --color-accent-orange: #ff5f1f;
-  --color-accent-blue: #0070f3;
-  --color-accent-green: #00c853;
-  --color-accent-pink: #d81b60;
-  --color-accent-purple: #7928ca;
+  --color-accent-orange: var(--accent-sand);
+  --color-accent-blue: var(--text-main);
+  --color-accent-green: var(--accent-sand);
+  --color-accent-pink: var(--accent-crimson);
+  --color-accent-purple: var(--accent-crimson);
+
+  --color-crimson: var(--accent-crimson);
+  --color-sand: var(--accent-sand);
+  --color-obsidian: var(--text-main);
+  --color-pearl: var(--background);
+
+  --shadow-brutal: 4px 4px 0px 0px var(--shadow-color);
+  --shadow-brutal-sm: 2px 2px 0px 0px var(--shadow-color);
+  --shadow-brutal-lg: 6px 6px 0px 0px var(--shadow-color);
+  --shadow-brutal-active: 0px 0px 0px 0px var(--shadow-color);
 }
 
 html {

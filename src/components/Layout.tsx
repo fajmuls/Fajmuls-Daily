@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic, LogOut, Search, X, Command, User as UserIcon, Plus } from 'lucide-react';
+import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic, LogOut, Search, X, Command, User as UserIcon, Plus, ArrowRight, Settings, Volume2, VolumeX, Moon, Sun } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
 import { useVoiceCommand } from '../hooks/useVoiceCommand';
 import { useAuth } from './AuthWrapper';
@@ -46,7 +46,7 @@ export function Layout({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const { addFinanceRecord, addNote } = useAppContext();
+  const { addFinanceRecord, addNote, darkMode, setDarkMode, soundEnabled, setSoundEnabled } = useAppContext();
 
   const handleVoiceCommand = (text: string) => {
     const lower = text.toLowerCase();
@@ -125,6 +125,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [voiceHint, setVoiceHint] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -193,14 +194,14 @@ export function Layout({ children }: { children: ReactNode }) {
                     <p className="text-[10px] text-stone-500 truncate">{user?.email}</p>
                  </div>
                  <button 
-                   onClick={() => { setShowMenu(false); navigate('/finance'); playClick(); }}
+                   onClick={() => { setShowMenu(false); setShowSettingsModal(true); playClick(); }}
                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-stone-600 hover:bg-stone-50 rounded-xl transition-colors"
                  >
-                    <Wallet className="w-4 h-4" />
-                    Setelan Keuangan
+                    <UserIcon className="w-4 h-4" />
+                    Pengaturan
                  </button>
                  <button 
-                   onClick={() => { setShowMenu(false); logout(); }}
+                   onClick={() => { setShowMenu(false); logout(); playClick(); }}
                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                  >
                     <LogOut className="w-4 h-4" />
@@ -217,23 +218,23 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen w-full bg-cream font-sans text-stone-900 overflow-hidden">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-stone-200 bg-paper">
+      <aside className="hidden md:flex flex-col w-64 border-r-4 border-stone-200 bg-paper z-10">
         <div className="p-6 flex items-center gap-3">
-          <img src="https://files.catbox.moe/c1ebqe.png" alt="Logo" className="w-10 h-10 object-contain" />
-          <h1 className="font-serif text-2xl font-bold tracking-tight text-accent-orange">Fajmuls Daily</h1>
+          <img src="https://files.catbox.moe/c1ebqe.png" alt="Logo" className="w-10 h-10 object-contain drop-shadow-md" />
+          <h1 className="font-serif text-2xl font-bold tracking-tight text-accent-crimson">Fajmuls Daily</h1>
         </div>
         
-        <nav className="flex-1 px-4 space-y-2 pt-4">
+        <nav className="flex-1 px-4 space-y-3 pt-4">
           {desktopNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               onClick={playClick}
               className={({ isActive }) => cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium",
+                "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold border-2",
                 isActive 
-                  ? "bg-stone-900 text-cream shadow-sm" 
-                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                  ? "bg-accent-crimson text-paper border-obsidian shadow-brutal translate-x-1" 
+                  : "bg-white text-stone-600 border-transparent hover:border-obsidian hover:shadow-brutal hover:-translate-y-1"
               )}
             >
               <item.icon className="w-5 h-5" />
@@ -242,12 +243,12 @@ export function Layout({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-stone-200">
+        <div className="p-4 border-t-2 border-stone-200">
           <button 
             onClick={toggleVoice}
             className={cn(
-              "w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-sm",
-              isListening ? "bg-accent-orange text-white animate-pulse shadow-sm" : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+              "w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold transition-all text-sm border-2",
+              isListening ? "bg-accent-crimson text-paper border-obsidian shadow-brutal animate-pulse" : "bg-white border-obsidian shadow-brutal text-obsidian active:translate-x-1 active:translate-y-1 active:shadow-brutal-active"
             )}
           >
             <Mic className="w-4 h-4" />
@@ -313,22 +314,22 @@ export function Layout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-paper border-b border-stone-200">
+        <header className="md:hidden flex items-center justify-between p-4 bg-paper border-b-2 border-stone-200">
           <div className="flex items-center gap-3">
-             <img src="https://files.catbox.moe/c1ebqe.png" alt="Logo" className="w-8 h-8 object-contain" />
-             <h1 className="font-serif text-lg font-bold text-accent-orange">Fajmuls Daily</h1>
+             <img src="https://files.catbox.moe/c1ebqe.png" alt="Logo" className="w-8 h-8 object-contain drop-shadow-md" />
+             <h1 className="font-serif text-lg font-bold text-accent-crimson tracking-tight">Fajmuls Daily</h1>
           </div>
           <div className="flex items-center gap-2">
-             <button onClick={() => setShowSearch(!showSearch)} className="p-2 bg-stone-100 rounded-full text-stone-600">
+             <button onClick={() => setShowSearch(!showSearch)} className="p-2 bg-stone-100 rounded-full text-stone-600 border border-stone-200 shadow-sm active:translate-y-px transition-transform">
                 <Search className="w-5 h-5" />
              </button>
-             <UserProfile compact />
              <button 
                onClick={toggleVoice}
-               className={cn("p-2 rounded-full", isListening ? "bg-accent-orange text-white animate-pulse shadow-sm" : "bg-stone-100 text-stone-600")}
+               className={cn("p-2 rounded-full border border-stone-200 shadow-sm active:translate-y-px transition-transform", isListening ? "bg-accent-crimson text-white animate-pulse" : "bg-stone-100 text-stone-600")}
              >
                <Mic className="w-5 h-5" />
              </button>
+             <UserProfile compact />
           </div>
         </header>
 
@@ -374,6 +375,101 @@ export function Layout({ children }: { children: ReactNode }) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Settings Modal will be rendered here if there is one */}
+        {showSettingsModal && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-obsidian/60 backdrop-blur-sm" onClick={() => setShowSettingsModal(false)}></div>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-paper border-4 border-obsidian shadow-brutal-lg rounded-[2.5rem] w-full max-w-md p-8 relative z-10"
+              >
+                 <div className="flex justify-between items-center mb-8">
+                    <div className="flex items-center gap-3">
+                       <Settings className="w-8 h-8 text-crimson" />
+                       <h2 className="font-serif text-3xl font-bold text-obsidian tracking-tight">Pengaturan</h2>
+                    </div>
+                    <button onClick={() => setShowSettingsModal(false)} className="p-2 hover:bg-stone-100 rounded-2xl transition-all">
+                       <X className="w-6 h-6 text-stone-400" />
+                    </button>
+                 </div>
+
+                 <div className="space-y-6">
+                    {/* Account Section */}
+                    <div className="p-5 bg-pearl border-2 border-obsidian rounded-3xl shadow-brutal-sm group">
+                       <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 bg-white border-2 border-obsidian rounded-2xl flex items-center justify-center shadow-brutal-sm">
+                                <UserIcon className="w-6 h-6 text-crimson" />
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Akun Terhubung</p>
+                                <p className="font-bold text-obsidian truncate max-w-[180px]">{user?.email}</p>
+                             </div>
+                          </div>
+                          <button 
+                            onClick={() => { logout(); playClick(); }}
+                            className="p-3 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl transition-all border border-transparent hover:border-obsidian shadow-sm hover:shadow-brutal-sm"
+                            title="Keluar"
+                          >
+                             <LogOut className="w-5 h-5" />
+                          </button>
+                       </div>
+                    </div>
+
+                    {/* Preferences Section */}
+                    <div className="space-y-3">
+                       <div className="flex items-center justify-between p-5 bg-white border-2 border-obsidian rounded-3xl shadow-brutal-sm">
+                          <div className="flex items-center gap-4">
+                             <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center border-2 border-obsidian shadow-brutal-xs transition-colors", darkMode ? "bg-obsidian text-paper" : "bg-sand text-obsidian")}>
+                                {darkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                             </div>
+                             <span className="font-bold text-obsidian">Mode Gelap</span>
+                          </div>
+                          <button 
+                            onClick={() => { setDarkMode(!darkMode); playClick(); }}
+                            className={cn(
+                              "relative inline-flex h-8 w-14 items-center rounded-full transition-colors border-2 border-obsidian cursor-pointer",
+                              darkMode ? "bg-obsidian" : "bg-stone-100"
+                            )}
+                          >
+                             <span className={cn(
+                               "inline-block h-5 w-5 transform rounded-full bg-crimson transition-transform border border-obsidian shadow-sm",
+                               darkMode ? "translate-x-7" : "translate-x-1"
+                             )} />
+                          </button>
+                       </div>
+
+                       <div className="flex items-center justify-between p-5 bg-white border-2 border-obsidian rounded-3xl shadow-brutal-sm">
+                          <div className="flex items-center gap-4">
+                             <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center border-2 border-obsidian shadow-brutal-xs transition-colors", soundEnabled ? "bg-green-500 text-white" : "bg-stone-200 text-stone-400")}>
+                                {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                             </div>
+                             <span className="font-bold text-obsidian">Suara Aplikasi</span>
+                          </div>
+                          <button 
+                            onClick={() => { setSoundEnabled(!soundEnabled); playClick(); }}
+                            className={cn(
+                              "relative inline-flex h-8 w-14 items-center rounded-full transition-colors border-2 border-obsidian cursor-pointer",
+                              soundEnabled ? "bg-obsidian" : "bg-stone-100"
+                            )}
+                          >
+                             <span className={cn(
+                               "inline-block h-5 w-5 transform rounded-full bg-sand transition-transform border border-obsidian shadow-sm",
+                               soundEnabled ? "translate-x-7" : "translate-x-1"
+                             )} />
+                          </button>
+                       </div>
+                    </div>
+
+                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest text-center pt-4">
+                       Versi 2.0 • Fajmuls Daily
+                    </p>
+                 </div>
+              </motion.div>
+           </div>
+        )}
 
         {/* Dynamic Content */}
         <div className="flex-1 overflow-y-auto w-full max-w-5xl mx-auto p-4 md:p-8 pb-32 md:pb-8">

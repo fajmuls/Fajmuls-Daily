@@ -15,11 +15,14 @@ interface ActionMenuProps {
   items: ActionItem[];
   className?: string;
   headerTitle?: string;
+  position?: "bottom" | "top";
 }
 
-export function ActionMenu({ items, className, headerTitle = "Opsi Halaman" }: ActionMenuProps) {
+export function ActionMenu({ items, className, headerTitle = "Opsi Halaman", position: initialPropPosition }: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [calculatedPosition, setCalculatedPosition] = useState<"bottom" | "top">(initialPropPosition || "bottom");
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const { playClick } = useAudio();
 
   useEffect(() => {
@@ -32,13 +35,26 @@ export function ActionMenu({ items, className, headerTitle = "Opsi Halaman" }: A
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleToggle = () => {
+    if (!isOpen && buttonRef.current && !initialPropPosition) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      // Provide ~200px space for the menu
+      if (spaceBelow < 250) {
+        setCalculatedPosition("top");
+      } else {
+        setCalculatedPosition("bottom");
+      }
+    }
+    setIsOpen(!isOpen);
+    playClick();
+  };
+
   return (
-    <div className={cn("relative", className)} ref={menuRef}>
+    <div className={cn("relative z-50", className)} ref={menuRef}>
       <button
-        onClick={() => {
-          setIsOpen(!isOpen);
-          playClick();
-        }}
+        ref={buttonRef}
+        onClick={handleToggle}
         className="p-2.5 bg-paper rounded-xl border border-stone-200 hover:bg-stone-50 transition-all text-stone-600 shadow-sm"
       >
         <MoreVertical className="w-5 h-5" />
@@ -47,16 +63,19 @@ export function ActionMenu({ items, className, headerTitle = "Opsi Halaman" }: A
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.95, y: calculatedPosition === "top" ? -10 : 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="absolute top-full right-0 mt-3 w-56 bg-white border border-stone-200 rounded-2xl shadow-2xl z-50 overflow-hidden"
+            exit={{ opacity: 0, scale: 0.95, y: calculatedPosition === "top" ? -10 : 10 }}
+            className={cn(
+              "absolute right-0 w-56 bg-white border-2 border-obsidian rounded-2xl shadow-brutal-lg z-[100] overflow-hidden",
+              calculatedPosition === "top" ? "bottom-full mb-3 origin-bottom-right" : "top-full mt-3 origin-top-right"
+            )}
           >
-            <div className="p-2 border-b border-stone-50 bg-stone-50/50 flex items-center gap-2 px-4 py-2">
-               <Settings className="w-3 h-3 text-stone-400" />
-               <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{headerTitle}</span>
+            <div className="p-2 border-b-2 border-obsidian bg-stone-50 flex items-center gap-2 px-4 py-2">
+               <Settings className="w-4 h-4 text-obsidian" />
+               <span className="text-[10px] font-bold text-obsidian uppercase tracking-widest">{headerTitle}</span>
             </div>
-            <div className="p-1.5">
+            <div className="p-1">
               {items.map((item, i) => (
                 <button
                   key={i}
@@ -67,7 +86,7 @@ export function ActionMenu({ items, className, headerTitle = "Opsi Halaman" }: A
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all",
                     item.variant === "danger"
-                      ? "text-red-500 hover:bg-red-50"
+                      ? "text-red-600 hover:bg-red-50"
                       : "text-stone-700 hover:bg-stone-50"
                   )}
                 >

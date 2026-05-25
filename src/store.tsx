@@ -29,7 +29,9 @@ interface AppState {
   financeCategoryPrefs: { [key: string]: { iconName: string; color: string } };
   hideAmounts: boolean;
   darkMode: boolean;
+  soundEnabled: boolean;
   setDarkMode: (dark: boolean) => void;
+  setSoundEnabled: (enabled: boolean) => void;
   setHideAmounts: (hide: boolean) => void;
   setAlert: (message: string | null) => void;
   showConfirm: (message: string, onConfirm: () => void) => void;
@@ -78,6 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [financeCategoryPrefs, setFinanceCategoryPrefs] = useState<{ [key: string]: { iconName: string; color: string } }>({});
   const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('fajmus-hide-amounts') === 'true');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('fajmus-dark-mode') === 'true');
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('fajmus-sound-enabled') !== 'false');
 
   const setAlert = (message: string | null) => {
     setAlertMessage(message);
@@ -107,6 +110,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
+  };
+
+  const toggleSoundEnabled = (enabled: boolean) => {
+    setSoundEnabled(enabled);
+    localStorage.setItem('fajmus-sound-enabled', enabled ? 'true' : 'false');
   };
 
   // Sync dark mode on mount
@@ -361,8 +369,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateFinanceRecord = async (record: FinanceRecord) => {
     if (!user) return;
+    const safeRecord = Object.fromEntries(Object.entries(record).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/finance`, record.id), record);
+      await setDoc(doc(db, `users/${user.uid}/finance`, record.id), safeRecord);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/finance/${record.id}`); }
   };
 
@@ -452,8 +461,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addBudget = async (budget: Budget) => {
     if (!user) return;
+    const safeBudget = Object.fromEntries(Object.entries(budget).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/budgets`, budget.id), budget);
+      await setDoc(doc(db, `users/${user.uid}/budgets`, budget.id), safeBudget);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/budgets/${budget.id}`); }
   };
 
@@ -466,15 +476,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addSaving = async (saving: SavingGoal) => {
     if (!user) return;
+    const safeSaving = Object.fromEntries(Object.entries(saving).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/savings`, saving.id), saving);
+      await setDoc(doc(db, `users/${user.uid}/savings`, saving.id), safeSaving);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/savings/${saving.id}`); }
   };
 
   const updateSaving = async (saving: SavingGoal) => {
     if (!user) return;
+    const safeSaving = Object.fromEntries(Object.entries(saving).filter(([_, v]) => v !== undefined));
     try {
-      await setDoc(doc(db, `users/${user.uid}/savings`, saving.id), saving);
+      await setDoc(doc(db, `users/${user.uid}/savings`, saving.id), safeSaving);
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/savings/${saving.id}`); }
   };
 
@@ -515,6 +527,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       user, notes, financeRecords, missedPrayers, docs, specials, budgets, savings, loading, 
       confirmDialog, alertMessage, financeMappings, financeCategoryPrefs, hideAmounts, setHideAmounts: toggleHideAmounts,
       darkMode, setDarkMode: toggleDarkMode,
+      soundEnabled, setSoundEnabled: toggleSoundEnabled,
       setAlert, showConfirm, closeConfirm, updateFinanceMapping, deleteFinanceMapping, updateCategoryPref,
       addNote, updateNote, deleteNote, addFinanceRecord, updateFinanceRecord, updateFinanceCategoryBulk, addFinanceRecordsBulk, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial,
       addBudget, deleteBudget, addSaving, updateSaving, deleteSaving

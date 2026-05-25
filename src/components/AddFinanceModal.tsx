@@ -2,7 +2,7 @@ import React, { useState, useMemo, FormEvent } from "react";
 import { format, isSameDay, addMonths, subMonths } from "date-fns";
 import { id } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus, X, Save, Calculator, Tag, Calendar, ChevronLeft, ChevronRight, ArrowRight, LayoutGrid } from "lucide-react";
+import { Plus, Minus, X, Save, Calculator, Tag, Calendar, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "../lib/utils";
@@ -14,6 +14,7 @@ export function AddFinanceModal({
   addFinanceRecord,
   financeRecords,
   categoryToGroup,
+  financeMappings,
   financeCategoryPrefs,
   playSuccess,
   playClick,
@@ -35,6 +36,7 @@ export function AddFinanceModal({
   const [showCategoryPopup, setShowCategoryPopup] = useState(false);
   const [calendarView, setCalendarView] = useState(new Date());
   const [lastInitialRecord, setLastInitialRecord] = useState<any>(null);
+  const [catSearch, setCatSearch] = useState("");
 
   React.useEffect(() => {
     if (isOpen && initialRecord !== lastInitialRecord) {
@@ -57,10 +59,13 @@ export function AddFinanceModal({
     e.preventDefault();
     if (!amount || !category) return;
 
-    const parentCategory = categoryToGroup[category] || undefined;
+    const parentCategory = categoryToGroup[category] || "";
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount)) return;
+
     addFinanceRecord({
       id: initialRecord ? initialRecord.id : uuidv4(),
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       category,
       parentCategory,
       note,
@@ -83,7 +88,17 @@ export function AddFinanceModal({
 
   const getCategoryColor = (catName: string) => {
     if (financeCategoryPrefs[catName]?.color) return financeCategoryPrefs[catName].color;
-    return type === "income" ? "#22c55e" : "#ef4444";
+    
+    // Distinct, vibrant, legible colors for brutalist theme
+    const COLORS_EXPENSE = ["#FF4500", "#D81B60", "#8E24AA", "#1E88E5", "#00897B", "#43A047", "#E53935", "#3949AB"];
+    const COLORS_INCOME = ["#00C853", "#2962FF", "#FFAB00", "#C51162", "#00BFA5", "#FF6D00", "#6200EA", "#AEEA00"];
+    
+    const colors = type === "income" ? COLORS_INCOME : COLORS_EXPENSE;
+    let hash = 0;
+    for (let i = 0; i < catName.length; i++) {
+      hash = catName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
   };
   
   const getCategoryIcon = (catName: string) => {
@@ -94,19 +109,35 @@ export function AddFinanceModal({
   };
 
   const categorySuggestions = useMemo(() => {
-    const counts: Record<string, number> = {};
-    financeRecords.filter((r: any) => r.type === type).forEach((r: any) => {
-        counts[r.category] = (counts[r.category] || 0) + 1;
+    // Only use categories strictly defined in the "Group and Category" settings
+    const definedCats = Object.keys(categoryToGroup);
+    
+    // Sort them alphabetically
+    return definedCats.sort((a, b) => a.localeCompare(b));
+  }, [categoryToGroup]);
+
+  const unmappedCategories = useMemo(() => {
+    const definedCats = new Set(Object.values(financeMappings).flat() as string[]);
+    const usedCats = new Set(financeRecords.map((r: any) => r.category));
+    return Array.from(usedCats).filter((cat: any) => !definedCats.has(cat)).sort();
+  }, [financeMappings, financeRecords]);
+
+  const filteredMappings = useMemo(() => {
+    const search = catSearch.toLowerCase();
+    if (!search) return financeMappings;
+    
+    const result: Record<string, string[]> = {};
+    Object.entries(financeMappings).forEach(([group, cats]) => {
+      const filtered = (cats as string[]).filter(c => c.toLowerCase().includes(search));
+      if (filtered.length > 0) result[group] = filtered;
     });
+    return result;
+  }, [financeMappings, catSearch]);
 
-    const defaultCats = type === "income"
-        ? ["Gaji", "Bonus", "Investasi", "Hadiah", "Freelance", "Penjualan"]
-        : ["Makanan", "Kopi & Jajan", "Transportasi Umum", "BBM", "Tagihan", "Belanja Harian", "Belanja Online", "Pulsa & Data"];
-
-    const allCatsSet = new Set([...defaultCats]);
-    financeRecords.filter((r: any) => r.type === type).forEach((r: any) => allCatsSet.add(r.category));
-    return Array.from(allCatsSet).sort((a, b) => (counts[b] || 0) - (counts[a] || 0));
-  }, [financeRecords, type]);
+  const filteredUnmapped = useMemo(() => {
+    const search = catSearch.toLowerCase();
+    return unmappedCategories.filter(c => c.toLowerCase().includes(search));
+  }, [unmappedCategories, catSearch]);
 
 
   return (
@@ -137,7 +168,11 @@ export function AddFinanceModal({
                 <div className="flex gap-2 p-1 bg-stone-100 rounded-2xl border border-stone-200">
                   <button
                     type="button"
-                    onClick={() => { setType("expense"); setCategory(""); playClick(); }}
+                    onClick={() => { 
+                      setType("expense"); 
+                      if (type !== "expense") setCategory(""); 
+                      playClick(); 
+                    }}
                     className={cn("flex-1 py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all", type === "expense" ? "bg-white border border-stone-100 text-stone-900 shadow-sm" : "text-stone-500")}
                   >
                     <span className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-1"><Minus className="w-4 h-4" /></span>
@@ -145,7 +180,11 @@ export function AddFinanceModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setType("income"); setCategory(""); playClick(); }}
+                    onClick={() => { 
+                      setType("income"); 
+                      if (type !== "income") setCategory(""); 
+                      playClick(); 
+                    }}
                     className={cn("flex-1 py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all", type === "income" ? "bg-white border border-stone-100 text-stone-900 shadow-sm" : "text-stone-500")}
                   >
                     <span className="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-1"><Plus className="w-4 h-4" /></span>
@@ -327,115 +366,126 @@ export function AddFinanceModal({
                    className="absolute inset-0 z-30 bg-paper flex flex-col"
                  >
                    <div className="p-6 border-b border-stone-100 flex items-center justify-between shrink-0 bg-stone-50/50">
-                     <div className="flex items-center gap-4">
-                       <button onClick={() => setShowCategoryPopup(false)} className="p-2 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-stone-200 transition-all">
+                     <div className="flex items-center gap-4 w-full">
+                       <button onClick={() => { setShowCategoryPopup(false); setCatSearch(""); }} className="p-2 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-stone-200 transition-all">
                          <ChevronLeft className="w-6 h-6 text-stone-600" />
                        </button>
-                       <h3 className="font-serif text-xl font-bold text-stone-900">Pilih Kategori</h3>
-                     </div>
-                   </div>
-                   <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-8">
-                     <div>
-                       <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-4">Kategori Tersedia</label>
-                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                          {categorySuggestions.map((cat, i) => {
-                             const iconName = getCategoryIcon(cat);
-                             const IconComp = iconName ? (LucideIcons as any)[iconName] : Tag;
-                             const isSelected = category === cat;
-
-                             return (
-                               <button 
-                                 key={i} 
-                                 type="button" 
-                                 onClick={() => { setCategory(cat); setSelectedIcon(iconName || "Tag"); setShowCategoryPopup(false); playClick(); }}
-                                 className={cn(
-                                   "aspect-square p-2 border rounded-2xl flex flex-col items-center justify-center gap-2 transition-all group",
-                                   isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg" : "bg-white border-stone-200 hover:border-stone-400 text-stone-700 shadow-sm"
-                                 )}
-                               >
-                                  <IconComp className={cn("w-6 h-6", isSelected ? "text-white" : "text-stone-400 group-hover:text-stone-600")} />
-                                  <span className={cn("text-[9px] font-bold uppercase tracking-wider truncate w-full text-center", isSelected ? "text-stone-200" : "text-stone-500")}>
-                                    {cat}
-                                  </span>
-                               </button>
-                             );
-                          })}
+                       <div className="flex-1 relative">
+                         <input 
+                           type="text"
+                           placeholder="Cari atau pilih kategori..."
+                           value={catSearch}
+                           onChange={(e) => setCatSearch(e.target.value)}
+                           className="w-full bg-white border border-stone-200 rounded-2xl px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-stone-900/5 font-bold"
+                         />
+                         <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300" />
                        </div>
                      </div>
-                     
-                     <div className="pt-6 border-t border-stone-100">
-                        <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-4">Atau Ketik Kategori Baru</label>
-                        <div className="flex gap-2">
-                           <input
-                              type="text"
-                              value={category}
-                              onChange={(e) => setCategory(e.target.value)}
-                              className="flex-1 bg-white border border-stone-200 rounded-2xl px-4 py-4 outline-none focus:border-stone-400 font-bold text-sm shadow-sm"
-                              placeholder="Misal: Sarapan"
-                           />
-                           <button
-                             type="button"
-                             onClick={() => setShowIconPicker(!showIconPicker)}
-                             className="h-[54px] w-[54px] bg-white border border-stone-200 rounded-2xl flex items-center justify-center hover:bg-stone-50 transition-colors shadow-sm relative overflow-hidden shrink-0"
+                   </div>
+                    <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+                     {catSearch && !Object.values(financeMappings).flat().includes(catSearch) && !unmappedCategories.includes(catSearch) && (
+                        <div className="bg-stone-900 border border-stone-800 rounded-3xl p-5 flex items-center justify-between shadow-brutal-sm">
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                                 <Plus className="w-6 h-6 text-white" />
+                              </div>
+                              <div>
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kategori Baru</p>
+                                 <p className="font-bold text-white">"{catSearch}"</p>
+                              </div>
+                           </div>
+                           <button 
+                             onClick={() => {
+                               setCategory(catSearch);
+                               setSelectedIcon(type === 'income' ? 'TrendingUp' : 'Tag');
+                               setShowCategoryPopup(false);
+                               setCatSearch("");
+                               playClick();
+                             }}
+                             className="px-6 py-3 bg-white text-stone-900 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-stone-100 transition-all active:scale-95"
                            >
-                             {(() => {
-                               const Icon = (LucideIcons as any)[selectedIcon] || Tag;
-                               return <Icon className="w-6 h-6 text-stone-700" />;
-                             })()}
+                             Gunakan
                            </button>
                         </div>
-                        
-                        <AnimatePresence>
-                          {showIconPicker && (
-                             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="mt-4 bg-white border border-stone-200 rounded-[2rem] p-6 shadow-2xl w-full z-50">
-                               <div className="flex items-center justify-between mb-6 px-2">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center">
-                                      <LayoutGrid className="w-4 h-4 text-stone-600" />
-                                    </div>
-                                    <span className="text-xs font-black uppercase tracking-widest text-stone-900 font-sans">Katalog Ikon</span>
-                                  </div>
-                                  <button onClick={() => setShowIconPicker(false)} className="p-2 hover:bg-stone-100 rounded-full transition-colors"><X className="w-4 h-4 text-stone-400" /></button>
-                               </div>
+                     )}
 
-                               <div className="space-y-8 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-                                 {ICON_GROUPS.map((group) => (
-                                   <div key={group.name} className="space-y-4">
-                                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 pl-2">{group.name}</h4>
-                                      <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
-                                        {group.icons.map((iconName) => {
-                                          const IconComp = (LucideIcons as any)[iconName] || Tag;
-                                          const isSelected = selectedIcon === iconName;
-                                          return (
-                                            <button
-                                              key={iconName}
-                                              type="button"
-                                              onClick={() => { setSelectedIcon(iconName); setShowIconPicker(false); playClick(); }}
-                                              className={cn(
-                                                "aspect-square rounded-2xl flex items-center justify-center transition-all border",
-                                                isSelected 
-                                                  ? "bg-stone-900 border-stone-900 text-white shadow-lg scale-110 z-10" 
-                                                  : "bg-stone-50 border-stone-100/50 hover:border-stone-300 text-stone-500 hover:text-stone-900"
-                                              )}
-                                              title={iconName}
-                                            >
-                                              <IconComp className="w-5 h-5 md:w-6 md:h-6" />
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                   </div>
-                                 ))}
+                     {Object.keys(financeMappings).length === 0 && unmappedCategories.length === 0 && !catSearch ? (
+                       <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
+                          <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center text-stone-400">
+                             <Tag className="w-8 h-8" />
+                          </div>
+                          <div>
+                             <p className="font-bold text-stone-900">Belum ada kategori</p>
+                             <p className="text-xs text-stone-500 mt-1 uppercase tracking-widest font-black">Tambah kategori di menu Keuangan &gt; Kategori &amp; Grup</p>
+                          </div>
+                       </div>
+                     ) : (
+                       <>
+                         {Object.entries(filteredMappings).map(([groupName, categories]) => {
+                           const catArray = Array.isArray(categories) ? categories : [];
+                           if (catArray.length === 0) return null;
+                           return (
+                             <div key={groupName}>
+                               <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-4">{groupName}</label>
+                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                  {catArray.map((cat, i) => {
+                                     const iconName = getCategoryIcon(cat);
+                                     const IconComp = iconName ? (LucideIcons as any)[iconName] : Tag;
+                                     const isSelected = category === cat;
+
+                                     return (
+                                         <button 
+                                           key={i} 
+                                           type="button" 
+                                           onClick={() => { setCategory(cat); setSelectedIcon(iconName || "Tag"); setShowCategoryPopup(false); setCatSearch(""); playClick(); }}
+                                           className={cn(
+                                             "aspect-square p-2 border rounded-2xl flex flex-col items-center justify-center gap-2 transition-all shadow-sm",
+                                             isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg" : "bg-white border-stone-200 hover:border-stone-400 text-stone-700"
+                                           )}
+                                         >
+                                            <IconComp className={cn("w-6 h-6")} style={{ color: isSelected ? 'white' : getCategoryColor(cat) }} />
+                                            <span className={cn("text-[9px] font-bold uppercase tracking-wider truncate w-full text-center mt-1", isSelected ? "text-stone-200" : "text-stone-500")}>
+                                              {cat}
+                                            </span>
+                                         </button>
+                                     );
+                                  })}
                                </div>
-                             </motion.div>
-                          )}
-                        </AnimatePresence>
-                        {category.length > 0 && (
-                          <button onClick={() => setShowCategoryPopup(false)} className="mt-4 w-full p-4 bg-stone-900 text-white font-bold text-sm uppercase tracking-widest rounded-2xl shadow-lg shadow-stone-300">
-                             Gunakan Kategori Ini
-                          </button>
-                        )}
-                     </div>
+                             </div>
+                           );
+                         })}
+
+                         {filteredUnmapped.length > 0 && (
+                           <div>
+                             <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-4">Tanpa Grup</label>
+                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                {filteredUnmapped.map((cat, i) => {
+                                   const iconName = getCategoryIcon(cat);
+                                   const IconComp = iconName ? (LucideIcons as any)[iconName] : Tag;
+                                   const isSelected = category === cat;
+
+                                   return (
+                                       <button 
+                                         key={`unmapped-${i}`} 
+                                         type="button" 
+                                         onClick={() => { setCategory(cat); setSelectedIcon(iconName || "Tag"); setShowCategoryPopup(false); setCatSearch(""); playClick(); }}
+                                         className={cn(
+                                           "aspect-square p-2 border rounded-2xl flex flex-col items-center justify-center gap-2 transition-all shadow-sm",
+                                           isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg" : "bg-white border-stone-200 hover:border-stone-400 text-stone-700"
+                                         )}
+                                       >
+                                          <IconComp className={cn("w-6 h-6")} style={{ color: isSelected ? 'white' : getCategoryColor(cat) }} />
+                                          <span className={cn("text-[9px] font-bold uppercase tracking-wider truncate w-full text-center mt-1", isSelected ? "text-stone-200" : "text-stone-500")}>
+                                            {cat}
+                                          </span>
+                                       </button>
+                                   );
+                                })}
+                             </div>
+                           </div>
+                         )}
+                       </>
+                     )}
                    </div>
                  </motion.div>
                )}

@@ -49,12 +49,12 @@ export function NotesList() {
           <Link 
             key={nt.type} 
             to={nt.link} 
-            className="group flex flex-col items-center justify-center p-6 bg-paper border border-stone-200 rounded-3xl hover:border-stone-400 hover:shadow-md transition-all"
+            className="group flex flex-col items-center justify-center p-6 bg-paper border-2 border-obsidian rounded-3xl hover:translate-x-1 hover:translate-y-1 hover:shadow-brutal-active shadow-brutal transition-all"
           >
-            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110", nt.bg, nt.color)}>
+            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110", nt.bg, nt.color, "border-2 border-obsidian")}>
               <nt.icon className="w-7 h-7" />
             </div>
-            <span className="font-bold text-sm text-center">{nt.label}</span>
+            <span className="font-bold text-sm text-center text-obsidian">{nt.label}</span>
           </Link>
         ))}
       </div>
@@ -81,9 +81,9 @@ export function NotesList() {
               if (note.type === 'workout') { title = note.title; preview = `${note.durationMins} menit`; }
 
               return (
-                <Link key={note.id} to={`/notes/${note.type}/${note.id}`} className="bg-paper p-6 rounded-3xl border border-stone-200 hover:shadow-lg transition-all group flex flex-col h-48 relative overflow-hidden">
+                <Link key={note.id} to={`/notes/${note.type}/${note.id}`} className="bg-paper p-6 rounded-3xl border-2 border-obsidian shadow-brutal hover:translate-x-1 hover:translate-y-1 hover:shadow-brutal-active transition-all group flex flex-col h-48 relative overflow-hidden">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={cn("p-2 rounded-xl", config.bg, config.color)}>
+                    <div className={cn("p-2 rounded-xl", config.bg, config.color, "border-2 border-obsidian")}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <span className="text-xs uppercase tracking-wider font-bold text-stone-400">{config.label}</span>

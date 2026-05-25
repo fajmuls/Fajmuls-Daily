@@ -64,7 +64,7 @@ export function Dashboard() {
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
         {/* Finance Snippet */}
-        <div className="bg-paper p-8 rounded-[2.5rem] shadow-sm border border-stone-200 relative overflow-hidden group">
+        <div className="bg-paper p-8 rounded-[2.5rem] shadow-brutal border-2 border-obsidian relative overflow-hidden group hover:translate-x-1 hover:translate-y-1 hover:shadow-brutal-active transition-all">
           <div className="absolute top-0 right-0 p-8 opacity-[0.03] scale-150 rotate-12 transition-transform group-hover:rotate-0 pointer-events-none">
              <Wallet className="w-32 h-32" />
           </div>
@@ -91,7 +91,7 @@ export function Dashboard() {
         </div>
 
         {/* Notes Snippet */}
-        <div className="bg-paper p-6 rounded-3xl shadow-sm border border-stone-200">
+        <div className="bg-paper p-6 rounded-3xl shadow-brutal border-2 border-obsidian hover:translate-x-1 hover:translate-y-1 hover:shadow-brutal-active transition-all">
           <div className="flex justify-between items-start mb-8">
             <div className="p-3 bg-stone-100 rounded-2xl">
               <NotebookPen className="w-6 h-6 text-stone-700" />
@@ -134,7 +134,7 @@ export function Dashboard() {
         </div>
 
         {/* Docs Snippet */}
-        <div className="bg-paper p-6 rounded-3xl shadow-sm border border-stone-200">
+        <div className="bg-paper p-6 rounded-3xl shadow-brutal border-2 border-obsidian hover:translate-x-1 hover:translate-y-1 hover:shadow-brutal-active transition-all">
           <div className="flex justify-between items-start mb-12">
             <div className="p-3 bg-stone-100 rounded-2xl">
               <FileImage className="w-6 h-6 text-stone-700" />
@@ -153,7 +153,7 @@ export function Dashboard() {
         </div>
 
         {/* Special Snippet */}
-        <div className="bg-paper p-6 rounded-3xl shadow-sm border border-stone-200">
+        <div className="bg-paper p-6 rounded-3xl shadow-brutal border-2 border-obsidian hover:translate-x-1 hover:translate-y-1 hover:shadow-brutal-active transition-all">
           <div className="flex justify-between items-start mb-12">
             <div className="p-3 bg-red-50 text-red-500 rounded-2xl">
               <ShieldAlert className="w-6 h-6" />
