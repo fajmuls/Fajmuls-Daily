@@ -33,6 +33,7 @@ interface RoutineCompletion {
 
 export function Activities() {
   const { playClick, playSuccess, playError } = useAudio();
+  const { showConfirm } = useAppContext();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
   // States for activities (could be moved to store if persistence is needed across sessions)
@@ -77,13 +78,14 @@ export function Activities() {
   };
 
   const handleDeleteActivity = (id: string) => {
-    if(!window.confirm("Yakin ingin menghapus kegiatan harian ini? Data penyelesaian juga akan terhapus.")) return;
-    playError();
-    const updated = activities.filter(a => a.id !== id);
-    const updatedComps = completions.filter(c => c.activityId !== id);
-    setActivities(updated);
-    setCompletions(updatedComps);
-    saveToLocal(updated, updatedComps);
+    showConfirm("Yakin ingin menghapus kegiatan harian ini? Data penyelesaian juga akan terhapus.", () => {
+      playError();
+      const updated = activities.filter(a => a.id !== id);
+      const updatedComps = completions.filter(c => c.activityId !== id);
+      setActivities(updated);
+      setCompletions(updatedComps);
+      saveToLocal(updated, updatedComps);
+    });
   };
 
   const toggleCompletion = (activityId: string, date: Date) => {
@@ -142,7 +144,7 @@ export function Activities() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-stone-200 pb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-accent-crimson rounded-2xl shadow-brutal border-2 border-stone-900">
+            <div className="p-3 bg-rose-600 rounded-2xl shadow-brutal border-2 border-stone-900">
                <CalendarRange className="w-6 h-6 text-white" />
             </div>
             <h1 className="font-serif text-4xl font-bold text-stone-900 tracking-tight">Kegiatan Harian</h1>
@@ -155,7 +157,7 @@ export function Activities() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="px-4 text-center min-w-[140px]">
-            <p className="text-[10px] font-black uppercase tracking-widest text-accent-crimson leading-none mb-1">Periode Bulan</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-rose-600 leading-none mb-1">Periode Bulan</p>
             <p className="font-bold text-lg text-stone-900 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</p>
           </div>
           <button onClick={() => { playClick(); setCurrentMonth(addMonths(currentMonth, 1)); }} className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
@@ -180,7 +182,7 @@ export function Activities() {
           </div>
           <button 
             onClick={handleAddActivity}
-            className="px-8 py-4 flex items-center justify-center gap-2 bg-accent-crimson text-white rounded-2xl font-black uppercase tracking-widest shadow-brutal border-2 border-stone-900 hover:-translate-y-1 transition-all active:translate-y-0 shrink-0"
+            className="px-6 md:px-8 py-4 flex items-center justify-center gap-2 bg-stone-900 text-white text-sm rounded-2xl font-black uppercase tracking-widest shadow-brutal hover:-translate-y-1 transition-all active:translate-y-0 shrink-0"
           >
             <Plus className="w-5 h-5" />
             <span>Tambah</span>
@@ -194,8 +196,8 @@ export function Activities() {
           {activityStats.map(stat => (
             <div key={stat.id} className="bg-paper p-5 rounded-3xl border-2 border-stone-200 shadow-sm hover:border-stone-900 hover:shadow-brutal transition-all group">
               <div className="flex justify-between items-start mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 group-hover:text-accent-crimson transition-colors">{stat.name}</span>
-                <TrendingUp className="w-4 h-4 text-stone-300 group-hover:text-accent-crimson transition-colors" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 group-hover:text-rose-600 transition-colors">{stat.name}</span>
+                <TrendingUp className="w-4 h-4 text-stone-300 group-hover:text-rose-600 transition-colors" />
               </div>
               <div className="flex items-end gap-2">
                 <span className="text-3xl font-black text-stone-900">{stat.count}</span>
@@ -205,7 +207,7 @@ export function Activities() {
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${stat.percentage}%` }}
-                  className="bg-accent-crimson h-full rounded-full"
+                  className="bg-rose-600 h-full rounded-full"
                 />
               </div>
             </div>
@@ -221,14 +223,14 @@ export function Activities() {
               <tr className="bg-stone-50 border-b-2 border-stone-900">
                 <th className="p-4 text-left border-r-2 border-stone-900 min-w-[160px]">
                   <div className="flex items-center gap-2">
-                    <Award className="w-5 h-5 text-accent-crimson" />
+                    <Award className="w-5 h-5 text-rose-600" />
                     <span className="text-xs font-black uppercase tracking-tighter">Nama Kegiatan</span>
                   </div>
                 </th>
                 {weeks.map((week, wIdx) => (
                   <React.Fragment key={wIdx}>
                     <th className="px-2 py-4 text-center border-r-2 border-stone-200 bg-stone-100/50" colSpan={week.length}>
-                       <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Minggu {wIdx + 1}</span>
+                       <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Minggu {wIdx + 1} ({format(week[0], 'd')} - {format(week[week.length - 1], 'd')})</span>
                     </th>
                   </React.Fragment>
                 ))}
@@ -242,12 +244,13 @@ export function Activities() {
                   <th 
                     key={dIdx} 
                     className={cn(
-                      "p-2 text-center text-[10px] font-bold border-r border-stone-100 min-w-[36px]",
-                      isSameDay(day, new Date()) ? "bg-accent-crimson text-white border-none" : ""
+                      "p-1.5 text-center text-[10px] font-bold border-r border-stone-100 min-w-[40px]",
+                      isSameDay(day, new Date()) ? "bg-stone-900 text-white border-none" : ""
                     )}
                   >
-                    <div>{format(day, 'd')}</div>
-                    <div className="text-[8px] opacity-70 uppercase tracking-tighter">{format(day, 'EEE', { locale: id })}</div>
+                    <div className="text-sm font-black">{format(day, 'd')}</div>
+                    <div className="text-[8px] opacity-90 uppercase tracking-tighter mt-0.5">{format(day, 'EEEE', { locale: id })}</div>
+                    <div className="text-[8px] opacity-60 uppercase font-mono tracking-tighter mt-0.5">{format(day, 'dd/MM/yy')}</div>
                   </th>
                 ))}
                 <th className="bg-stone-100 border-l border-stone-900"></th>
@@ -267,7 +270,7 @@ export function Activities() {
               ) : (
                 activities.map(act => (
                   <tr key={act.id} className="border-b border-stone-100 hover:bg-stone-50 transition-colors group/row">
-                    <td className="p-4 border-r-2 border-stone-900 font-bold text-sm text-stone-800 bg-stone-50/30">
+                    <td className="p-3 border-r-2 border-stone-900 font-bold text-sm text-stone-800 bg-stone-50/30">
                       {act.name}
                     </td>
                     {daysInMonth.map((day, dIdx) => {
@@ -278,13 +281,13 @@ export function Activities() {
                           <button 
                             onClick={() => toggleCompletion(act.id, day)}
                             className={cn(
-                              "w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center mx-auto cursor-pointer",
+                              "w-4 h-4 rounded border-2 transition-all flex items-center justify-center mx-auto cursor-pointer",
                               isCompleted 
-                                ? "bg-accent-crimson border-stone-900 text-white shadow-sm" 
+                                ? "bg-stone-900 border-stone-900 text-white shadow-sm" 
                                 : "bg-white border-stone-200 hover:border-stone-400"
                             )}
                           >
-                             {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                             {isCompleted && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
                           </button>
                         </td>
                       );

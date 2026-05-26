@@ -1331,41 +1331,76 @@ export function Finance() {
       {activeTab === "records" ? (
         <div className="space-y-8">
           <div className="w-full">
-            <div className="bg-stone-900 text-white rounded-[2rem] p-6 shadow-brutal relative overflow-hidden group border-2 border-stone-900">
-              <div className="flex justify-between items-center relative z-10">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-stone-400 uppercase tracking-widest text-[9px] font-black">
-                      Net Tabungan
-                    </p>
+            <div className="bg-stone-900 text-white rounded-[2.5rem] p-8 shadow-brutal relative overflow-hidden group border-2 border-stone-900">
+              <div className="absolute top-0 right-0 p-6 opacity-5 scale-150 rotate-12 transition-transform group-hover:rotate-0">
+                <Wallet className="w-24 h-24" />
+              </div>
+              <div className="flex justify-between items-start mb-2 relative z-10">
+                <p className="text-stone-400 uppercase tracking-widest text-[10px] font-bold mt-2">
+                  Saldo Tersedia
+                </p>
+                <div className="flex gap-2">
+                  <div className="p-1 px-4 bg-white/10 rounded-2xl flex items-center gap-2 backdrop-blur-sm">
                     <div
                       className={cn(
-                        "w-1.5 h-1.5 rounded-full",
+                        "w-2 h-2 rounded-full",
                         balance >= 0
                           ? "bg-green-400"
                           : "bg-red-400 animate-pulse",
                       )}
                     />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
+                      {balance >= 0 ? "Surplus" : "Defisit"}
+                    </span>
                   </div>
-                  <h2 className="font-mono text-2xl font-bold tracking-tight">
-                    {hideAmounts
-                      ? "Rp •••••••"
-                      : `Rp ${balance.toLocaleString("id-ID")}`}
-                  </h2>
+                  <button
+                    onClick={() => {
+                      setHideAmounts(!hideAmounts);
+                      playClick();
+                    }}
+                    className="p-3 bg-white text-stone-900 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all ring-4 ring-white/5"
+                    title={hideAmounts ? "Tampilkan Saldo" : "Sembunyi Saldo"}
+                  >
+                    {hideAmounts ? (
+                      <Eye className="w-5 h-5" />
+                    ) : (
+                      <EyeOff className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
-                <div className="flex gap-4 items-center">
-                  <div className="text-right">
-                    <p className="text-stone-400 text-[8px] uppercase font-black tracking-widest mb-0.5">Pemasukan</p>
-                    <p className="font-mono font-bold text-xs text-green-400">
-                      {hideAmounts ? "Rp •••" : `Rp ${totalIncome.toLocaleString("id-ID")}`}
-                    </p>
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight mb-8 relative z-10">
+                {hideAmounts
+                  ? "Rp •••••••"
+                  : `Rp ${balance.toLocaleString("id-ID")}`}
+              </h2>
+
+              <div className="flex items-center justify-between border-t border-white/10 pt-6">
+                <div>
+                  <div className="text-stone-400 text-[10px] uppercase font-black tracking-widest mb-1 flex items-center gap-1.5">
+                    <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                      <TrendingUp className="w-2.5 h-2.5 text-green-400" />
+                    </div>{" "}
+                    Pemasukan
                   </div>
-                  <div className="text-right border-l border-white/10 pl-4">
-                    <p className="text-stone-400 text-[8px] uppercase font-black tracking-widest mb-0.5">Pengeluaran</p>
-                    <p className="font-mono font-bold text-xs text-red-400">
-                      {hideAmounts ? "Rp •••" : `Rp ${totalExpense.toLocaleString("id-ID")}`}
-                    </p>
+                  <p className="font-bold text-sm text-green-400">
+                    {hideAmounts
+                      ? "Rp •••"
+                      : `Rp ${totalIncome.toLocaleString("id-ID")}`}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-stone-400 text-[10px] uppercase font-black tracking-widest mb-1 flex items-center justify-end gap-1.5">
+                    Pengeluaran{" "}
+                    <div className="w-4 h-4 rounded-full bg-red-500/20 flex items-center justify-center">
+                      <TrendingDown className="w-2.5 h-2.5 text-red-400" />
+                    </div>
                   </div>
+                  <p className="font-bold text-sm text-red-400">
+                    {hideAmounts
+                      ? "Rp •••"
+                      : `Rp ${totalExpense.toLocaleString("id-ID")}`}
+                  </p>
                 </div>
               </div>
             </div>
@@ -2129,47 +2164,35 @@ export function Finance() {
             </header>
 
             {/* Metric Blocks */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pemasukan</span>
-                  </div>
-                  <p className="text-2xl font-black text-stone-900 tracking-tight">
-                    Rp {trendTotals.totalPemasukan.toLocaleString("id-ID")}
-                  </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 border-b border-stone-200 pb-6 mb-6">
+              <div className="py-2 flex items-center justify-between md:flex-col md:items-start md:justify-center">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pemasukan</span>
                 </div>
-                <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wider mt-3">Akumulasi Arus Masuk</p>
+                <p className="text-sm font-bold font-mono text-emerald-600 tracking-tight">
+                  Rp {trendTotals.totalPemasukan.toLocaleString("id-ID")}
+                </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pengeluaran</span>
-                  </div>
-                  <p className="text-2xl font-black text-stone-900 tracking-tight">
-                    Rp {trendTotals.totalPengeluaran.toLocaleString("id-ID")}
-                  </p>
+              <div className="py-2 flex items-center justify-between md:flex-col md:items-start md:justify-center border-t md:border-t-0 md:border-l border-stone-200 md:pl-4">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <div className="w-2 h-2 rounded-full bg-rose-500 shadow-sm" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pengeluaran</span>
                 </div>
-                <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wider mt-3">Akumulasi Arus Keluar</p>
+                <p className="text-sm font-bold font-mono text-rose-600 tracking-tight">
+                  Rp {trendTotals.totalPengeluaran.toLocaleString("id-ID")}
+                </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Net Tabungan (Selisih)</span>
-                  </div>
-                  <p className={cn(
-                    "text-2xl font-black tracking-tight",
-                    trendTotals.totalTabungan >= 0 ? "text-emerald-700" : "text-rose-700"
-                  )}>
-                    {trendTotals.totalTabungan >= 0 ? "+" : ""}Rp {trendTotals.totalTabungan.toLocaleString("id-ID")}
-                  </p>
+              <div className="py-2 flex items-center justify-between md:flex-col md:items-start md:justify-center border-t md:border-t-0 md:border-l border-stone-200 md:pl-4">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <div className={cn("w-2 h-2 rounded-full shadow-sm", trendTotals.totalTabungan >= 0 ? "bg-emerald-500" : "bg-rose-500")} />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Net Tabungan</span>
                 </div>
-                <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wider mt-3">Kondisi Neraca 6 Bulan</p>
+                <p className={cn("text-sm font-bold font-mono tracking-tight", trendTotals.totalTabungan >= 0 ? "text-stone-900" : "text-stone-500")}>
+                  Rp {trendTotals.totalTabungan.toLocaleString("id-ID")}
+                </p>
               </div>
             </div>
 
@@ -2239,20 +2262,18 @@ export function Finance() {
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                   >
                     <Pie
-                      activeIndex={activeExpenseIndex}
-                      activeShape={renderActiveShape}
                       data={expenseChartData}
                       cx="50%"
                       cy="50%"
                       innerRadius="35%"
                       outerRadius="55%"
-                      paddingAngle={4}
+                      paddingAngle={0}
                       dataKey="value"
-                      stroke="none"
+                      stroke="#fff"
+                      strokeWidth={2}
                       labelLine={false}
                       label={renderCustomizedLabel}
-                      onClick={(data, index) => {
-                        setActiveExpenseIndex(activeExpenseIndex === index ? -1 : index);
+                      onClick={(data) => {
                         handleChartClick(data, "expense");
                       }}
                       className="cursor-pointer"
@@ -2296,12 +2317,12 @@ export function Finance() {
                         id={`detail-expense-${data.name}${parseFloat(data.displayPercent) < 3 ? "-Lainnya-Header" : ""}`}
                         key={i}
                         className={cn(
-                          "flex items-center justify-between p-4 rounded-3xl transition-all group border bg-white shadow-sm mb-3",
+                          "flex items-center justify-between p-4 rounded-[1.5rem] transition-all group border-2 mb-3 bg-white",
                           highlightedCategory === data.name ||
                             (highlightedCategory === "Lainnya" &&
                               parseFloat(data.displayPercent) < 3)
-                            ? "bg-stone-50 border-stone-900 ring-4 ring-stone-900/5 scale-[1.02] shadow-md"
-                            : "border-stone-100 hover:border-stone-300 shadow-sm hover:shadow-md",
+                            ? "border-stone-900 shadow-[4px_4px_0px_#1c1917] -translate-y-1 bg-stone-50"
+                            : "border-stone-900 shadow-[2px_2px_0px_#1c1917] hover:shadow-[4px_4px_0px_#1c1917] hover:-translate-y-0.5",
                         )}
                       >
                         <div className="flex items-center gap-4">
@@ -2354,20 +2375,18 @@ export function Finance() {
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                   >
                     <Pie
-                      activeIndex={activeIncomeIndex}
-                      activeShape={renderActiveShape}
                       data={incomeChartData}
                       cx="50%"
                       cy="50%"
                       innerRadius="35%"
                       outerRadius="55%"
-                      paddingAngle={4}
+                      paddingAngle={0}
                       dataKey="value"
-                      stroke="none"
+                      stroke="#fff"
+                      strokeWidth={2}
                       labelLine={false}
                       label={renderCustomizedLabel}
-                      onClick={(data, index) => {
-                        setActiveIncomeIndex(activeIncomeIndex === index ? -1 : index);
+                      onClick={(data) => {
                         handleChartClick(data, "income");
                       }}
                       className="cursor-pointer"
@@ -2411,12 +2430,12 @@ export function Finance() {
                         id={`detail-income-${data.name}${parseFloat(data.displayPercent) < 3 ? "-Lainnya-Header" : ""}`}
                         key={i}
                         className={cn(
-                          "flex items-center justify-between p-4 rounded-3xl transition-all group border bg-white shadow-sm mb-3",
+                          "flex items-center justify-between p-4 rounded-[1.5rem] transition-all group border-2 mb-3 bg-white",
                           highlightedCategory === data.name ||
                             (highlightedCategory === "Lainnya" &&
                               parseFloat(data.displayPercent) < 3)
-                            ? "bg-stone-50 border-stone-900 ring-4 ring-stone-900/5 scale-[1.02] shadow-md"
-                            : "border-stone-100 hover:border-stone-300 shadow-sm hover:shadow-md",
+                            ? "border-stone-900 shadow-[4px_4px_0px_#1c1917] -translate-y-1 bg-stone-50"
+                            : "border-stone-900 shadow-[2px_2px_0px_#1c1917] hover:shadow-[4px_4px_0px_#1c1917] hover:-translate-y-0.5",
                         )}
                       >
                         <div className="flex items-center gap-4">
@@ -2888,7 +2907,7 @@ export function Finance() {
                     return (
                       <div
                         key={cat}
-                        className="group relative bg-white border border-stone-100 p-6 rounded-[2rem] hover:border-stone-400 transition-all shadow-sm hover:shadow-md"
+                        className="group relative bg-white border-2 border-stone-900 p-4 lg:p-5 rounded-3xl transition-all shadow-[2px_2px_0px_#1c1917] hover:shadow-[4px_4px_0px_#1c1917] hover:-translate-y-1"
                       >
                         <div className="flex items-center gap-4">
                           <div className="relative">
@@ -2965,7 +2984,7 @@ export function Finance() {
                                   [cat]: { ...editObj, name: e.target.value },
                                 }))
                               }
-                              className="w-full bg-transparent font-bold text-stone-900 outline-none border-b-2 border-transparent hover:border-stone-100 focus:border-stone-900 transition-all text-lg pb-1"
+                              className="w-full bg-transparent font-bold text-stone-900 outline-none border-b-2 border-transparent hover:border-stone-100 focus:border-stone-900 transition-all text-sm pb-1"
                             />
                             <p className="text-[9px] font-black uppercase tracking-widest text-stone-300 mt-1">
                               ID: {cat}

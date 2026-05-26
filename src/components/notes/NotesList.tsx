@@ -131,7 +131,7 @@ export function NotesList() {
           </div>
           <div>
             <h1 className="font-serif text-4xl font-black text-stone-900 tracking-tight flex items-center gap-2">
-              Ruang Catatan <Sparkles className="w-6 h-6 text-yellow-500" />
+              Catatan
             </h1>
             <p className="text-stone-500 text-xs font-bold uppercase tracking-widest mt-1">
               Tempat kumpul ide-ide santai & memori penting mu.
@@ -201,30 +201,30 @@ export function NotesList() {
                     to={nt.link} 
                     onClick={playClick}
                     className={cn(
-                      "group border-2 border-stone-200 hover:border-stone-900 rounded-[2rem] p-6 hover:shadow-brutal transition-all flex flex-col justify-between min-h-[170px]",
+                      "group border-2 border-stone-900 rounded-[2rem] p-6 shadow-brutal hover:-translate-y-1 hover:translate-x-1 hover:shadow-brutal-active hover:rotate-1 transition-all flex flex-col justify-between min-h-[170px]",
                       nt.bg
                     )}
                   >
                     <div>
                       <div className="flex justify-between items-start mb-4">
-                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 border border-stone-300 shadow-sm bg-white/60", nt.color)}>
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-stone-900 shadow-[2px_2px_0px_#1c1917] bg-white group-hover:scale-110 transition-transform", nt.color)}>
                           <nt.icon className="w-6 h-6" />
                         </div>
                         {count !== "..." && (
-                          <span className="text-[9px] uppercase font-black tracking-widest bg-white/60 text-stone-600 px-3 py-1 rounded-full border border-stone-200">
+                          <span className="text-[9px] uppercase font-black tracking-widest bg-white border-2 border-stone-900 shadow-[2px_2px_0px_#1c1917] text-stone-900 px-3 py-1 rounded-full">
                             {count} catatan
                           </span>
                         )}
                       </div>
-                      <h3 className={cn("font-sans text-2xl font-black group-hover:text-amber-700 transition-colors tracking-tight leading-none mb-2", nt.color)}>
+                      <h3 className={cn("font-serif text-2xl font-black group-hover:text-amber-700 transition-colors tracking-tight leading-none mb-2", nt.color)}>
                         {nt.label}
                       </h3>
-                      <p className="text-stone-600/80 text-xs font-bold leading-relaxed">{nt.desc}</p>
+                      <p className="text-stone-700 text-xs font-bold leading-relaxed">{nt.desc}</p>
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs font-black text-stone-900 uppercase tracking-widest mt-4 group-hover:translate-x-1 transition-transform">
                       <span>Buka</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-4 h-4" />
                     </div>
                   </Link>
                 );
@@ -264,19 +264,22 @@ export function NotesList() {
                       key={note.id} 
                       to={config.link} 
                       onClick={playClick}
-                      className="bg-paper p-6 rounded-3xl border border-stone-205 shadow-sm hover:border-stone-900 hover:shadow-md transition-all group flex flex-col h-48 relative overflow-hidden bg-white"
+                      className={cn(
+                        "p-6 rounded-[2rem] border-2 border-stone-900 shadow-brutal hover:shadow-brutal-active hover:-translate-y-1 transition-all group flex flex-col h-48 relative overflow-hidden",
+                        config.bg || "bg-white"
+                      )}
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div className={cn("p-2 rounded-xl border border-stone-200 shadow-sm", config.bg, config.color)}>
+                        <div className={cn("p-2 rounded-xl border-2 border-stone-900 shadow-[2px_2px_0px_#1c1917] bg-white text-stone-900")}>
                           <Icon className="w-4 h-4" />
                         </div>
-                        <span className="text-[9px] uppercase tracking-widest font-black text-stone-400">{config.label}</span>
+                        <span className="text-[9px] uppercase tracking-widest font-black text-stone-900 opacity-60">{config.label}</span>
                       </div>
-                      <h3 className="font-bold text-base text-stone-900 line-clamp-1 mb-1.5 group-hover:text-amber-600 transition-colors">
+                      <h3 className="font-serif italic font-medium text-xl text-stone-900 line-clamp-1 mb-1.5 group-hover:text-amber-800 transition-colors">
                         {title || 'Tanpa Judul'}
                       </h3>
-                      <p className="text-stone-500 line-clamp-2 text-xs font-semibold leading-relaxed flex-1">{preview}</p>
-                      <p className="text-[9px] text-stone-400 mt-4 font-mono uppercase tracking-wider">{format(note.createdAt, 'd MMM yyyy HH:mm', { locale: localeId })}</p>
+                      <p className="text-stone-800 opacity-80 line-clamp-2 text-xs font-semibold leading-relaxed flex-1">{preview}</p>
+                      <p className="text-[9px] text-stone-900 opacity-60 mt-4 font-mono uppercase tracking-wider">{format(note.createdAt, 'd MMM yyyy HH:mm', { locale: localeId })}</p>
                     </Link>
                   );
                 })}
