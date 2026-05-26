@@ -14,11 +14,20 @@ interface ActionItem {
 interface ActionMenuProps {
   items: ActionItem[];
   className?: string;
+  triggerClassName?: string;
   headerTitle?: string;
   position?: "bottom" | "top";
+  iconSize?: number;
 }
 
-export function ActionMenu({ items, className, headerTitle = "Opsi Halaman", position: initialPropPosition }: ActionMenuProps) {
+export function ActionMenu({ 
+  items, 
+  className, 
+  triggerClassName,
+  headerTitle = "Opsi Halaman", 
+  position: initialPropPosition,
+  iconSize = 5
+}: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [calculatedPosition, setCalculatedPosition] = useState<"bottom" | "top">(initialPropPosition || "bottom");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -55,9 +64,12 @@ export function ActionMenu({ items, className, headerTitle = "Opsi Halaman", pos
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="p-2.5 bg-paper rounded-xl border border-stone-200 hover:bg-stone-50 transition-all text-stone-600 shadow-sm"
+        className={cn(
+          "p-2.5 bg-paper rounded-xl border border-stone-200 hover:bg-stone-50 transition-all text-stone-600 shadow-sm flex items-center justify-center",
+          triggerClassName
+        )}
       >
-        <MoreVertical className="w-5 h-5" />
+        <MoreVertical className={cn(`w-${iconSize} h-${iconSize}`)} style={{ width: iconSize * 4, height: iconSize * 4 }} />
       </button>
 
       <AnimatePresence>

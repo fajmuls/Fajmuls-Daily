@@ -51,6 +51,7 @@ interface AppState {
   addFinanceRecord: (record: FinanceRecord) => void;
   updateFinanceRecord: (record: FinanceRecord) => void;
   updateFinanceCategoryBulk: (oldCategory: string, newCategory: string) => void;
+  deleteFinanceCategoryBulk: (category: string) => void;
   addFinanceRecordsBulk: (records: FinanceRecord[]) => void;
   deleteFinanceRecord: (id: string) => void;
   togglePrayer: (id: string) => void;
@@ -390,6 +391,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/finance/bulkUpdate`); }
   };
 
+  const deleteFinanceCategoryBulk = async (category: string) => {
+    if (!user) return;
+    const batch = writeBatch(db);
+    const recordsToUpdate = financeRecords.filter(r => r.category === category);
+    if (recordsToUpdate.length === 0) return;
+    
+    recordsToUpdate.forEach(r => {
+      const pDoc = doc(db, `users/${user.uid}/finance`, r.id);
+      batch.set(pDoc, { ...r, category: "" }, { merge: true });
+    });
+    try {
+      await batch.commit();
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/finance/bulkDelete`); }
+  };
+
   const deleteFinanceRecord = async (id: string) => {
     if (!user) return;
     try {
@@ -529,7 +545,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       darkMode, setDarkMode: toggleDarkMode,
       soundEnabled, setSoundEnabled: toggleSoundEnabled,
       setAlert, showConfirm, closeConfirm, updateFinanceMapping, deleteFinanceMapping, updateCategoryPref,
-      addNote, updateNote, deleteNote, addFinanceRecord, updateFinanceRecord, updateFinanceCategoryBulk, addFinanceRecordsBulk, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial,
+      addNote, updateNote, deleteNote, addFinanceRecord, updateFinanceRecord, updateFinanceCategoryBulk, deleteFinanceCategoryBulk, addFinanceRecordsBulk, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial,
       addBudget, deleteBudget, addSaving, updateSaving, deleteSaving
     }}>
       {children}

@@ -335,6 +335,7 @@ export function Finance() {
     financeCategoryPrefs,
     updateCategoryPref,
     updateFinanceCategoryBulk,
+    deleteFinanceCategoryBulk,
     updateFinanceRecord,
     budgets,
     addBudget,
@@ -468,6 +469,118 @@ export function Finance() {
         (isIncome ? "TrendingUp" : "TrendingDown"),
       color: financeCategoryPrefs[cat]?.color || fpColor,
     };
+  };
+
+  const renderCategoryItemUI = (cat: string, editObj: any) => {
+    return (
+      <>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <button
+              onClick={() => setPickingIconFor(pickingIconFor === cat ? null : cat)}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-white transition-all shadow-md active:scale-90"
+              style={{ backgroundColor: editObj.color }}
+            >
+              {React.createElement((LucideIcons as any)[editObj.iconName] || Tag, { className: "w-6 h-6" })}
+            </button>
+            {pickingIconFor === cat && (
+              <div className="absolute top-14 left-0 w-80 bg-white border border-stone-200 shadow-2xl rounded-[2.5rem] p-6 z-50 animate-in fade-in zoom-in-95 overflow-hidden">
+                <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-6 pr-2">
+                  {ICON_GROUPS.map((group) => (
+                    <div key={group.name} className="space-y-3">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">{group.name}</label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {group.icons.map((iconName) => {
+                          const Ico = (LucideIcons as any)[iconName];
+                          return (
+                            <button
+                              key={iconName}
+                              onClick={() => {
+                                setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, iconName } }));
+                                setPickingIconFor(null);
+                              }}
+                              className={cn(
+                                "aspect-square hover:bg-stone-100 rounded-xl flex items-center justify-center text-stone-600 transition-all",
+                                editObj.iconName === iconName ? "bg-stone-900 text-white shadow-md scale-110" : "bg-stone-50"
+                              )}
+                            >
+                              {Ico && <Ico className="w-4 h-4" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <input
+              type="text"
+              value={editObj.name}
+              onChange={(e) => setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, name: e.target.value } }))}
+              className="w-full bg-transparent font-bold text-stone-900 outline-none border-b-2 border-transparent hover:border-stone-100 focus:border-stone-900 transition-all text-sm pb-1"
+            />
+            <p className="text-[9px] font-black uppercase tracking-widest text-stone-300 mt-1">ID: {cat}</p>
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => setPickingColorFor(pickingColorFor === cat ? null : cat)}
+              className="w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform hover:scale-110 active:scale-95 shrink-0"
+              style={{ backgroundColor: editObj.color }}
+            />
+            {pickingColorFor === cat && (
+              <div className="absolute top-10 right-0 w-64 bg-white border border-stone-200 shadow-2xl rounded-[2rem] p-5 z-50 animate-in fade-in zoom-in-95">
+                <div className="space-y-4">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">Pilih Warna</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      "#FF4500", "#D81B60", "#8E24AA", "#1E88E5", "#00897B",
+                      "#43A047", "#E53935", "#3949AB", "#FFC107", "#FF5722",
+                      "#795548", "#1c1917", "#607D8B", "#E91E63", "#9C27B0",
+                    ].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => {
+                          setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, color: c } }));
+                          setPickingColorFor(null);
+                        }}
+                        className={cn(
+                          "aspect-square rounded-full border-2 border-white shadow-sm transition-transform hover:scale-110",
+                          editObj.color === c ? "ring-2 ring-stone-900 scale-110" : ""
+                        )}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                  <div className="pt-4 border-t border-stone-100">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">Custom</label>
+                    <input
+                      type="color"
+                      value={editObj.color}
+                      onChange={(e) => setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, color: e.target.value } }))}
+                      className="w-full h-10 rounded-xl cursor-pointer border-none p-0 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-stone-100 flex items-center justify-between">
+          <p className="text-[10px] font-medium text-stone-500">
+            Grup: <span className="font-bold text-stone-900">{categoryToGroup[cat] || "Tanpa Grup"}</span>
+          </p>
+          <button
+            onClick={() => showConfirm(`Hapus kategori "${cat}"?`, () => { deleteFinanceCategoryBulk(cat); playError(); })}
+            className="text-[10px] font-black uppercase tracking-widest text-red-300 hover:text-red-500 transition-colors"
+          >
+            Hapus
+          </button>
+        </div>
+      </>
+    );
   };
 
   // Memoized category to group map for easy lookup
@@ -1354,6 +1467,8 @@ export function Finance() {
                 },
               },
             ]}
+            triggerClassName="p-1 px-3 bg-white border border-stone-200 rounded-xl shadow-sm text-stone-600 hover:bg-stone-50"
+            iconSize={4}
           />
         </div>
       </header>
@@ -2094,12 +2209,12 @@ export function Finance() {
                                         : `${record.type === "income" ? "+" : "-"}Rp ${record.amount.toLocaleString("id-ID")}`}
                                     </p>
                                   </div>
-                                  <div className="absolute top-2 right-2">
+                                  <div className="absolute top-0.5 right-0.5">
                                     <ActionMenu
                                       items={[
                                         {
                                           label: "Ubah Data",
-                                          icon: <Edit3 className="w-3 h-3" />,
+                                          icon: <Edit3 className="w-2 h-2" />,
                                           onClick: () => {
                                             setEditingRecord(record);
                                             setShowAddModal(true);
@@ -2107,7 +2222,7 @@ export function Finance() {
                                         },
                                         {
                                           label: "Hapus",
-                                          icon: <Trash2 className="w-3 h-3" />,
+                                          icon: <Trash2 className="w-2 h-2" />,
                                           onClick: () =>
                                             showConfirm(
                                               "Hapus transaksi ini?",
@@ -2119,7 +2234,8 @@ export function Finance() {
                                           variant: "danger",
                                         },
                                       ]}
-                                      className="h-7 w-7 flex items-center justify-center p-0 bg-white/80 backdrop-blur-sm shadow-sm"
+                                      triggerClassName="h-2.5 w-2.5 p-0 rounded-[2px] bg-white/95 backdrop-blur-sm shadow-sm border border-stone-200"
+                                      iconSize={1.5}
                                       headerTitle="Opsi Transaksi"
                                     />
                                   </div>
@@ -2941,182 +3057,50 @@ export function Finance() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allCategories
-                  .filter((cat) =>
-                    cat.toLowerCase().includes(settingsSearch.toLowerCase()),
-                  )
-                  .map((cat) => {
-                    const isIncome =
-                      financeRecords.find((r) => r.category === cat)?.type ===
-                      "income";
-                    const editObj = getCatEdit(cat, isIncome);
-                    return (
-                      <div
-                        key={cat}
-                        className="group relative bg-white border-2 border-stone-900 p-4 lg:p-5 rounded-3xl transition-all shadow-[2px_2px_0px_#1c1917] hover:shadow-[4px_4px_0px_#1c1917] hover:-translate-y-1"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <button
-                              onClick={() =>
-                                setPickingIconFor(
-                                  pickingIconFor === cat ? null : cat,
-                                )
-                              }
-                              className="w-12 h-12 rounded-2xl flex items-center justify-center text-white transition-all shadow-md active:scale-90"
-                              style={{ backgroundColor: editObj.color }}
-                            >
-                              {React.createElement(
-                                (LucideIcons as any)[editObj.iconName] || Tag,
-                                { className: "w-6 h-6" },
-                              )}
-                            </button>
-                            {pickingIconFor === cat && (
-                              <div className="absolute top-14 left-0 w-80 bg-white border border-stone-200 shadow-2xl rounded-[2.5rem] p-6 z-50 animate-in fade-in zoom-in-95 overflow-hidden">
-                                <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-6 pr-2">
-                                  {ICON_GROUPS.map((group) => (
-                                    <div
-                                      key={group.name}
-                                      className="space-y-3"
-                                    >
-                                      <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">
-                                        {group.name}
-                                      </label>
-                                      <div className="grid grid-cols-5 gap-2">
-                                        {group.icons.map((iconName) => {
-                                          const Ico = (LucideIcons as any)[
-                                            iconName
-                                          ];
-                                          return (
-                                            <button
-                                              key={iconName}
-                                              onClick={() => {
-                                                setCategoryEdits((p) => ({
-                                                  ...p,
-                                                  [cat]: {
-                                                    ...editObj,
-                                                    iconName: iconName,
-                                                  },
-                                                }));
-                                                setPickingIconFor(null);
-                                              }}
-                                              className={cn(
-                                                "aspect-square hover:bg-stone-100 rounded-xl flex items-center justify-center text-stone-600 transition-all",
-                                                editObj.iconName === iconName
-                                                  ? "bg-stone-900 text-white shadow-md scale-110"
-                                                  : "bg-stone-50",
-                                              )}
-                                            >
-                                              {Ico && (
-                                                <Ico className="w-4 h-4" />
-                                              )}
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <input
-                              type="text"
-                              value={editObj.name}
-                              onChange={(e) =>
-                                setCategoryEdits((p) => ({
-                                  ...p,
-                                  [cat]: { ...editObj, name: e.target.value },
-                                }))
-                              }
-                              className="w-full bg-transparent font-bold text-stone-900 outline-none border-b-2 border-transparent hover:border-stone-100 focus:border-stone-900 transition-all text-sm pb-1"
-                            />
-                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-300 mt-1">
-                              ID: {cat}
-                            </p>
-                          </div>
-                          <div className="relative">
-                            <button
-                              onClick={() =>
-                                setPickingColorFor(
-                                  pickingColorFor === cat ? null : cat,
-                                )
-                              }
-                              className="w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform hover:scale-110 active:scale-95 shrink-0"
-                              style={{ backgroundColor: editObj.color }}
-                            />
-                            {pickingColorFor === cat && (
-                              <div className="absolute top-10 right-0 w-64 bg-white border border-stone-200 shadow-2xl rounded-[2rem] p-5 z-50 animate-in fade-in zoom-in-95">
-                                <div className="space-y-4">
-                                  <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">
-                                    Pilih Warna
-                                  </label>
-                                  <div className="grid grid-cols-5 gap-2">
-                                    {[
-                                      "#FF4500",
-                                      "#D81B60",
-                                      "#8E24AA",
-                                      "#1E88E5",
-                                      "#00897B",
-                                      "#43A047",
-                                      "#E53935",
-                                      "#3949AB",
-                                      "#FFC107",
-                                      "#FF5722",
-                                      "#795548",
-                                      "#1c1917",
-                                      "#607D8B",
-                                      "#E91E63",
-                                      "#9C27B0",
-                                    ].map((c) => (
-                                      <button
-                                        key={c}
-                                        onClick={() => {
-                                          setCategoryEdits((p) => ({
-                                            ...p,
-                                            [cat]: { ...editObj, color: c },
-                                          }));
-                                          setPickingColorFor(null);
-                                        }}
-                                        className={cn(
-                                          "aspect-square rounded-full border-2 border-white shadow-sm transition-transform hover:scale-110",
-                                          editObj.color === c
-                                            ? "ring-2 ring-stone-900 scale-110"
-                                            : "",
-                                        )}
-                                        style={{ backgroundColor: c }}
-                                      />
-                                    ))}
-                                  </div>
-                                  <div className="pt-4 border-t border-stone-100">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">
-                                      Custom Palette
-                                    </label>
-                                    <input
-                                      type="color"
-                                      value={editObj.color}
-                                      onChange={(e) =>
-                                        setCategoryEdits((p) => ({
-                                          ...p,
-                                          [cat]: {
-                                            ...editObj,
-                                            color: e.target.value,
-                                          },
-                                        }))
-                                      }
-                                      className="w-full h-8 cursor-pointer border-0 p-0 rounded-lg overflow-hidden bg-transparent"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+              <div className="space-y-12">
+                <div>
+                   <div className="flex items-center gap-3 mb-6 px-1">
+                      <div className="w-1.5 h-6 bg-red-500 rounded-full" />
+                      <h3 className="font-serif text-xl font-bold uppercase tracking-tight">Kategori Pengeluaran</h3>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {allCategories
+                      .filter((cat) => {
+                        const matches = cat.toLowerCase().includes(settingsSearch.toLowerCase());
+                        const isInc = financeRecords.find((r) => r.category === cat)?.type === "income";
+                        const gName = categoryToGroup[cat];
+                        const gType = gName ? (financeCategoryPrefs["__GROUP_TYPE_" + gName] as any)?.color : null;
+                        return matches && (gType === 'expense' || (!isInc && gType !== 'income'));
+                      })
+                      .map((cat) => (
+                        <div key={cat} className="group relative bg-white border-2 border-stone-100 p-5 rounded-[2rem] transition-all hover:border-stone-900 hover:shadow-xl shadow-sm">
+                          {renderCategoryItemUI(cat, getCatEdit(cat, false))}
                         </div>
-                      </div>
-                    );
-                  })}
+                      ))}
+                  </div>
+                </div>
+
+                <div>
+                   <div className="flex items-center gap-3 mb-6 px-1">
+                      <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                      <h3 className="font-serif text-xl font-bold uppercase tracking-tight">Kategori Pemasukan</h3>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {allCategories
+                      .filter((cat) => {
+                        const matches = cat.toLowerCase().includes(settingsSearch.toLowerCase());
+                        const isInc = financeRecords.find((r) => r.category === cat)?.type === "income";
+                        const gName = categoryToGroup[cat];
+                        const gType = gName ? (financeCategoryPrefs["__GROUP_TYPE_" + gName] as any)?.color : null;
+                        return matches && (gType === 'income' || isInc);
+                      })
+                      .map((cat) => (
+                        <div key={cat} className="group relative bg-white border-2 border-stone-100 p-5 rounded-[2rem] transition-all hover:border-stone-900 hover:shadow-xl shadow-sm">
+                          {renderCategoryItemUI(cat, getCatEdit(cat, true))}
+                        </div>
+                      ))}
+                  </div>
+                </div>
               </div>
             </section>
           </div>
@@ -3175,12 +3159,12 @@ export function Finance() {
                             key={group}
                             className="bg-white border-2 border-stone-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all group/card mb-4 relative"
                           >
-                            <div className="absolute top-4 right-4">
+                            <div className="absolute top-3 right-3">
                               <ActionMenu
                                 items={[
                                   {
                                     label: "Ubah Nama Grup",
-                                    icon: <Edit3 className="w-4 h-4" />,
+                                    icon: <Edit3 className="w-3.5 h-3.5" />,
                                     onClick: () => {
                                        const newName = prompt("Nama grup baru:", group);
                                        if (newName && newName !== group) {
@@ -3195,7 +3179,7 @@ export function Finance() {
                                   },
                                   {
                                     label: "Hapus Grup",
-                                    icon: <Trash2 className="w-4 h-4" />,
+                                    icon: <Trash2 className="w-3.5 h-3.5" />,
                                     onClick: () => {
                                       showConfirm(
                                         `Hapus grup "${group}"? Semua kategori di dalamnya akan menjadi tidak terkelompok.`,
@@ -3208,7 +3192,8 @@ export function Finance() {
                                     variant: "danger"
                                   }
                                 ]}
-                                className="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-stone-50 hover:bg-stone-100 border border-stone-100"
+                                triggerClassName="w-4 h-4 p-0 rounded-md bg-white hover:bg-stone-50 border border-stone-200 shadow-sm"
+                                iconSize={2}
                                 headerTitle="Pengaturan Grup"
                               />
                             </div>

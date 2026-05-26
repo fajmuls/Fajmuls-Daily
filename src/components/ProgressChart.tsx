@@ -86,23 +86,20 @@ export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, fi
         <div className="absolute top-[4.5rem] left-0 right-0 h-1 flex justify-between px-0.5 pointer-events-none">
           {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(p => (
             <div key={p} className="flex flex-col items-center">
-              <div className={cn("h-2 w-0.5 transition-colors", p % 50 === 0 ? "bg-stone-400" : "bg-stone-200")} />
-              {p % 20 === 0 && (
-                <span className="text-[7px] font-black text-stone-400 mt-2">{p}%</span>
-              )}
+              <div className={cn("h-2.5 w-0.5 transition-colors", p % 50 === 0 ? "bg-stone-600" : "bg-stone-300")} />
+              <span className="text-[7px] font-black text-stone-400 mt-2">{p}%</span>
             </div>
           ))}
         </div>
 
-        {/* Dynamic labels above/below for all segments if wanted explicitly */}
-        <div className="absolute -bottom-8 left-0 right-0 flex gap-1 h-6 overflow-hidden pointer-events-none">
+        {/* Labels above/below for segments */}
+        <div className="absolute -top-6 left-0 right-0 flex gap-0.5 h-4 pointer-events-none overflow-hidden">
            {data.map((item, i) => {
              const percent = parseFloat(item.displayPercent);
-             if (percent < 5) return null;
-             const color = financeCategoryPrefs[item.name]?.color || getCategoryColor(item.name, type);
+             if (percent < 3) return null;
              return (
-               <div key={i} style={{ width: `${percent}%` }} className="flex justify-center items-center">
-                  <div className="h-1 w-1 rounded-full" style={{ backgroundColor: color }} />
+               <div key={i} style={{ width: `${percent}%` }} className="flex justify-center flex-col items-center">
+                  <span className="text-[6px] font-black text-stone-400 truncate w-full text-center px-1 uppercase">{item.name}</span>
                </div>
              )
            })}
