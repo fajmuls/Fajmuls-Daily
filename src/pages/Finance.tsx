@@ -383,6 +383,7 @@ export function Finance() {
 
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
   const [newGroupModalName, setNewGroupModalName] = useState("");
+  const [newGroupType, setNewGroupType] = useState<"income" | "expense">("expense");
 
   const [showUpdateBalanceModal, setShowUpdateBalanceModal] = useState(false);
   const [updateBalanceSavingId, setUpdateBalanceSavingId] = useState<
@@ -413,13 +414,15 @@ export function Finance() {
           );
           if (others.length > 0) {
             setHighlightedCategory("Lainnya");
-            setTimeout(() => setHighlightedCategory(null), 5000);
             return;
           }
         }
 
-        setHighlightedCategory(targetName);
-        setTimeout(() => setHighlightedCategory(null), 3000);
+        if (highlightedCategory === targetName) {
+           setHighlightedCategory(null);
+        } else {
+           setHighlightedCategory(targetName);
+        }
       }
     };
 
@@ -2091,12 +2094,12 @@ export function Finance() {
                                         : `${record.type === "income" ? "+" : "-"}Rp ${record.amount.toLocaleString("id-ID")}`}
                                     </p>
                                   </div>
-                                  <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                                  <div className="absolute top-2 right-2">
                                     <ActionMenu
                                       items={[
                                         {
                                           label: "Ubah Data",
-                                          icon: <Edit3 className="w-3.5 h-3.5" />,
+                                          icon: <Edit3 className="w-3 h-3" />,
                                           onClick: () => {
                                             setEditingRecord(record);
                                             setShowAddModal(true);
@@ -2104,7 +2107,7 @@ export function Finance() {
                                         },
                                         {
                                           label: "Hapus",
-                                          icon: <Trash2 className="w-3.5 h-3.5" />,
+                                          icon: <Trash2 className="w-3 h-3" />,
                                           onClick: () =>
                                             showConfirm(
                                               "Hapus transaksi ini?",
@@ -2116,7 +2119,7 @@ export function Finance() {
                                           variant: "danger",
                                         },
                                       ]}
-                                      className="h-8 w-8 flex items-center justify-center p-0"
+                                      className="h-7 w-7 flex items-center justify-center p-0 bg-white/80 backdrop-blur-sm shadow-sm"
                                       headerTitle="Opsi Transaksi"
                                     />
                                   </div>
@@ -2192,39 +2195,6 @@ export function Finance() {
                 </span>
               </div>
             </header>
-
-            {/* Metric Blocks */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 border-b border-stone-200 pb-6 mb-6">
-              <div className="py-2 flex items-center justify-between md:flex-col md:items-start md:justify-center">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pemasukan</span>
-                </div>
-                <p className="text-sm font-bold font-mono text-emerald-600 tracking-tight">
-                  Rp {trendTotals.totalPemasukan.toLocaleString("id-ID")}
-                </p>
-              </div>
-
-              <div className="py-2 flex items-center justify-between md:flex-col md:items-start md:justify-center border-t md:border-t-0 md:border-l border-stone-200 md:pl-4">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <div className="w-2 h-2 rounded-full bg-rose-500 shadow-sm" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pengeluaran</span>
-                </div>
-                <p className="text-xs font-bold font-mono text-rose-600 tracking-tight">
-                  Rp {trendTotals.totalPengeluaran.toLocaleString("id-ID")}
-                </p>
-              </div>
-
-              <div className="py-2 flex items-center justify-between md:flex-col md:items-start md:justify-center border-t md:border-t-0 md:border-l border-stone-200 md:pl-4">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <div className={cn("w-2 h-2 rounded-full shadow-sm", trendTotals.totalTabungan >= 0 ? "bg-emerald-500" : "bg-rose-500")} />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Net Tabungan</span>
-                </div>
-                <p className={cn("text-xs font-bold font-mono tracking-tight", trendTotals.totalTabungan >= 0 ? "text-stone-900" : "text-stone-500")}>
-                  Rp {trendTotals.totalTabungan.toLocaleString("id-ID")}
-                </p>
-              </div>
-            </div>
 
             {/* Line Chart Component */}
             <div className="w-full h-[350px] min-w-0 bg-white/40 p-4 rounded-3xl border border-stone-200">
@@ -2357,14 +2327,15 @@ export function Finance() {
                     categoryToIcon={categoryToIcon}
                     financeCategoryPrefs={financeCategoryPrefs}
                     onItemClick={(item) => handleChartClick(item, "expense")}
+                    highlightedName={highlightedCategory}
                   />
                 )}
               </div>
 
-              <div className="mt-8 space-y-3 max-h-[500px] overflow-y-auto px-1 custom-scrollbar">
-                <div className="sticky top-0 bg-paper pt-2 pb-4 z-10">
-                  <h4 className="font-black text-[10px] uppercase tracking-widest text-stone-400 px-2">
-                    Analisis Kategori
+              <div className="mt-8 space-y-3 max-h-[400px] overflow-y-auto px-1 custom-scrollbar">
+                <div className="sticky top-0 bg-paper pt-2 pb-4 z-10 border-b border-stone-100 mb-4">
+                  <h4 className="font-black text-[10px] uppercase tracking-widest text-stone-400">
+                    Detail Kategori
                   </h4>
                 </div>
                 {expenseData.length === 0 ? (
@@ -2500,14 +2471,15 @@ export function Finance() {
                     categoryToIcon={categoryToIcon}
                     financeCategoryPrefs={financeCategoryPrefs}
                     onItemClick={(item) => handleChartClick(item, "income")}
+                    highlightedName={highlightedCategory}
                   />
                 )}
               </div>
 
-              <div className="mt-8 space-y-3 max-h-[500px] overflow-y-auto px-1 custom-scrollbar">
-                <div className="sticky top-0 bg-paper pt-2 pb-4 z-10">
-                  <h4 className="font-black text-[10px] uppercase tracking-widest text-stone-400 px-2">
-                    Analisis Kategori
+              <div className="mt-8 space-y-3 max-h-[400px] overflow-y-auto px-1 custom-scrollbar">
+                <div className="sticky top-0 bg-paper pt-2 pb-4 z-10 border-b border-stone-100 mb-4">
+                  <h4 className="font-black text-[10px] uppercase tracking-widest text-stone-400">
+                    Detail Kategori
                   </h4>
                 </div>
                 {incomeData.length === 0 ? (
@@ -3187,6 +3159,9 @@ export function Finance() {
                     </h5>
                     {Object.keys(financeMappings)
                       .filter(group => {
+                        const pref = financeCategoryPrefs["__GROUP_TYPE_" + group];
+                        if (pref) return pref.color === (type === "Pemasukan" ? "income" : "expense");
+                        
                         const cats = financeMappings[group] || [];
                         const isIncome = cats.some(c => financeRecords.some(r => r.category === c && r.type === "income"));
                         return type === "Pemasukan" ? isIncome : !isIncome;
@@ -3198,25 +3173,9 @@ export function Finance() {
                         return (
                           <div
                             key={group}
-                            className="bg-white border-2 border-stone-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all group/card mb-4"
+                            className="bg-white border-2 border-stone-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all group/card mb-4 relative"
                           >
-                            <header className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md group-hover/card:scale-110 transition-transform"
-                                  style={{ backgroundColor: type === "Pengeluaran" ? "#ef4444" : "#10b981" }}
-                                >
-                                  <Folder className="w-4 h-4" />
-                                </div>
-                                <div>
-                                  <h4 className="text-base font-bold text-stone-900 tracking-tight">
-                                    {group}
-                                  </h4>
-                                  <p className="text-[7px] font-black uppercase tracking-widest text-stone-400">
-                                    Grup {type}
-                                  </p>
-                                </div>
-                              </div>
+                            <div className="absolute top-4 right-4">
                               <ActionMenu
                                 items={[
                                   {
@@ -3226,8 +3185,10 @@ export function Finance() {
                                        const newName = prompt("Nama grup baru:", group);
                                        if (newName && newName !== group) {
                                           const currentCats = financeMappings[group];
+                                          const currentType = (financeCategoryPrefs["__GROUP_TYPE_" + group] as any)?.color || (type === "Pemasukan" ? "income" : "expense");
                                           deleteFinanceMapping(group);
                                           updateFinanceMapping(newName, currentCats);
+                                          updateCategoryPref("__GROUP_TYPE_" + newName, { color: currentType, iconName: "" });
                                           playSuccess();
                                        }
                                     }
@@ -3247,8 +3208,27 @@ export function Finance() {
                                     variant: "danger"
                                   }
                                 ]}
-                                className="w-8 h-8 flex items-center justify-center p-0 rounded-lg hover:bg-stone-50"
+                                className="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-stone-50 hover:bg-stone-100 border border-stone-100"
+                                headerTitle="Pengaturan Grup"
                               />
+                            </div>
+                            <header className="flex items-center justify-between mb-4 pr-10">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-sm group-hover/card:scale-110 transition-transform"
+                                  style={{ backgroundColor: type === "Pengeluaran" ? "#ef4444" : "#10b981" }}
+                                >
+                                  <Folder className="w-3.5 h-3.5" />
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-bold text-stone-900 tracking-tight">
+                                    {group}
+                                  </h4>
+                                  <p className="text-[7px] font-black uppercase tracking-widest text-stone-400">
+                                    Grup {type}
+                                  </p>
+                                </div>
+                              </div>
                             </header>
 
                             <div className="min-h-[60px] bg-stone-50 border-2 border-dashed border-stone-100 rounded-2xl p-3 flex flex-wrap gap-1.5 mb-4">
@@ -3889,6 +3869,28 @@ export function Finance() {
               <div className="p-8 space-y-6">
                 <div className="space-y-4">
                   <label className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-400 block">
+                    Tipe Grup
+                  </label>
+                  <div className="flex bg-stone-100 p-1 rounded-2xl border border-stone-200">
+                    <button
+                      onClick={() => setNewGroupType("expense")}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        newGroupType === "expense" ? "bg-white text-stone-900 shadow-sm" : "text-stone-400"
+                      )}
+                    >Pengeluaran</button>
+                    <button
+                      onClick={() => setNewGroupType("income")}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        newGroupType === "income" ? "bg-white text-stone-900 shadow-sm" : "text-stone-400"
+                      )}
+                    >Pemasukan</button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-400 block">
                     Nama Grup Baru
                   </label>
                   <input
@@ -3906,6 +3908,7 @@ export function Finance() {
                           return;
                         }
                         updateFinanceMapping(trimmed, []);
+                        updateCategoryPref("__GROUP_TYPE_" + trimmed, { color: newGroupType, iconName: "" });
                         playSuccess();
                         setAlert(`Grup "${trimmed}" berhasil dibuat!`);
                         setShowAddGroupModal(false);
@@ -3934,6 +3937,7 @@ export function Finance() {
                         return;
                       }
                       updateFinanceMapping(trimmed, []);
+                      updateCategoryPref("__GROUP_TYPE_" + trimmed, { color: newGroupType, iconName: "" });
                       playSuccess();
                       setAlert(`Grup "${trimmed}" berhasil dibuat!`);
                       setShowAddGroupModal(false);

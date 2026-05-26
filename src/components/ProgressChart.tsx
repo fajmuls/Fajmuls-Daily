@@ -13,8 +13,21 @@ interface ProgressChartProps {
   onItemClick: (item: any, type: "income" | "expense") => void;
 }
 
-export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, financeCategoryPrefs, onItemClick }: ProgressChartProps) {
-  const [highlightedIndex, setHighlightedIndex] = React.useState<number | null>(null);
+export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, financeCategoryPrefs, onItemClick, highlightedName }: ProgressChartProps & { highlightedName?: string | null }) {
+  const [localHighlightedIndex, setLocalHighlightedIndex] = React.useState<number | null>(null);
+  
+  // Sync with external highlight if provided
+  React.useEffect(() => {
+    if (highlightedName === undefined) return;
+    if (!highlightedName) {
+      setLocalHighlightedIndex(null);
+      return;
+    }
+    const idx = data.findIndex(item => item.name === highlightedName);
+    if (idx !== -1) setLocalHighlightedIndex(idx);
+  }, [highlightedName, data]);
+
+  const activeIndex = highlightedName !== undefined ? (data.findIndex(item => item.name === highlightedName) === -1 ? null : data.findIndex(item => item.name === highlightedName)) : localHighlightedIndex;
 
   return (
     <div className="w-full space-y-10">
@@ -23,7 +36,7 @@ export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, fi
           {data.map((item, i) => {
             const color = financeCategoryPrefs[item.name]?.color || getCategoryColor(item.name, type);
             const percent = parseFloat(item.displayPercent);
-            const isHighlighted = highlightedIndex === i;
+            const isHighlighted = activeIndex === i;
             
             const prefIcon = financeCategoryPrefs[item.name]?.iconName || categoryToIcon[item.name] || (type === "income" ? "TrendingUp" : "TrendingDown");
             const IconComp = (LucideIcons as any)[prefIcon] || (type === "income" ? TrendingUp : TrendingDown);
@@ -32,12 +45,12 @@ export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, fi
               <div
                 key={i}
                 onClick={() => {
-                  setHighlightedIndex(isHighlighted ? null : i);
+                  setLocalHighlightedIndex(isHighlighted ? null : i);
                   onItemClick(item, type);
                 }}
                 className={cn(
                   "h-full transition-all duration-300 cursor-pointer relative group",
-                  highlightedIndex !== null && !isHighlighted && "opacity-30 scale-95",
+                  activeIndex !== null && !isHighlighted && "opacity-30 scale-95",
                   isHighlighted && "ring-4 ring-offset-4 ring-stone-900/10 z-10 scale-[1.02]"
                 )}
                 style={{ width: `${percent}%`, backgroundColor: color }}
@@ -69,12 +82,14 @@ export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, fi
           })}
         </div>
 
-        {/* Grid Lines */}
+        {/* Grid Lines - Every 10% */}
         <div className="absolute top-[4.5rem] left-0 right-0 h-1 flex justify-between px-0.5 pointer-events-none">
-          {[0, 25, 50, 75, 100].map(p => (
+          {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(p => (
             <div key={p} className="flex flex-col items-center">
-              <div className="h-2 w-0.5 bg-stone-200" />
-              <span className="text-[8px] font-black text-stone-400 mt-2">{p}%</span>
+              <div className={cn("h-2 w-0.5 transition-colors", p % 50 === 0 ? "bg-stone-400" : "bg-stone-200")} />
+              {p % 20 === 0 && (
+                <span className="text-[7px] font-black text-stone-400 mt-2">{p}%</span>
+              )}
             </div>
           ))}
         </div>
