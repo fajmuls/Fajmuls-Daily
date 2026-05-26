@@ -262,9 +262,9 @@ export function DailyGoalsView() {
         <div className="bg-paper p-6 rounded-3xl border-2 border-stone-900 shadow-brutal flex flex-col items-center justify-center space-y-4 text-center">
           <h2 className="text-xs uppercase tracking-widest text-stone-500 font-black">Progress Hari Ini</h2>
           
-          <div className="relative w-32 h-32 flex items-center justify-center">
+          <div className="relative w-32 h-32 flex items-center justify-center mx-auto">
             {/* SVG circle */}
-            <svg className="w-full h-full transform -rotate-90">
+            <svg className="w-full h-full transform -rotate-90 overflow-visible">
               <circle
                 cx="64"
                 cy="64"
@@ -281,10 +281,11 @@ export function DailyGoalsView() {
                 strokeWidth="12"
                 fill="transparent"
                 strokeDasharray={2 * Math.PI * 52}
+                initial={{ strokeDashoffset: 2 * Math.PI * 52 }}
                 animate={{
                   strokeDashoffset: 2 * Math.PI * 52 * (1 - completionStats.percentage / 100)
                 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
                 strokeLinecap="round"
               />
             </svg>

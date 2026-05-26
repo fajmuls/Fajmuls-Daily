@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, NotebookPen, FileText, Star, Mic, LogOut, Search, X, Command, User as UserIcon, Plus, ArrowRight, Settings, Volume2, VolumeX, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Wallet, NotebookPen, FileText, CalendarRange, Star, Mic, LogOut, Search, X, Command, User as UserIcon, Plus, ArrowRight, Settings, Volume2, VolumeX, Moon, Sun } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
 import { useVoiceCommand } from '../hooks/useVoiceCommand';
 import { useAuth } from './AuthWrapper';
@@ -22,6 +22,7 @@ const desktopNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
   { icon: NotebookPen, label: 'Catatan', path: '/notes' },
+  { icon: CalendarRange, label: 'Kegiatan', path: '/activities' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
 ];
 
@@ -29,6 +30,7 @@ const mobileNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
   { icon: NotebookPen, label: 'Catatan', path: '/notes' },
+  { icon: CalendarRange, label: 'Kegiatan', path: '/activities' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
 ];
 

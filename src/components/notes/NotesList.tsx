@@ -129,11 +129,11 @@ export function NotesList() {
             <NotebookPen className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
-              Aplikasi Catatan
+            <h1 className="font-serif text-4xl font-black text-stone-900 tracking-tight flex items-center gap-2">
+              Ruang Catatan <Sparkles className="w-6 h-6 text-yellow-500" />
             </h1>
-            <p className="text-stone-500 text-sm font-medium">
-              Eksplorasi draf catatan, resolusi harian, serta momen istimewa.
+            <p className="text-stone-500 text-xs font-bold uppercase tracking-widest mt-1">
+              Tempat kumpul ide-ide santai & memori penting mu.
             </p>
           </div>
         </div>
@@ -184,32 +184,44 @@ export function NotesList() {
           
           {/* Grid Layout of Beautiful Premium Note Categories */}
           <div>
-            <h2 className="font-bold uppercase tracking-wider text-xs text-stone-400 mb-4">Pilih Templat Catatan</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {NOTE_TYPES.map(nt => {
+            <h2 className="font-bold uppercase tracking-widest text-[10px] text-stone-400 mb-6 flex items-center gap-2">
+              <Plus className="w-3 h-3" /> Pilih Templat Catatan
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {NOTE_TYPES.map((nt, idx) => {
                 const count = getNoteCount(nt.type);
+                // Random subtle rotations for a "casual" sticky note feel
+                const rotations = ["hover:rotate-1", "hover:-rotate-1", "hover:rotate-2", "hover:-rotate-2"];
+                const rotation = rotations[idx % rotations.length];
+                
                 return (
                   <Link 
                     key={nt.type} 
                     to={nt.link} 
                     onClick={playClick}
-                    className="group bg-paper border-2 border-stone-950 rounded-[2rem] p-6 hover:translate-x-1 hover:translate-y-1 hover:shadow-brutal-active shadow-brutal transition-all flex flex-col justify-between min-h-[170px]"
+                    className={cn(
+                      "group bg-paper border-2 border-stone-200 rounded-[2rem] p-6 hover:border-stone-900 hover:shadow-brutal transition-all flex flex-col justify-between min-h-[180px] relative overflow-hidden",
+                      rotation
+                    )}
                   >
+                    {/* Washi Tape effect */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-16 h-8 bg-stone-900/5 rotate-2 group-hover:bg-stone-900/10 transition-colors" />
+                    
                     <div>
                       <div className="flex justify-between items-start mb-4">
-                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 border-2 border-stone-950 shadow-sm", nt.bg, nt.color)}>
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 border border-stone-200 shadow-sm", nt.bg, nt.color)}>
                           <nt.icon className="w-6 h-6" />
                         </div>
                         {count !== "..." && (
-                          <span className="text-[10px] uppercase font-black tracking-widest bg-stone-100 text-stone-500 px-3 py-1 rounded-full border border-stone-200">
-                            {count} draf
+                          <span className="text-[9px] uppercase font-black tracking-widest bg-stone-50 text-stone-400 px-3 py-1 rounded-full border border-stone-100">
+                            {count} catatan
                           </span>
                         )}
                       </div>
-                      <h3 className="font-serif text-xl font-bold text-stone-900 group-hover:text-amber-600 transition-colors uppercase tracking-tight">
+                      <h3 className="font-serif text-2xl font-black text-stone-900 group-hover:text-amber-600 transition-colors tracking-tight leading-none mb-2">
                         {nt.label}
                       </h3>
-                      <p className="text-stone-500 text-xs font-semibold leading-relaxed mt-1.5">{nt.desc}</p>
+                      <p className="text-stone-500 text-xs font-bold leading-relaxed">{nt.desc}</p>
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs font-black text-stone-900 uppercase tracking-widest mt-4 group-hover:translate-x-1 transition-transform">

@@ -12,19 +12,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Fajmul Daily" />
     <script>
-      // Silence Vite WebSocket connection errors
+      // Silence Vite WebSocket connection errors completely for user experience
       window.addEventListener('unhandledrejection', function(event) {
         if (event.reason && (
           String(event.reason).includes('WebSocket') || 
-          String(event.reason).includes('websocket') || 
-          (event.reason.message && (
-            String(event.reason.message).includes('WebSocket') || 
-            String(event.reason.message).includes('websocket')
-          ))
+          String(event.reason).includes('websocket')
         )) {
           event.preventDefault();
           event.stopPropagation();
-          console.warn('Silenced unhandled WebSocket rejection:', event.reason);
         }
       });
       window.addEventListener('error', function(event) {
@@ -35,7 +30,6 @@
         )) {
           event.preventDefault();
           event.stopPropagation();
-          console.warn('Silenced error:', event.message);
         }
       });
     </script>
