@@ -98,6 +98,8 @@ import {
   Folder,
   Calculator,
   Edit3,
+  LayoutGrid,
+  Shield,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { cn } from "../lib/utils";
@@ -374,6 +376,7 @@ export function Finance() {
 
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCatModalName, setNewCatModalName] = useState("");
+  const [newCatType, setNewCatType] = useState<"income" | "expense">("expense");
   const [addCatModalTargetGroup, setAddCatModalTargetGroup] = useState<
     string | null
   >(null);
@@ -2017,7 +2020,7 @@ export function Finance() {
                               {group.records.map((record) => (
                                 <div
                                   key={record.id}
-                                  className="p-3.5 flex items-center justify-between hover:bg-stone-50 transition-all group relative focus-within:z-[50] group-hover:z-[40] z-0"
+                                  className="p-3 flex items-center justify-between hover:bg-stone-50 transition-all group relative focus-within:z-[50] group-hover:z-[40] z-0 px-4 pr-12"
                                 >
                                   <div
                                     className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-all"
@@ -2028,9 +2031,9 @@ export function Finance() {
                                       ),
                                     }}
                                   />
-                                  <div className="flex items-center gap-3 min-w-0">
+                                  <div className="flex items-center gap-2.5 min-w-0">
                                     <div
-                                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover:scale-110"
+                                      className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover:scale-110"
                                       style={{
                                         backgroundColor: getCategoryColor(
                                           record.category,
@@ -2049,25 +2052,25 @@ export function Finance() {
                                           : record.type === "income"
                                             ? TrendingUp
                                             : Minus;
-                                        return <Icon className="w-4 h-4" />;
+                                        return <Icon className="w-3.5 h-3.5" />;
                                       })()}
                                     </div>
-                                    <div className="min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <p className="font-bold text-stone-900 truncate tracking-tight text-xs">
+                                    <div className="min-w-0 leading-tight">
+                                      <div className="flex items-center gap-1.5">
+                                        <p className="font-bold text-stone-900 truncate tracking-tight text-[11px]">
                                           {record.category}
                                         </p>
-                                        <span className="text-[8px] font-bold text-stone-300 uppercase tracking-widest">
+                                        <span className="text-[7px] font-black text-stone-300 uppercase tracking-widest">
                                           {categoryToGroup[record.category] ||
                                             "-"}
                                         </span>
                                       </div>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <p className="text-[9px] text-stone-400 font-medium whitespace-nowrap">
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        <p className="text-[8px] text-stone-400 font-medium whitespace-nowrap">
                                           {format(record.createdAt, "HH:mm", { locale: id })}
                                         </p>
                                         {record.note && (
-                                          <p className="text-[9px] text-stone-500 truncate italic">
+                                          <p className="text-[8px] text-stone-500 truncate italic">
                                             — {record.note}
                                           </p>
                                         )}
@@ -2077,7 +2080,7 @@ export function Finance() {
                                   <div className="flex items-center gap-3">
                                     <p
                                       className={cn(
-                                        "font-black text-sm tracking-tighter text-right",
+                                        "font-black text-xs tracking-tighter text-right",
                                         record.type === "income"
                                           ? "text-green-600"
                                           : "text-red-600",
@@ -2087,11 +2090,13 @@ export function Finance() {
                                         ? "Rp ••"
                                         : `${record.type === "income" ? "+" : "-"}Rp ${record.amount.toLocaleString("id-ID")}`}
                                     </p>
+                                  </div>
+                                  <div className="absolute top-1/2 -translate-y-1/2 right-2">
                                     <ActionMenu
                                       items={[
                                         {
                                           label: "Ubah Data",
-                                          icon: <Edit3 className="w-4 h-4" />,
+                                          icon: <Edit3 className="w-3.5 h-3.5" />,
                                           onClick: () => {
                                             setEditingRecord(record);
                                             setShowAddModal(true);
@@ -2099,7 +2104,7 @@ export function Finance() {
                                         },
                                         {
                                           label: "Hapus",
-                                          icon: <Trash2 className="w-4 h-4" />,
+                                          icon: <Trash2 className="w-3.5 h-3.5" />,
                                           onClick: () =>
                                             showConfirm(
                                               "Hapus transaksi ini?",
@@ -2111,7 +2116,7 @@ export function Finance() {
                                           variant: "danger",
                                         },
                                       ]}
-                                      className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                                      className="h-8 w-8 flex items-center justify-center p-0"
                                       headerTitle="Opsi Transaksi"
                                     />
                                   </div>
@@ -3193,42 +3198,60 @@ export function Finance() {
                         return (
                           <div
                             key={group}
-                            className="bg-white border-2 border-stone-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all group/card mb-4"
+                            className="bg-white border-2 border-stone-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all group/card mb-4"
                           >
-                            <header className="flex items-center justify-between mb-6">
-                              <div className="flex items-center gap-4">
+                            <header className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
                                 <div
-                                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md group-hover/card:scale-110 transition-transform"
+                                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md group-hover/card:scale-110 transition-transform"
                                   style={{ backgroundColor: type === "Pengeluaran" ? "#ef4444" : "#10b981" }}
                                 >
-                                  <Folder className="w-5 h-5" />
+                                  <Folder className="w-4 h-4" />
                                 </div>
                                 <div>
-                                  <h4 className="text-lg font-bold text-stone-900 tracking-tight">
+                                  <h4 className="text-base font-bold text-stone-900 tracking-tight">
                                     {group}
                                   </h4>
-                                  <p className="text-[8px] font-black uppercase tracking-widest text-stone-400">
+                                  <p className="text-[7px] font-black uppercase tracking-widest text-stone-400">
                                     Grup {type}
                                   </p>
                                 </div>
                               </div>
-                              <button
-                                onClick={() => {
-                                  showConfirm(
-                                    `Hapus grup "${group}"? Semua kategori di dalamnya akan menjadi tidak terkelompok.`,
-                                    () => {
-                                      deleteFinanceMapping(group);
-                                      playError();
+                              <ActionMenu
+                                items={[
+                                  {
+                                    label: "Ubah Nama Grup",
+                                    icon: <Edit3 className="w-4 h-4" />,
+                                    onClick: () => {
+                                       const newName = prompt("Nama grup baru:", group);
+                                       if (newName && newName !== group) {
+                                          const currentCats = financeMappings[group];
+                                          deleteFinanceMapping(group);
+                                          updateFinanceMapping(newName, currentCats);
+                                          playSuccess();
+                                       }
+                                    }
+                                  },
+                                  {
+                                    label: "Hapus Grup",
+                                    icon: <Trash2 className="w-4 h-4" />,
+                                    onClick: () => {
+                                      showConfirm(
+                                        `Hapus grup "${group}"? Semua kategori di dalamnya akan menjadi tidak terkelompok.`,
+                                        () => {
+                                          deleteFinanceMapping(group);
+                                          playError();
+                                        },
+                                      );
                                     },
-                                  );
-                                }}
-                                className="w-9 h-9 flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                                    variant: "danger"
+                                  }
+                                ]}
+                                className="w-8 h-8 flex items-center justify-center p-0 rounded-lg hover:bg-stone-50"
+                              />
                             </header>
 
-                            <div className="min-h-[80px] bg-stone-50 border-2 border-dashed border-stone-200 rounded-[2rem] p-4 flex flex-wrap gap-2 mb-6">
+                            <div className="min-h-[60px] bg-stone-50 border-2 border-dashed border-stone-100 rounded-2xl p-3 flex flex-wrap gap-1.5 mb-4">
                               {categoriesInGroup.map((cat) => {
                                 const catColor = getCategoryColor(cat, type === "Pengeluaran" ? "expense" : "income");
                                 const catIcon = getCategoryIcon(cat, type === "Pengeluaran" ? "expense" : "income");
@@ -3236,15 +3259,15 @@ export function Finance() {
                                 return (
                                   <div
                                     key={cat}
-                                    className="group/item flex items-center gap-2.5 bg-white border border-stone-200 pl-2.5 pr-1.5 py-1 rounded-xl shadow-sm hover:border-stone-400 transition-all animate-in zoom-in-95 duration-200"
+                                    className="group/item flex items-center gap-2 bg-white border border-stone-200 pl-2 pr-1 py-1 rounded-lg shadow-sm hover:border-stone-400 transition-all animate-in zoom-in-95 duration-200"
                                   >
                                     <div
-                                      className="w-6 h-6 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover/item:scale-105"
+                                      className="w-5 h-5 rounded-md flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover/item:scale-105"
                                       style={{ backgroundColor: catColor }}
                                     >
-                                      <Icon className="w-3 h-3" />
+                                      <Icon className="w-2.5 h-2.5" />
                                     </div>
-                                    <span className="text-xs font-bold text-stone-700 leading-tight truncate">
+                                    <span className="text-[10px] font-bold text-stone-700 leading-tight truncate">
                                       {cat}
                                     </span>
                                     <button
@@ -3257,18 +3280,18 @@ export function Finance() {
                                         );
                                         playSuccess();
                                       }}
-                                      className="w-5 h-5 flex items-center justify-center hover:bg-stone-100 text-stone-300 hover:text-stone-800 rounded-lg transition-all ml-auto shrink-0"
+                                      className="w-4 h-4 flex items-center justify-center hover:bg-stone-100 text-stone-300 hover:text-stone-800 rounded-md transition-all ml-auto shrink-0"
                                       title="Hapus dari grup"
                                     >
-                                      <X className="w-3 h-3" />
+                                      <X className="w-2.5 h-2.5" />
                                     </button>
                                   </div>
                                 );
                               })}
                               {categoriesInGroup.length === 0 && (
-                                <div className="flex-1 flex flex-col items-center justify-center py-4 text-stone-300 gap-2 opacity-50">
-                                  <ListFilter className="w-8 h-8" />
-                                  <p className="text-[9px] font-black uppercase tracking-widest">
+                                <div className="flex-1 flex flex-col items-center justify-center py-3 text-stone-300 gap-1.5 opacity-50">
+                                  <ListFilter className="w-6 h-6" />
+                                  <p className="text-[7px] font-black uppercase tracking-widest">
                                     Grup kosong
                                   </p>
                                 </div>
@@ -3281,16 +3304,16 @@ export function Finance() {
                                   setManagedGroup(isManaged ? null : group)
                                 }
                                 className={cn(
-                                  "w-full py-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2",
+                                  "w-full py-3 rounded-xl font-black text-[8px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2",
                                   isManaged
                                     ? "bg-white border-stone-900 text-stone-900 shadow-inner"
                                     : "bg-stone-50 border-transparent text-stone-500 hover:bg-stone-100",
                                 )}
                               >
                                 {isManaged ? (
-                                  <X className="w-3.5 h-3.5" />
+                                  <X className="w-3 h-3" />
                                 ) : (
-                                  <Plus className="w-3.5 h-3.5" />
+                                  <Plus className="w-3 h-3" />
                                 )}
                                 {isManaged ? "Batalkan" : "Isi Kategori"}
                               </button>
@@ -3706,6 +3729,28 @@ export function Finance() {
               <div className="p-8 space-y-6">
                 <div className="space-y-4">
                   <label className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-400 block">
+                    Jenis Kategori
+                  </label>
+                  <div className="flex bg-stone-100 p-1 rounded-2xl border border-stone-200">
+                    <button
+                      onClick={() => setNewCatType("expense")}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        newCatType === "expense" ? "bg-white text-stone-900 shadow-sm" : "text-stone-400"
+                      )}
+                    >Pengeluaran</button>
+                    <button
+                      onClick={() => setNewCatType("income")}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        newCatType === "income" ? "bg-white text-stone-900 shadow-sm" : "text-stone-400"
+                      )}
+                    >Pemasukan</button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-400 block">
                     Nama Kategori Baru
                   </label>
                   <input
@@ -3726,7 +3771,7 @@ export function Finance() {
                           id: uuidv4(),
                           amount: 0,
                           category: trimmed,
-                          type: 'expense',
+                          type: newCatType,
                           createdAt: Date.now(),
                           note: 'Inisialisasi kategori baru'
                         });
@@ -3768,7 +3813,7 @@ export function Finance() {
                         id: uuidv4(),
                         amount: 0,
                         category: trimmed,
-                        type: 'expense',
+                        type: newCatType,
                         createdAt: Date.now(),
                         note: 'Inisialisasi kategori baru'
                       });
