@@ -244,14 +244,11 @@ export function Activities() {
                   <th 
                     key={dIdx} 
                     className={cn(
-                      "p-1.5 text-center text-[10px] font-bold border-r border-stone-100 min-w-[40px]",
+                      "p-1 text-center text-[8px] font-bold border-r border-stone-100 min-w-[20px]",
                       isSameDay(day, new Date()) ? "bg-stone-900 text-white border-none" : ""
                     )}
                   >
-                    <div className="text-sm font-black">{format(day, 'd')}</div>
-                    <div className="text-[9px] opacity-90 uppercase tracking-widest mt-0.5">
-                      {format(day, 'EEEEEE', { locale: id })}
-                    </div>
+                    <div className="text-[10px] font-black">{format(day, 'd')}</div>
                   </th>
                 ))}
               </tr>
@@ -259,45 +256,45 @@ export function Activities() {
             <tbody>
               {activities.length === 0 ? (
                 <tr>
-                  <td colSpan={daysInMonth.length + 2} className="p-20 text-center">
-                    <div className="flex flex-col items-center gap-4 text-stone-400">
-                      <CalendarIcon className="w-12 h-12 opacity-30" />
-                      <p className="font-bold text-lg">Belum ada kegiatan yang didaftarkan.</p>
-                      <p className="text-sm">Mulai dengan menambahkan template kegiatan di atas.</p>
+                  <td colSpan={daysInMonth.length + 2} className="p-10 text-center">
+                    <div className="flex flex-col items-center gap-2 text-stone-400">
+                      <CalendarIcon className="w-8 h-8 opacity-30" />
+                      <p className="font-bold text-sm">Belum ada kegiatan.</p>
+                      <p className="text-xs">Mulai dengan menambahkan template di atas.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 activities.map(act => (
                   <tr key={act.id} className="border-b border-stone-100 hover:bg-stone-50 transition-colors group/row">
-                    <td className="p-3 border-r-2 border-stone-900 font-bold text-sm text-stone-800 bg-stone-50/30">
+                    <td className="p-2 border-r-2 border-stone-900 font-bold text-xs text-stone-800 bg-stone-50/30">
                       {act.name}
                     </td>
                     {daysInMonth.map((day, dIdx) => {
                       const dateStr = format(day, 'yyyy-MM-dd');
                       const isCompleted = completions.some(c => c.activityId === act.id && c.dateStr === dateStr);
                       return (
-                        <td key={dIdx} className="p-1 text-center border-r border-stone-50">
+                        <td key={dIdx} className="p-0.5 text-center border-r border-stone-50">
                           <button 
                             onClick={() => toggleCompletion(act.id, day)}
                             className={cn(
-                              "w-4 h-4 rounded border-2 transition-all flex items-center justify-center mx-auto cursor-pointer",
+                              "w-3.5 h-3.5 rounded border border-stone-300 transition-all flex items-center justify-center mx-auto cursor-pointer",
                               isCompleted 
                                 ? "bg-stone-900 border-stone-900 text-white shadow-sm" 
-                                : "bg-white border-stone-200 hover:border-stone-400"
+                                : "bg-white hover:border-stone-500"
                             )}
                           >
-                             {isCompleted && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
+                             {isCompleted && <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />}
                           </button>
                         </td>
                       );
                     })}
-                    <td className="p-4 text-center border-l border-stone-900">
+                    <td className="p-2 text-center border-l border-stone-900">
                       <button 
                         onClick={() => handleDeleteActivity(act.id)}
-                        className="p-2.5 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        className="p-1 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </td>
                   </tr>

@@ -208,10 +208,10 @@ export function DailyGoalsView() {
             <ChevronLeft className="w-5 h-5 text-stone-600" />
           </button>
           <div>
-            <h1 className="font-serif text-4xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
-              Daily Goals <Award className="w-8 h-8 text-yellow-500 animate-bounce" />
+            <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
+              Daily Goals <Award className="w-6 h-6 text-yellow-500 animate-bounce" />
             </h1>
-            <p className="text-stone-500 text-sm font-medium">
+            <p className="text-stone-500 text-xs mt-1 font-medium">
               Kelola pencapaian harian Anda secara terintegrasi.
             </p>
           </div>
@@ -221,7 +221,7 @@ export function DailyGoalsView() {
         {!isSameDay(selectedDate, new Date()) && (
           <button
             onClick={handleGoToToday}
-            className="px-4 py-2 bg-stone-100 text-stone-700 hover:bg-stone-900 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm border border-stone-200"
+            className="px-4 py-2 bg-stone-100 text-stone-700 hover:bg-stone-900 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm border border-stone-200"
           >
             Hari Ini
           </button>
@@ -229,20 +229,20 @@ export function DailyGoalsView() {
       </header>
 
       {/* Date Switcher Ribbon */}
-      <div className="flex items-center justify-between p-4 bg-paper border-2 border-stone-900 rounded-3xl shadow-brutal bg-white">
+      <div className="flex items-center justify-between p-3 bg-paper border border-stone-300 rounded-3xl shadow-sm bg-white">
         <button
           onClick={handlePrevDay}
           className="p-2.5 rounded-xl border border-stone-200 hover:border-stone-900 transition-colors bg-stone-50"
         >
-          <ChevronLeft className="w-5 h-5 text-stone-700" />
+          <ChevronLeft className="w-4 h-4 text-stone-700" />
         </button>
         
         <div className="flex flex-col items-center">
-          <div className="flex items-center gap-2 text-stone-900 font-serif text-xl font-bold">
-            <Calendar className="w-5 h-5 text-accent-crimson" />
+          <div className="flex items-center gap-2 text-stone-900 font-serif text-base font-bold">
+            <Calendar className="w-4 h-4 text-accent-crimson" />
             <span>{format(selectedDate, 'EEEE, dd MMMM yyyy', { locale: id })}</span>
           </div>
-          <span className="text-[9px] uppercase tracking-widest font-black text-stone-400 mt-0.5">
+          <span className="text-[8px] uppercase tracking-widest font-black text-stone-400 mt-0.5">
             {isSameDay(selectedDate, new Date()) ? 'TARGET ANDA HARI INI' : 'RIWAYAT TARGET HARIAN'}
           </span>
         </div>

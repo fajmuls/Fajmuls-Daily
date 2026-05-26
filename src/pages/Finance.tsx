@@ -313,6 +313,8 @@ function CustomDropdown({
 }
 
 
+import { ProgressChart } from "../components/ProgressChart";
+
 export function Finance() {
   const [showPrintView, setShowPrintView] = useState(false);
 
@@ -353,6 +355,7 @@ export function Finance() {
   const [type, setType] = useState<"income" | "expense">("expense");
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [chartMode, setChartMode] = useState<"detail" | "grouped">("detail");
+  const [chartDisplayType, setChartDisplayType] = useState<"line" | "pie">("line");
   const [showSettings, setShowSettings] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
@@ -392,30 +395,31 @@ export function Finance() {
     color: string;
   } | null>(null);
 
-  const [highlightedCategory, setHighlightedCategory] = useState<string | null>(
-    null,
-  );
+  const [highlightedCategory, setHighlightedCategory] = useState<string | null>(null);
+
+  const categories = Array.from(new Set(financeRecords.map((r) => r.category)));
 
   const handleChartClick = (data: any, type: "expense" | "income") => {
-    if (data?.payload?.name) {
-      let targetName = data.payload.name;
-      const originalData = type === "expense" ? expenseData : incomeData;
+      if (data?.payload?.name || data?.name) {
+        let targetName = data?.payload?.name || data?.name;
+        const originalData = type === "expense" ? expenseData : incomeData;
 
-      if (targetName === "Lainnya") {
-        const others = originalData.filter(
-          (d) => parseFloat(d.displayPercent) < 3,
-        );
-        if (others.length > 0) {
-          setHighlightedCategory("Lainnya");
-          setTimeout(() => setHighlightedCategory(null), 5000);
-          return;
+        if (targetName === "Lainnya") {
+          const others = originalData.filter(
+            (d) => parseFloat(d.displayPercent) < 3,
+          );
+          if (others.length > 0) {
+            setHighlightedCategory("Lainnya");
+            setTimeout(() => setHighlightedCategory(null), 5000);
+            return;
+          }
         }
-      }
 
-      setHighlightedCategory(targetName);
-      setTimeout(() => setHighlightedCategory(null), 3000);
-    }
-  };
+        setHighlightedCategory(targetName);
+        setTimeout(() => setHighlightedCategory(null), 3000);
+      }
+    };
+
 
   const [filterCategory, setFilterCategory] = useState<string>("All");
   const [filterRange, setFilterRange] = useState<string>("all");
@@ -2127,6 +2131,31 @@ export function Finance() {
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
           <div className="flex bg-stone-50 p-1.5 rounded-2xl border border-stone-200 max-w-fit mx-auto mt-2">
             <button
+              onClick={() => setChartDisplayType("line")}
+              className={cn(
+                "px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                chartDisplayType === "line"
+                  ? "bg-white text-stone-900 shadow-sm"
+                  : "text-stone-400 hover:text-stone-600",
+              )}
+            >
+              Line Bar
+            </button>
+            <button
+              onClick={() => setChartDisplayType("pie")}
+              className={cn(
+                "px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                chartDisplayType === "pie"
+                  ? "bg-white text-stone-900 shadow-sm"
+                  : "text-stone-400 hover:text-stone-600",
+              )}
+            >
+              Pie Chart
+            </button>
+          </div>
+
+          <div className="flex bg-stone-50 p-1.5 rounded-2xl border border-stone-200 max-w-fit mx-auto mt-2">
+            <button
               onClick={() => setChartMode("grouped")}
               className={cn(
                 "px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
@@ -2199,7 +2228,7 @@ export function Finance() {
                   <div className="w-2 h-2 rounded-full bg-rose-500 shadow-sm" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Pengeluaran</span>
                 </div>
-                <p className="text-sm font-bold font-mono text-rose-600 tracking-tight">
+                <p className="text-xs font-bold font-mono text-rose-600 tracking-tight">
                   Rp {trendTotals.totalPengeluaran.toLocaleString("id-ID")}
                 </p>
               </div>
@@ -2209,7 +2238,7 @@ export function Finance() {
                   <div className={cn("w-2 h-2 rounded-full shadow-sm", trendTotals.totalTabungan >= 0 ? "bg-emerald-500" : "bg-rose-500")} />
                   <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Net Tabungan</span>
                 </div>
-                <p className={cn("text-sm font-bold font-mono tracking-tight", trendTotals.totalTabungan >= 0 ? "text-stone-900" : "text-stone-500")}>
+                <p className={cn("text-xs font-bold font-mono tracking-tight", trendTotals.totalTabungan >= 0 ? "text-stone-900" : "text-stone-500")}>
                   Rp {trendTotals.totalTabungan.toLocaleString("id-ID")}
                 </p>
               </div>
@@ -2275,46 +2304,59 @@ export function Finance() {
                   Distribusi Pengeluaran
                 </h3>
               </header>
-              <div className="w-full h-[400px] min-w-0">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <PieChart
-                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                  >
-                    <Pie
-                      isAnimationActive={false}
-                      activeIndex={activeExpenseIndex}
-                      activeShape={renderActiveShape}
-                      data={expenseChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="35%"
-                      outerRadius="55%"
-                      paddingAngle={0}
-                      dataKey="value"
-                      stroke="#fff"
-                      strokeWidth={2}
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      onClick={(data, index) => {
-                        setActiveExpenseIndex(activeExpenseIndex === index ? -1 : index);
-                        handleChartClick(data, "expense");
-                      }}
-                      className="cursor-pointer outline-none"
-                    >
-                      {expenseChartData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={
-                            entry.name === "Lainnya"
-                              ? "#a8a29e"
-                              : getCategoryColor(entry.name, "expense")
-                          }
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="w-full flex-grow min-w-0">
+                {chartDisplayType === "pie" ? (
+                  <div className="w-full h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                      <PieChart
+                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                      >
+                        <Pie
+                          isAnimationActive={false}
+                          activeIndex={activeExpenseIndex}
+                          activeShape={renderActiveShape}
+                          data={expenseChartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius="35%"
+                          outerRadius="55%"
+                          paddingAngle={0}
+                          dataKey="value"
+                          stroke="#fff"
+                          strokeWidth={2}
+                          labelLine={false}
+                          label={renderCustomizedLabel}
+                          onClick={(data, index) => {
+                            setActiveExpenseIndex(activeExpenseIndex === index ? -1 : index);
+                            handleChartClick(data, "expense");
+                          }}
+                          className="cursor-pointer outline-none"
+                        >
+                          {expenseChartData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                entry.name === "Lainnya"
+                                  ? "#a8a29e"
+                                  : getCategoryColor(entry.name, "expense")
+                              }
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <ProgressChart
+                    data={expenseChartData}
+                    type="expense"
+                    getCategoryColor={getCategoryColor}
+                    categoryToIcon={categoryToIcon}
+                    financeCategoryPrefs={financeCategoryPrefs}
+                    onItemClick={(item) => handleChartClick(item, "expense")}
+                  />
+                )}
               </div>
 
               <div className="mt-8 space-y-3 max-h-[500px] overflow-y-auto px-1 custom-scrollbar">
@@ -2369,7 +2411,7 @@ export function Finance() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-base tracking-tight text-stone-900">
+                          <p className="font-bold text-sm md:text-base tracking-tight text-stone-900">
                             Rp {data.value.toLocaleString("id-ID")}
                           </p>
                           <p className="text-[9px] font-black uppercase tracking-widest text-stone-300">
@@ -2392,46 +2434,59 @@ export function Finance() {
                   Distribusi Pemasukan
                 </h3>
               </header>
-              <div className="w-full h-[400px] min-w-0">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <PieChart
-                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                  >
-                    <Pie
-                      isAnimationActive={false}
-                      activeIndex={activeIncomeIndex}
-                      activeShape={renderActiveShape}
-                      data={incomeChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="35%"
-                      outerRadius="55%"
-                      paddingAngle={0}
-                      dataKey="value"
-                      stroke="#fff"
-                      strokeWidth={2}
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      onClick={(data, index) => {
-                        setActiveIncomeIndex(activeIncomeIndex === index ? -1 : index);
-                        handleChartClick(data, "income");
-                      }}
-                      className="cursor-pointer outline-none"
-                    >
-                      {incomeChartData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={
-                            entry.name === "Lainnya"
-                              ? "#a8a29e"
-                              : getCategoryColor(entry.name, "income")
-                          }
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="w-full flex-grow min-w-0">
+                {chartDisplayType === "pie" ? (
+                  <div className="w-full h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                      <PieChart
+                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                      >
+                        <Pie
+                          isAnimationActive={false}
+                          activeIndex={activeIncomeIndex}
+                          activeShape={renderActiveShape}
+                          data={incomeChartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius="35%"
+                          outerRadius="55%"
+                          paddingAngle={0}
+                          dataKey="value"
+                          stroke="#fff"
+                          strokeWidth={2}
+                          labelLine={false}
+                          label={renderCustomizedLabel}
+                          onClick={(data, index) => {
+                            setActiveIncomeIndex(activeIncomeIndex === index ? -1 : index);
+                            handleChartClick(data, "income");
+                          }}
+                          className="cursor-pointer outline-none"
+                        >
+                          {incomeChartData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                entry.name === "Lainnya"
+                                  ? "#a8a29e"
+                                  : getCategoryColor(entry.name, "income")
+                              }
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <ProgressChart
+                    data={incomeChartData}
+                    type="income"
+                    getCategoryColor={getCategoryColor}
+                    categoryToIcon={categoryToIcon}
+                    financeCategoryPrefs={financeCategoryPrefs}
+                    onItemClick={(item) => handleChartClick(item, "income")}
+                  />
+                )}
               </div>
 
               <div className="mt-8 space-y-3 max-h-[500px] overflow-y-auto px-1 custom-scrollbar">
@@ -2486,7 +2541,7 @@ export function Finance() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-base tracking-tight text-stone-900">
+                          <p className="font-bold text-sm md:text-base tracking-tight text-stone-900">
                             Rp {data.value.toLocaleString("id-ID")}
                           </p>
                           <p className="text-[9px] font-black uppercase tracking-widest text-stone-300">
@@ -2531,28 +2586,28 @@ export function Finance() {
               {/* Budget Form */}
               <div
                 id="budget-form"
-                className="p-6 bg-stone-50 rounded-3xl border border-stone-200/50 space-y-4"
+                className="bg-stone-50 rounded-[2rem] border border-stone-100 p-6 space-y-4 shadow-inner"
               >
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-2 block">
                       Kategori
                     </label>
                     <input
                       id="new-budget-cat"
                       type="text"
-                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-stone-900"
+                      className="w-full bg-white border border-stone-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-stone-900 transition-all shadow-sm"
                       placeholder="Cth. Makanan"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-2 block">
                       Nominal
                     </label>
                     <input
                       id="new-budget-amt"
                       type="number"
-                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-stone-900"
+                      className="w-full bg-white border border-stone-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-stone-900 transition-all shadow-sm font-mono"
                       placeholder="0"
                     />
                   </div>
@@ -2590,7 +2645,7 @@ export function Finance() {
                       playSuccess();
                     }
                   }}
-                  className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold transition-all hover:bg-stone-800"
+                  className="w-full py-4 bg-stone-900 text-white rounded-2xl font-black uppercase tracking-widest transition-all hover:translate-y-[-2px] hover:shadow-lg active:translate-y-0"
                 >
                   Tambah Anggaran
                 </button>
@@ -2613,7 +2668,7 @@ export function Finance() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">
                           {b.category}
                         </p>
-                        <p className="font-black text-2xl text-stone-900 tracking-tighter">
+                        <p className="font-black text-xl md:text-2xl text-stone-900 tracking-tighter">
                           Rp {b.amount.toLocaleString("id-ID")}
                         </p>
                       </div>
@@ -2669,39 +2724,39 @@ export function Finance() {
               {/* Saving Form */}
               <div
                 id="saving-form"
-                className="p-6 bg-teal-50/10 rounded-3xl border border-teal-100/60 space-y-4 relative z-10"
+                className="bg-stone-50 rounded-[2rem] border border-stone-100 p-6 space-y-4 relative z-10 shadow-inner"
               >
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2 col-span-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 pl-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-2 block">
                       Nama Simpanan
                     </label>
                     <input
                       id="new-saving-name"
                       type="text"
-                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full bg-white border border-stone-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-stone-900 transition-all shadow-sm"
                       placeholder="Cth. Dana Darurat"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 pl-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-2 block">
                       Saldo
                     </label>
                     <input
                       id="new-saving-amt"
                       type="number"
-                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full bg-white border border-stone-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-stone-900 transition-all shadow-sm font-mono"
                       placeholder="0"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 pl-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 pl-2 block">
                       Target (Ops)
                     </label>
                     <input
                       id="new-saving-target"
                       type="number"
-                      className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full bg-white border border-stone-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-stone-900 transition-all shadow-sm font-mono"
                       placeholder="0"
                     />
                   </div>
@@ -2750,7 +2805,7 @@ export function Finance() {
                       playSuccess();
                     }
                   }}
-                  className="w-full py-3 bg-teal-600 text-white rounded-xl font-bold transition-all hover:bg-teal-700 shadow-lg shadow-teal-100/30"
+                  className="w-full py-4 bg-stone-900 text-white rounded-2xl font-black uppercase tracking-widest transition-all hover:translate-y-[-2px] hover:shadow-lg active:translate-y-0"
                 >
                   Buka Tabungan Baru
                 </button>
@@ -2776,17 +2831,17 @@ export function Finance() {
                               {s.location}
                             </div>
                             <div className="w-1 h-1 rounded-full bg-stone-300" />
-                            <p className="text-xs font-bold text-stone-900">
+                            <p className="text-[10px] md:text-xs font-bold text-stone-900">
                               {s.name}
                             </p>
                           </div>
-                          <p className="font-black text-2xl text-stone-900 tracking-tighter">
+                          <p className="font-black text-xl md:text-2xl text-stone-900 tracking-tighter">
                             Rp {s.currentAmount.toLocaleString("id-ID")}
                           </p>
 
                           {s.targetAmount > 0 && (
                             <div className="mt-4 space-y-2">
-                              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                              <div className="flex justify-between text-[9px] md:text-[10px] font-black uppercase tracking-widest">
                                 <span className="text-stone-400">
                                   Target: Rp{" "}
                                   {s.targetAmount.toLocaleString("id-ID")}
@@ -3244,12 +3299,12 @@ export function Finance() {
                           </button>
 
                           {isManaged && (
-                            <div className="absolute top-full left-0 right-0 mt-4 p-8 bg-white border border-stone-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[2.5rem] z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-                              <div className="flex items-center justify-between mb-6">
-                                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-900">
+                            <div className="absolute top-full left-0 right-0 mt-2 p-4 md:p-6 bg-white border border-stone-200 shadow-xl rounded-3xl z-50 animate-in fade-in slide-in-from-top-4 duration-200">
+                              <div className="flex items-center justify-between mb-4">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-stone-900">
                                   Pilih Kategori
                                 </label>
-                                <span className="text-[10px] font-bold text-stone-400">
+                                <span className="text-[9px] font-bold text-stone-400">
                                   {
                                     allCategories.filter(
                                       (cat) => !categoryToGroup[cat],
@@ -3259,20 +3314,20 @@ export function Finance() {
                                 </span>
                               </div>
 
-                              <div className="relative mb-6">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300" />
+                              <div className="relative mb-4">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-300" />
                                 <input
                                   type="text"
-                                  placeholder="Cari kategori tersedia..."
+                                  placeholder="Cari..."
                                   value={selectionSearch}
                                   onChange={(e) =>
                                     setSelectionSearch(e.target.value)
                                   }
-                                  className="w-full bg-stone-50 border border-stone-100 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold outline-none focus:bg-white focus:border-stone-900 transition-all"
+                                  className="w-full bg-stone-50 border border-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold outline-none focus:bg-white focus:border-stone-900 transition-all"
                                 />
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto custom-scrollbar pr-3 mb-6">
+                              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto custom-scrollbar pr-2 mb-4">
                                 {allCategories
                                   .filter(
                                     (cat) =>
@@ -3295,10 +3350,10 @@ export function Finance() {
                                         setSelectionSearch("");
                                         playSuccess();
                                       }}
-                                      className="flex items-center gap-4 p-4 bg-stone-50 hover:bg-stone-900 hover:text-white rounded-3xl transition-all group/selector text-left border-2 border-transparent hover:border-stone-800 shadow-sm"
+                                      className="flex items-center gap-2 p-2 bg-stone-50 hover:bg-stone-900 hover:text-white rounded-xl transition-all group/selector text-left border border-transparent hover:border-stone-800 shadow-sm"
                                     >
                                       <div
-                                        className="w-12 h-12 rounded-2xl bg-white group-hover/selector:bg-white/10 flex items-center justify-center text-white transition-all shadow-md"
+                                        className="w-7 h-7 shrink-0 rounded-lg bg-white group-hover/selector:bg-white/10 flex items-center justify-center text-white transition-all shadow-sm"
                                         style={{
                                           backgroundColor: getCategoryColor(
                                             cat,
@@ -3310,18 +3365,14 @@ export function Finance() {
                                           (LucideIcons as any)[
                                             getCategoryIcon(cat, "expense")
                                           ] || Tag,
-                                          { className: "w-6 h-6" },
+                                          { className: "w-3.5 h-3.5" },
                                         )}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <span className="font-black text-[11px] uppercase tracking-widest block truncate">
+                                        <span className="font-bold text-[10px] sm:text-xs">
                                           {cat}
                                         </span>
-                                        <span className="text-[9px] opacity-40 uppercase tracking-tighter">
-                                          Klik untuk pilih
-                                        </span>
                                       </div>
-                                      <ChevronRight className="w-4 h-4 opacity-0 group-hover/selector:opacity-100 transition-all" />
                                     </button>
                                   ))}
 
@@ -3332,16 +3383,16 @@ export function Finance() {
                                       .toLowerCase()
                                       .includes(selectionSearch.toLowerCase()),
                                 ).length === 0 && (
-                                  <div className="col-span-1 md:col-span-2 py-12 text-center bg-stone-50 rounded-[2rem] border-2 border-dashed border-stone-100">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-300">
-                                      Tidak ada kategori yang cocok
+                                  <div className="col-span-2 lg:col-span-3 py-6 text-center bg-stone-50 rounded-xl border border-dashed border-stone-200">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                                      Tidak ditemukan
                                     </p>
                                   </div>
                                 )}
                               </div>
 
-                              <div className="pt-6 border-t border-stone-100">
-                                <p className="text-[10px] font-bold text-stone-400 mb-4 text-center">
+                              <div className="pt-4 border-t border-stone-100">
+                                <p className="text-[10px] font-medium text-stone-500 mb-3 text-center leading-tight">
                                   Tidak menemukan kategori? Buat baru di sini:
                                 </p>
                                 <button
@@ -4087,15 +4138,15 @@ export function Finance() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-5 border border-stone-200 rounded-2xl bg-stone-50/50">
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 block leading-none">Total Arus Masuk</span>
-                <span className="text-lg font-black mt-1 block text-stone-900">Rp {filteredRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
+                <span className="text-sm font-black mt-1 block text-stone-900">Rp {filteredRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
               </div>
               <div className="p-5 border border-stone-200 rounded-2xl bg-stone-50/50">
                 <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 block leading-none">Total Arus Keluar</span>
-                <span className="text-lg font-black mt-1 block text-stone-900">Rp {filteredRecords.filter(r => r.type === "expense").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
+                <span className="text-sm font-black mt-1 block text-stone-900">Rp {filteredRecords.filter(r => r.type === "expense").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
               </div>
               <div className="p-5 border border-stone-900 bg-stone-900 rounded-2xl text-white shadow-lg">
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-300 block leading-none">Selisih Bersih</span>
-                <span className="text-lg font-black mt-1 block">
+                <span className="text-sm font-black mt-1 block">
                   Rp {(
                     filteredRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0) -
                     filteredRecords.filter(r => r.type === "expense").reduce((acc, r) => acc + r.amount, 0)
