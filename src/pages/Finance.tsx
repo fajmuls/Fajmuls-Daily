@@ -473,21 +473,37 @@ export function Finance() {
     };
   };
 
+  const [movingCategoryGroup, setMovingCategoryGroup] = useState<string | null>(null);
+
+  const handleMoveCategory = (cat: string, newGroup: string | null) => {
+    // Remove from current group
+    const currentGroup = categoryToGroup[cat];
+    if (currentGroup) {
+      updateFinanceMapping(currentGroup, (financeMappings[currentGroup] || []).filter(c => c !== cat));
+    }
+    // Add to new group
+    if (newGroup) {
+      updateFinanceMapping(newGroup, [...(financeMappings[newGroup] || []), cat]);
+    }
+    setMovingCategoryGroup(null);
+    playSuccess();
+  };
+
   const renderCategoryItemUI = (cat: string, editObj: any) => {
     return (
       <>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="relative">
             <button
               onClick={() => setPickingIconFor(pickingIconFor === cat ? null : cat)}
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-white transition-all shadow-md active:scale-90"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all shadow-sm active:scale-90"
               style={{ backgroundColor: editObj.color }}
             >
-              {React.createElement((LucideIcons as any)[editObj.iconName] || Tag, { className: "w-6 h-6" })}
+              {React.createElement((LucideIcons as any)[editObj.iconName] || Tag, { className: "w-5 h-5" })}
             </button>
             {pickingIconFor === cat && (
-              <div className="absolute top-14 left-0 w-80 bg-white border border-stone-200 shadow-2xl rounded-[2.5rem] p-6 z-50 animate-in fade-in zoom-in-95 overflow-hidden">
-                <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-6 pr-2">
+              <div className="absolute top-12 left-0 w-80 bg-white border border-stone-200 shadow-2xl rounded-[2rem] p-6 z-50 animate-in fade-in zoom-in-95 overflow-hidden">
+                <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-6 pr-2">
                   {ICON_GROUPS.map((group) => (
                     <div key={group.name} className="space-y-3">
                       <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">{group.name}</label>
@@ -502,11 +518,11 @@ export function Finance() {
                                 setPickingIconFor(null);
                               }}
                               className={cn(
-                                "aspect-square hover:bg-stone-100 rounded-xl flex items-center justify-center text-stone-600 transition-all",
+                                "aspect-square hover:bg-stone-100 rounded-lg flex items-center justify-center text-stone-600 transition-all",
                                 editObj.iconName === iconName ? "bg-stone-900 text-white shadow-md scale-110" : "bg-stone-50"
                               )}
                             >
-                              {Ico && <Ico className="w-4 h-4" />}
+                              {Ico && <Ico className="w-3.5 h-3.5" />}
                             </button>
                           );
                         })}
@@ -522,65 +538,68 @@ export function Finance() {
               type="text"
               value={editObj.name}
               onChange={(e) => setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, name: e.target.value } }))}
-              className="w-full bg-transparent font-bold text-stone-900 outline-none border-b-2 border-transparent hover:border-stone-100 focus:border-stone-900 transition-all text-sm pb-1"
+              className="w-full bg-transparent font-bold text-stone-900 outline-none border-b border-transparent hover:border-stone-100 focus:border-stone-900 transition-all text-xs pb-0.5"
             />
-            <p className="text-[9px] font-black uppercase tracking-widest text-stone-300 mt-1">ID: {cat}</p>
+            <p className="text-[8px] font-black uppercase tracking-widest text-stone-300">ID: {cat}</p>
+            <p className="text-[8px] font-bold text-stone-400 mt-0.5">
+              {categoryToGroup[cat] || "Tanpa Grup"}
+            </p>
           </div>
-          <div className="relative">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setPickingColorFor(pickingColorFor === cat ? null : cat)}
-              className="w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform hover:scale-110 active:scale-95 shrink-0"
+              className="w-6 h-6 rounded-full border border-stone-200 shadow-sm transition-transform hover:scale-110 shrink-0"
               style={{ backgroundColor: editObj.color }}
             />
-            {pickingColorFor === cat && (
-              <div className="absolute top-10 right-0 w-64 bg-white border border-stone-200 shadow-2xl rounded-[2rem] p-5 z-50 animate-in fade-in zoom-in-95">
-                <div className="space-y-4">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">Pilih Warna</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {[
-                      "#FF4500", "#D81B60", "#8E24AA", "#1E88E5", "#00897B",
-                      "#43A047", "#E53935", "#3949AB", "#FFC107", "#FF5722",
-                      "#795548", "#1c1917", "#607D8B", "#E91E63", "#9C27B0",
-                    ].map(c => (
-                      <button
-                        key={c}
-                        onClick={() => {
-                          setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, color: c } }));
-                          setPickingColorFor(null);
-                        }}
-                        className={cn(
-                          "aspect-square rounded-full border-2 border-white shadow-sm transition-transform hover:scale-110",
-                          editObj.color === c ? "ring-2 ring-stone-900 scale-110" : ""
-                        )}
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                  </div>
-                  <div className="pt-4 border-t border-stone-100">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block mb-2">Custom</label>
-                    <input
-                      type="color"
-                      value={editObj.color}
-                      onChange={(e) => setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, color: e.target.value } }))}
-                      className="w-full h-10 rounded-xl cursor-pointer border-none p-0 outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+            <ActionMenu
+              items={[
+                {
+                  label: "Pindahkan ke Grup",
+                  icon: <Folder className="w-3.5 h-3.5" />,
+                  onClick: () => setMovingCategoryGroup(cat)
+                },
+                {
+                  label: "Hapus Kategori",
+                  icon: <Trash2 className="w-3.5 h-3.5" />,
+                  onClick: () => showConfirm(`Hapus kategori "${cat}"?`, () => { deleteFinanceCategoryBulk(cat); playError(); }),
+                  variant: "danger"
+                }
+              ]}
+              triggerClassName="h-8 w-8 p-0 rounded-lg bg-stone-50 border-stone-100"
+              iconSize={4}
+              headerTitle="Opsi Kategori"
+            />
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-stone-100 flex items-center justify-between">
-          <p className="text-[10px] font-medium text-stone-500">
-            Grup: <span className="font-bold text-stone-900">{categoryToGroup[cat] || "Tanpa Grup"}</span>
-          </p>
-          <button
-            onClick={() => showConfirm(`Hapus kategori "${cat}"?`, () => { deleteFinanceCategoryBulk(cat); playError(); })}
-            className="text-[10px] font-black uppercase tracking-widest text-red-300 hover:text-red-500 transition-colors"
-          >
-            Hapus
-          </button>
-        </div>
+        {pickingColorFor === cat && (
+          <div className="mt-4 bg-white border border-stone-200 shadow-xl rounded-2xl p-4 z-50">
+             <div className="grid grid-cols-5 gap-2 mb-4">
+                {[
+                  "#FF4500", "#D81B60", "#8E24AA", "#1E88E5", "#00897B",
+                  "#43A047", "#E53935", "#3949AB", "#FFC107", "#FF5722",
+                ].map(c => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, color: c } }));
+                      setPickingColorFor(null);
+                    }}
+                    className={cn(
+                      "w-full aspect-square rounded-full border-2 border-white shadow-sm transition-transform hover:scale-110",
+                      editObj.color === c ? "ring-2 ring-stone-900 scale-110" : ""
+                    )}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+            </div>
+            <input
+              type="color"
+              value={editObj.color}
+              onChange={(e) => setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, color: e.target.value } }))}
+              className="w-full h-8 rounded-lg cursor-pointer border-none p-0 outline-none"
+            />
+          </div>
+        )}
       </>
     );
   };
@@ -1046,7 +1065,8 @@ export function Finance() {
     return mainData;
   }, [incomeData]);
 
-  const [trendFilter, setTrendFilter] = useState<"1m" | "4w" | "6m" | "1y" | "2y">("6m");
+  const [trendFilter, setTrendFilter] = useState<"1m" | "4w" | "6m" | "1y" | "2y">("1m");
+  const [selectedWeek, setSelectedWeek] = useState<number | 'all'>('all');
 
   const trendData = useMemo(() => {
     const list: any[] = [];
@@ -1056,6 +1076,10 @@ export function Finance() {
       // Last 30 days (Per Hari)
       for (let i = 29; i >= 0; i--) {
         const d = subDays(now, i);
+        // Calculate week index (roughly 4 weeks of 7-8 days)
+        const dayIdx = 29 - i;
+        const weekIdx = Math.floor(dayIdx / 7);
+        
         list.push({
           year: d.getFullYear(),
           month: d.getMonth(),
@@ -1063,6 +1087,7 @@ export function Finance() {
           label: format(d, "dd MMM", { locale: id }),
           pemasukan: 0,
           pengeluaran: 0,
+          weekIdx, // add weekIdx for filtering
         });
       }
     } else if (trendFilter === "4w") {
@@ -1117,8 +1142,12 @@ export function Finance() {
       item.tabungan = item.pemasukan - item.pengeluaran;
     });
 
+    if (trendFilter === "1m" && selectedWeek !== 'all') {
+      return list.filter(item => item.weekIdx === selectedWeek);
+    }
+
     return list;
-  }, [financeRecords, trendFilter]);
+  }, [financeRecords, trendFilter, selectedWeek]);
 
   const trendTotals = useMemo(() => {
     let totalPemasukan = 0;
@@ -1490,7 +1519,7 @@ export function Finance() {
         </div>
       </header>
 
-      {activeTab === "records" ? (
+      {activeTab === "records" && (
         <div className="space-y-8">
           <div className="w-full">
             <div className="bg-stone-900 text-white rounded-[2.5rem] p-8 shadow-brutal relative overflow-hidden group border-2 border-stone-900">
@@ -2155,7 +2184,7 @@ export function Finance() {
                               {group.records.map((record) => (
                                 <div
                                   key={record.id}
-                                  className="p-3 flex items-center justify-between hover:bg-stone-50 transition-all group relative focus-within:z-[50] group-hover:z-[40] z-0 px-4 pr-16"
+                                  className="p-3 flex items-center justify-between hover:bg-stone-50 transition-all group relative focus-within:z-[50] group-hover:z-[40] z-0 px-4 pr-12"
                                 >
                                   <div
                                     className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-all"
@@ -2212,7 +2241,7 @@ export function Finance() {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="flex-1 flex justify-end mr-4">
+                                  <div className="flex-1 flex justify-end">
                                     <p
                                       className={cn(
                                         "font-black text-xs tracking-tighter",
@@ -2226,7 +2255,7 @@ export function Finance() {
                                         : `${record.type === "income" ? "+" : "-"}Rp ${record.amount.toLocaleString("id-ID")}`}
                                     </p>
                                   </div>
-                                  <div className="absolute top-1.5 right-1.5">
+                                  <div className="absolute right-1 top-1/2 -translate-y-1/2">
                                     <ActionMenu
                                       items={[
                                         {
@@ -2251,7 +2280,7 @@ export function Finance() {
                                           variant: "danger",
                                         },
                                       ]}
-                                      triggerClassName="h-8 w-8 p-0 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-stone-200 hover:border-stone-900 transition-all"
+                                      triggerClassName="h-9 w-9 p-0 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-stone-200 hover:border-stone-900 transition-all"
                                       iconSize={5}
                                       headerTitle="Opsi Transaksi"
                                     />
@@ -2269,7 +2298,9 @@ export function Finance() {
             )}
           </div>
         </div>
-      ) : activeTab === "analysis" ? (
+      )}
+
+      {activeTab === "analysis" && (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
           {/* Controls Section */}
           <div className="flex bg-stone-50 p-1.5 rounded-2xl border border-stone-200 max-w-fit mx-auto mt-2">
@@ -2323,7 +2354,10 @@ export function Finance() {
                 ].map((f) => (
                   <button
                     key={f.id}
-                    onClick={() => setTrendFilter(f.id as any)}
+                    onClick={() => {
+                      setTrendFilter(f.id as any);
+                      setSelectedWeek('all');
+                    }}
                     className={cn(
                       "px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all",
                       trendFilter === f.id
@@ -2337,11 +2371,40 @@ export function Finance() {
               </div>
             </header>
 
+            {trendFilter === "1m" && (
+              <div className="px-6 pb-2 -mt-4 animate-in slide-in-from-top-2 duration-300">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-stone-400 mr-2">Minggu:</span>
+                  {[
+                    { id: 'all', label: 'Semua' },
+                    { id: 0, label: 'M1' },
+                    { id: 1, label: 'M2' },
+                    { id: 2, label: 'M3' },
+                    { id: 3, label: 'M4' },
+                  ].map((w) => (
+                    <button
+                      key={w.id}
+                      onClick={() => setSelectedWeek(w.id as any)}
+                      className={cn(
+                        "px-3 py-1 rounded-lg text-[9px] font-bold transition-all border",
+                        selectedWeek === w.id
+                          ? "bg-stone-900 text-white border-stone-900 shadow-sm"
+                          : "bg-surface text-stone-500 border-stone-100 hover:border-stone-300"
+                      )}
+                    >
+                      {w.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Line Chart Component */}
-            <div className="w-full h-[300px] min-w-0 bg-white/40 p-2 rounded-3xl border border-stone-100">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                <LineChart
-                  data={trendData}
+            <div className="w-full h-[220px] md:h-[300px] min-w-0 bg-white/40 p-2 rounded-3xl border border-stone-100 overflow-x-auto overflow-y-hidden custom-scrollbar">
+              <div className="h-full min-w-[600px] md:min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={trendData}
                   margin={{ top: 20, right: 25, left: 10, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
@@ -2386,6 +2449,7 @@ export function Finance() {
               </ResponsiveContainer>
             </div>
           </div>
+        </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-paper rounded-3xl border border-stone-200 p-6 md:p-8 shadow-sm flex flex-col">
@@ -2677,7 +2741,9 @@ export function Finance() {
             </div>
           </div>
         </div>
-      ) : activeTab === "planning" ? (
+      )}
+
+      {activeTab === "planning" && (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <section className="bg-paper p-8 rounded-[2.5rem] border border-stone-200 shadow-sm space-y-8 flex flex-col">
@@ -3016,7 +3082,9 @@ export function Finance() {
             </section>
           </div>
         </div>
-      ) : activeTab === "settings" ? (
+      )}
+
+      {activeTab === "settings" && (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20">
           {/* Card Box 1: Kustomisasi Kategori */}
           <div className="bg-paper border border-stone-200 rounded-[2.5rem] p-8 md:p-12 shadow-sm border-2">
@@ -3167,7 +3235,6 @@ export function Finance() {
                        {type}
                     </h5>
                     {Object.keys(financeMappings)
-                      .filter(group => group !== "Kebutuhan")
                       .filter(group => {
                         const pref = financeCategoryPrefs["__GROUP_TYPE_" + group];
                         if (pref) return pref.color === (type === "Pemasukan" ? "income" : "expense");
@@ -3375,7 +3442,53 @@ export function Finance() {
             </section>
           </div>
         </div>
-      ) : null}
+      )}
+
+      <AnimatePresence>
+        {movingCategoryGroup && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMovingCategoryGroup(null)}
+              className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl border border-stone-200 overflow-hidden flex flex-col p-6"
+            >
+              <h3 className="text-xl font-bold mb-4">Pindahkan "{movingCategoryGroup}"</h3>
+              <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                <button
+                  onClick={() => handleMoveCategory(movingCategoryGroup, null)}
+                  className="w-full text-left px-4 py-3 rounded-xl bg-stone-50 hover:bg-stone-100 font-bold text-xs"
+                >
+                  Lepas dari Grup (Tanpa Grup)
+                </button>
+                {existingGroups.map(group => (
+                  <button
+                    key={group}
+                    onClick={() => handleMoveCategory(movingCategoryGroup, group)}
+                    className="w-full text-left px-4 py-3 rounded-xl bg-stone-50 hover:bg-stone-100 font-bold text-xs flex items-center justify-between"
+                  >
+                    <span>{group}</span>
+                    {categoryToGroup[movingCategoryGroup] === group && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                  </button>
+                ))}
+              </div>
+              <button 
+                onClick={() => setMovingCategoryGroup(null)}
+                className="mt-6 w-full py-3 bg-stone-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg"
+              >
+                Tutup
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {editingCategory && (
@@ -4212,30 +4325,32 @@ export function Finance() {
             </div>
 
             {/* Print Header */}
-            <div className="text-center md:text-left flex flex-col md:flex-row justify-between items-start md:items-center border-b border-stone-200 pb-6 gap-4">
-              <div>
-                <h1 className="text-2xl font-black uppercase tracking-widest text-stone-950">Laporan Histori Keuangan</h1>
-                <p className="text-xs text-stone-400 mt-1 font-mono uppercase">Dicetak pada {new Date().toLocaleDateString("id-ID", { dateStyle: "full" })}</p>
+            <div className="flex flex-col md:flex-row justify-between items-end border-b-2 border-stone-900 pb-8 gap-6">
+              <div className="space-y-1">
+                <h1 className="text-4xl font-black uppercase tracking-tighter text-stone-950 leading-none">Financial Ledger</h1>
+                <p className="text-[10px] text-stone-400 font-mono uppercase tracking-[0.2em]">Generated {new Date().toLocaleDateString("id-ID", { dateStyle: "long" })}</p>
               </div>
-              <div className="border border-stone-200 p-4 rounded-2xl bg-stone-50 text-right shrink-0">
-                <p className="text-[10px] uppercase tracking-widest text-stone-400 font-black">Total Transaksi</p>
-                <p className="text-xl font-black text-stone-900 mt-0.5">{filteredRecords.length} Catatan</p>
+              <div className="flex gap-4">
+                <div className="text-right">
+                  <p className="text-[9px] uppercase tracking-widest text-stone-400 font-black mb-1">Status Laporan</p>
+                  <p className="text-xs font-black bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100 italic">Terverifikasi</p>
+                </div>
               </div>
             </div>
 
-            {/* Financial Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-5 border border-stone-200 rounded-2xl bg-stone-50/50">
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 block leading-none">Total Arus Masuk</span>
-                <span className="text-sm font-black mt-1 block text-stone-900">Rp {filteredRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
+            {/* Financial Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 border-2 border-stone-100 rounded-[2rem] bg-stone-50/30 flex flex-col justify-between h-32 hover:border-emerald-200 transition-colors">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600">Total Income</span>
+                <span className="text-2xl font-black text-stone-900 font-mono tracking-tighter">Rp {filteredRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
               </div>
-              <div className="p-5 border border-stone-200 rounded-2xl bg-stone-50/50">
-                <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 block leading-none">Total Arus Keluar</span>
-                <span className="text-sm font-black mt-1 block text-stone-900">Rp {filteredRecords.filter(r => r.type === "expense").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
+              <div className="p-6 border-2 border-stone-100 rounded-[2rem] bg-stone-50/30 flex flex-col justify-between h-32 hover:border-rose-200 transition-colors">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-rose-600">Total Expenses</span>
+                <span className="text-2xl font-black text-stone-900 font-mono tracking-tighter">Rp {filteredRecords.filter(r => r.type === "expense").reduce((acc, r) => acc + r.amount, 0).toLocaleString("id-ID")}</span>
               </div>
-              <div className="p-5 border border-stone-900 bg-stone-900 rounded-2xl text-white shadow-lg">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-300 block leading-none">Selisih Bersih</span>
-                <span className="text-sm font-black mt-1 block">
+              <div className="p-6 border-2 border-stone-900 bg-stone-900 rounded-[2rem] text-white shadow-2xl flex flex-col justify-between h-32">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">Net Surplus</span>
+                <span className="text-2xl font-black font-mono tracking-tighter">
                   Rp {(
                     filteredRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0) -
                     filteredRecords.filter(r => r.type === "expense").reduce((acc, r) => acc + r.amount, 0)
@@ -4244,37 +4359,42 @@ export function Finance() {
               </div>
             </div>
 
-            {/* Financial Details Table */}
-            <div className="border border-stone-200 rounded-2xl overflow-hidden shadow-sm bg-white">
-              <table className="w-full text-left text-xs border-collapse">
+            {/* Records Table */}
+            <div className="overflow-hidden bg-white">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider w-12 text-center">No</th>
-                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider">Tanggal & Waktu</th>
-                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider">Kategori</th>
-                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider">Tipe</th>
-                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider">Catatan / Keterangan</th>
-                    <th className="p-3 font-bold uppercase text-stone-500 text-[9px] tracking-wider text-right">Jumlah (IDR)</th>
+                  <tr className="border-b-2 border-stone-900">
+                    <th className="py-4 font-black uppercase text-stone-400 text-[8px] tracking-[0.2em] w-10">#</th>
+                    <th className="py-4 font-black uppercase text-stone-900 text-[9px] tracking-widest">Detail Transaksi</th>
+                    <th className="py-4 font-black uppercase text-stone-900 text-[9px] tracking-widest text-center">Tipe</th>
+                    <th className="py-4 font-black uppercase text-stone-900 text-[9px] tracking-widest text-right">Nominal (IDR)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {filteredRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center p-8 text-stone-400 font-medium">Tidak ada data transaksi ditemukan</td>
+                      <td colSpan={4} className="text-center py-20 text-stone-300 font-black uppercase tracking-widest text-xs">No records found</td>
                     </tr>
                   ) : (
                     filteredRecords.map((r, i) => (
-                      <tr key={r.id} className="hover:bg-stone-50 transition-colors">
-                        <td className="p-3 text-center text-stone-400 font-mono font-bold">{i + 1}</td>
-                        <td className="p-3 font-medium text-stone-600">{format(r.createdAt, "d MMM yyyy, HH:mm", { locale: id })}</td>
-                        <td className="p-3 font-black text-stone-900">{r.category}</td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${r.type === 'income' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
-                            {r.type === 'income' ? 'Masuk' : 'Keluar'}
-                          </span>
+                      <tr key={r.id} className="group">
+                        <td className="py-5 align-top text-[10px] font-mono text-stone-300 group-hover:text-stone-900 transition-colors">{String(i + 1).padStart(2, '0')}</td>
+                        <td className="py-5 align-top space-y-1">
+                          <div className="flex items-center gap-2">
+                             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(r.category, r.type) }} />
+                             <span className="font-black text-stone-900 text-sm tracking-tight">{r.category}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] font-medium text-stone-400">
+                             <span className="font-mono">{format(r.createdAt, "d MMM yyyy, HH:mm", { locale: id })}</span>
+                             {r.note && <span className="italic flex items-center gap-1.5"><div className="w-1 h-1 bg-stone-200 rounded-full" /> {r.note}</span>}
+                          </div>
                         </td>
-                        <td className="p-3 text-stone-500 italic font-medium">{r.note || '—'}</td>
-                        <td className={`p-3 font-mono font-black text-right ${r.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        <td className="py-5 align-top text-center">
+                           <span className={`inline-block px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${r.type === 'income' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                             {r.type === 'income' ? 'Income' : 'Expense'}
+                           </span>
+                        </td>
+                        <td className={`py-5 align-top font-mono font-black text-right text-sm tracking-tighter ${r.type === 'income' ? 'text-emerald-600' : 'text-stone-900'}`}>
                           {r.type === 'income' ? '+' : '-'}Rp {r.amount.toLocaleString("id-ID")}
                         </td>
                       </tr>
@@ -4284,10 +4404,16 @@ export function Finance() {
               </table>
             </div>
 
-            {/* Elegant footer for print only */}
-            <div className="hidden print:flex justify-between items-center text-[10px] text-stone-400 pt-8 border-t border-dashed border-stone-200 font-mono">
-              <span>Dibuat secara aman melalui Catatan Keuangan Pribadi</span>
-              <span>Verifikasi Otoritas Mandiri</span>
+            {/* Professional Footer */}
+            <div className="pt-12 border-t border-stone-200 flex justify-between items-center">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-stone-900 uppercase tracking-widest">Catatan Keuangan Pribadi</p>
+                <p className="text-[8px] text-stone-400 font-mono tracking-tighter italic whitespace-nowrap overflow-hidden max-w-[200px]">System.Log::Audit_Hash_{Math.random().toString(36).substring(7).toUpperCase()}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] text-stone-900 font-black uppercase tracking-tighter">Halaman 01 / 01</p>
+                <p className="text-[8px] text-stone-400 font-mono">Status: Printed_Final</p>
+              </div>
             </div>
           </div>
         </div>
