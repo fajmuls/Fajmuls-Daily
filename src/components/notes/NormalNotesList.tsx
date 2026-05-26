@@ -124,8 +124,9 @@ export function NormalNotesList() {
       ) : (
          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
            {sortedNotes.map((note, idx) => {
-             const rotations = ["hover:rotate-1", "hover:-rotate-1", "hover:rotate-2", "hover:-rotate-2"];
-             const rotation = rotations[idx % rotations.length];
+             // Let's create an array of background colors to make "setiap kartu punya warna sendiri" as requested
+             const bgColors = ["bg-amber-50", "bg-blue-50", "bg-emerald-50", "bg-rose-50", "bg-purple-50", "bg-orange-50"];
+             const bgColor = bgColors[idx % bgColors.length];
              
              return (
                <button 
@@ -138,35 +139,31 @@ export function NormalNotesList() {
                    }
                  }}
                  className={cn(
-                   "text-left bg-white rounded-[2.5rem] p-8 border-2 transition-all group relative overflow-hidden", 
+                   "text-left rounded-[2.5rem] p-8 border-2 transition-all group relative overflow-hidden", 
                    selectionMode && selectedIds.includes(note.id) 
                      ? "border-stone-900 shadow-brutal bg-stone-50" 
-                     : "border-stone-200 hover:border-stone-900 hover:shadow-brutal",
-                   rotation
+                     : cn("border-stone-200 hover:border-stone-900 hover:shadow-brutal", bgColor)
                  )}
                >
-                  {/* Tape Decoration */}
-                  <div className="absolute top-0 left-1/4 -translate-y-2 w-12 h-8 bg-amber-200/40 -rotate-6 group-hover:bg-amber-200/60 transition-colors" />
-                  
                   {selectionMode && (
                     <div className="absolute top-6 right-6 z-10">
-                      <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors", selectedIds.includes(note.id) ? "bg-stone-900 border-stone-900" : "border-stone-300")}>
+                      <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors", selectedIds.includes(note.id) ? "bg-stone-900 border-stone-900" : "border-stone-300 bg-white")}>
                         {selectedIds.includes(note.id) && <CheckSquare className="w-4 h-4 text-white" />}
                       </div>
                     </div>
                   )}
                   <div className="flex items-center gap-4 mb-4">
-                     <div className="w-12 h-12 bg-stone-100 text-stone-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-amber-100 group-hover:text-amber-700 transition-colors border border-stone-200">
-                        <FileText className="w-5 h-5" />
+                     <div className="w-12 h-12 bg-white/60 text-stone-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-stone-200 shadow-sm">
+                        <FileText className="w-6 h-6" />
                      </div>
                      <div className="truncate pr-8">
-                        <h3 className="font-serif text-xl font-black text-stone-900 truncate tracking-tight">{note.title || 'Tanpa Judul'}</h3>
-                        <p className="text-[10px] text-stone-400 uppercase font-black tracking-widest">{format(note.createdAt, 'd MMM yyyy, HH:mm', { locale: localeId })}</p>
+                        <h3 className="font-sans text-xl font-black text-stone-900 truncate tracking-tight">{note.title || 'Tanpa Judul'}</h3>
+                        <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest mt-1">{format(note.createdAt, 'd MMM yyyy, HH:mm', { locale: localeId })}</p>
                      </div>
                   </div>
-                  <p className="text-stone-500 line-clamp-3 text-sm font-semibold leading-relaxed h-14 overflow-hidden">{note.content || 'Isi catatan kosong...'}</p>
+                  <p className="text-stone-600/80 line-clamp-3 text-sm font-bold leading-relaxed h-14 overflow-hidden">{note.content || 'Isi catatan kosong...'}</p>
                   
-                  <div className="mt-4 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-stone-300 group-hover:text-stone-900 transition-colors">
+                  <div className="mt-4 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-stone-400 group-hover:text-stone-900 transition-colors">
                      <span>Baca Selengkapnya</span>
                      <Plus className="w-2 h-2" />
                   </div>

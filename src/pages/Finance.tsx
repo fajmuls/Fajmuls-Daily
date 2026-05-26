@@ -7,6 +7,7 @@ import {
   startOfMonth,
   subMonths,
   subYears,
+  subDays,
   isAfter,
 } from "date-fns";
 import { id } from "date-fns/locale";
@@ -105,6 +106,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Sector,
   ResponsiveContainer,
   Tooltip,
   Legend,
@@ -928,27 +930,49 @@ export function Finance() {
     return mainData;
   }, [incomeData]);
 
-  const trend6MonthsData = useMemo(() => {
-    const list = [];
+  const [trendFilter, setTrendFilter] = useState<"1m" | "6m" | "1y">("6m");
+
+  const trendData = useMemo(() => {
+    const list: any[] = [];
     const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const d = subMonths(now, i);
-      list.push({
-        year: d.getFullYear(),
-        month: d.getMonth(),
-        label: format(d, "MMM yyyy", { locale: id }),
-        pemasukan: 0,
-        pengeluaran: 0,
-        tabungan: 0,
-      });
+    
+    if (trendFilter === "1m") {
+      // Last 30 days (Per Hari)
+      for (let i = 29; i >= 0; i--) {
+        const d = subDays(now, i);
+        list.push({
+          year: d.getFullYear(),
+          month: d.getMonth(),
+          date: d.getDate(),
+          label: format(d, "dd MMM", { locale: id }),
+          pemasukan: 0,
+          pengeluaran: 0,
+        });
+      }
+    } else {
+      const monthCount = trendFilter === "1y" ? 11 : 5;
+      for (let i = monthCount; i >= 0; i--) {
+        const d = subMonths(now, i);
+        list.push({
+          year: d.getFullYear(),
+          month: d.getMonth(),
+          label: format(d, "MMM yyyy", { locale: id }),
+          pemasukan: 0,
+          pengeluaran: 0,
+        });
+      }
     }
 
     financeRecords.forEach((record) => {
       const recordDate = new Date(record.createdAt);
-      const rYear = recordDate.getFullYear();
-      const rMonth = recordDate.getMonth();
-
-      const item = list.find((m) => m.year === rYear && m.month === rMonth);
+      
+      let item = null;
+      if (trendFilter === "1m") {
+        item = list.find((m) => m.year === recordDate.getFullYear() && m.month === recordDate.getMonth() && m.date === recordDate.getDate());
+      } else {
+        item = list.find((m) => m.year === recordDate.getFullYear() && m.month === recordDate.getMonth());
+      }
+      
       if (item) {
         if (record.type === "income") {
           item.pemasukan += record.amount;
@@ -963,12 +987,12 @@ export function Finance() {
     });
 
     return list;
-  }, [financeRecords]);
+  }, [financeRecords, trendFilter]);
 
   const trendTotals = useMemo(() => {
     let totalPemasukan = 0;
     let totalPengeluaran = 0;
-    trend6MonthsData.forEach((item) => {
+    trendData.forEach((item) => {
       totalPemasukan += item.pemasukan;
       totalPengeluaran += item.pengeluaran;
     });
@@ -977,7 +1001,47 @@ export function Finance() {
       totalPengeluaran,
       totalTabungan: totalPemasukan - totalPengeluaran,
     };
-  }, [trend6MonthsData]);
+  }, [trendData]);
+
+  const [activeExpenseIndex, setActiveExpenseIndex] = useState<number>(-1);
+  const [activeIncomeIndex, setActiveIncomeIndex] = useState<number>(-1);
+
+  const renderActiveShape = (props: any) => {
+    const RADIAN = Math.PI / 180;
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle,
+      fill, payload, percent, value } = props;
+    const sin = Math.sin(-RADIAN * midAngle);
+    const cos = Math.cos(-RADIAN * midAngle);
+    const sx = cx + (outerRadius + 10) * cos;
+    const sy = cy + (outerRadius + 10) * sin;
+    const mx = cx + (outerRadius + 30) * cos;
+    const my = cy + (outerRadius + 30) * sin;
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+    const ey = my;
+    const textAnchor = cos >= 0 ? 'start' : 'end';
+
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 12}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
+        <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" className="font-bold text-[10px]">
+          {payload.name}
+        </text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999" className="font-medium text-[9px]">
+          {`Rp ${value.toLocaleString("id-ID")} (${(percent * 100).toFixed(1)}%)`}
+        </text>
+      </g>
+    );
+  };
 
   // Helper to get color for a category
   const getCategoryColor = (catName: string, catType: "income" | "expense") => {
@@ -1267,76 +1331,41 @@ export function Finance() {
       {activeTab === "records" ? (
         <div className="space-y-8">
           <div className="w-full">
-            <div className="bg-stone-900 text-white rounded-[2.5rem] p-8 shadow-brutal-lg relative overflow-hidden group border-4 border-obsidian">
-              <div className="absolute top-0 right-0 p-6 opacity-5 scale-150 rotate-12 transition-transform group-hover:rotate-0">
-                <Wallet className="w-24 h-24" />
-              </div>
-              <div className="flex justify-between items-start mb-2 relative z-10">
-                <p className="text-stone-400 uppercase tracking-widest text-[10px] font-bold mt-2">
-                  Saldo Tersedia
-                </p>
-                <div className="flex gap-2">
-                  <div className="p-1 px-4 bg-white/10 rounded-2xl flex items-center gap-2 backdrop-blur-sm">
+            <div className="bg-stone-900 text-white rounded-[2rem] p-6 shadow-brutal relative overflow-hidden group border-2 border-stone-900">
+              <div className="flex justify-between items-center relative z-10">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-stone-400 uppercase tracking-widest text-[9px] font-black">
+                      Net Tabungan
+                    </p>
                     <div
                       className={cn(
-                        "w-2 h-2 rounded-full",
+                        "w-1.5 h-1.5 rounded-full",
                         balance >= 0
                           ? "bg-green-400"
                           : "bg-red-400 animate-pulse",
                       )}
                     />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
-                      {balance >= 0 ? "Surplus" : "Defisit"}
-                    </span>
                   </div>
-                  <button
-                    onClick={() => {
-                      setHideAmounts(!hideAmounts);
-                      playClick();
-                    }}
-                    className="p-3 bg-white text-stone-900 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all ring-4 ring-white/5"
-                    title={hideAmounts ? "Tampilkan Saldo" : "Sembunyi Saldo"}
-                  >
-                    {hideAmounts ? (
-                      <Eye className="w-5 h-5" />
-                    ) : (
-                      <EyeOff className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <h2 className="text-4xl font-bold tracking-tight mb-8 relative z-10">
-                {hideAmounts
-                  ? "Rp •••••••"
-                  : `Rp ${balance.toLocaleString("id-ID")}`}
-              </h2>
-
-              <div className="flex items-center justify-between border-t border-white/10 pt-6">
-                <div>
-                  <div className="text-stone-400 text-[10px] uppercase font-black tracking-widest mb-1 flex items-center gap-1.5">
-                    <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <TrendingUp className="w-2.5 h-2.5 text-green-400" />
-                    </div>{" "}
-                    Pemasukan
-                  </div>
-                  <p className="font-bold text-sm text-green-400">
+                  <h2 className="font-mono text-2xl font-bold tracking-tight">
                     {hideAmounts
-                      ? "Rp •••"
-                      : `Rp ${totalIncome.toLocaleString("id-ID")}`}
-                  </p>
+                      ? "Rp •••••••"
+                      : `Rp ${balance.toLocaleString("id-ID")}`}
+                  </h2>
                 </div>
-                <div className="text-right">
-                  <div className="text-stone-400 text-[10px] uppercase font-black tracking-widest mb-1 flex items-center justify-end gap-1.5">
-                    Pengeluaran{" "}
-                    <div className="w-4 h-4 rounded-full bg-red-500/20 flex items-center justify-center">
-                      <TrendingDown className="w-2.5 h-2.5 text-red-400" />
-                    </div>
+                <div className="flex gap-4 items-center">
+                  <div className="text-right">
+                    <p className="text-stone-400 text-[8px] uppercase font-black tracking-widest mb-0.5">Pemasukan</p>
+                    <p className="font-mono font-bold text-xs text-green-400">
+                      {hideAmounts ? "Rp •••" : `Rp ${totalIncome.toLocaleString("id-ID")}`}
+                    </p>
                   </div>
-                  <p className="font-bold text-sm text-red-400">
-                    {hideAmounts
-                      ? "Rp •••"
-                      : `Rp ${totalExpense.toLocaleString("id-ID")}`}
-                  </p>
+                  <div className="text-right border-l border-white/10 pl-4">
+                    <p className="text-stone-400 text-[8px] uppercase font-black tracking-widest mb-0.5">Pengeluaran</p>
+                    <p className="font-mono font-bold text-xs text-red-400">
+                      {hideAmounts ? "Rp •••" : `Rp ${totalExpense.toLocaleString("id-ID")}`}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2076,15 +2105,24 @@ export function Finance() {
                 </div>
                 <div>
                   <h3 className="font-serif text-2xl font-bold text-stone-900">
-                    Tren Aliran Kas (6 Bulan Terakhir)
+                    Tren Aliran Kas
                   </h3>
                   <p className="text-xs text-stone-500 font-bold uppercase tracking-widest mt-0.5">
                     Laporan pergerakan arus kas masuk (pemasukan) dan keluar (pengeluaran).
                   </p>
                 </div>
               </div>
-              <div>
-                <span className="text-[10px] uppercase font-black tracking-widest bg-stone-900 text-white px-3.5 py-1.5 rounded-full border border-stone-200 shadow-sm">
+              <div className="flex items-center gap-2">
+                <select
+                  value={trendFilter}
+                  onChange={(e) => setTrendFilter(e.target.value as any)}
+                  className="bg-paper text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border-2 border-stone-200 outline-none hover:border-stone-400 focus:border-stone-900 transition-colors cursor-pointer"
+                >
+                  <option value="1m">30 Hari</option>
+                  <option value="6m">6 Bulan</option>
+                  <option value="1y">1 Tahun</option>
+                </select>
+                <span className="text-[10px] uppercase font-black tracking-widest bg-stone-900 text-white px-3.5 py-1.5 rounded-full border border-stone-200 shadow-sm hidden sm:block">
                   Metrik Real-time
                 </span>
               </div>
@@ -2139,7 +2177,7 @@ export function Finance() {
             <div className="w-full h-[350px] min-w-0 bg-white/40 p-4 rounded-3xl border border-stone-200">
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart
-                  data={trend6MonthsData}
+                  data={trendData}
                   margin={{ top: 20, right: 25, left: 10, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
@@ -2160,7 +2198,7 @@ export function Finance() {
                     verticalAlign="top" 
                     height={36} 
                     iconType="circle"
-                    formatter={(value) => <span className="text-xs font-black uppercase tracking-wider text-stone-700">{value}</span>}
+                    formatter={(value: any) => <span className="text-xs font-black uppercase tracking-wider text-stone-700">{value}</span>}
                   />
                   <Line 
                     type="monotone" 
@@ -2189,6 +2227,9 @@ export function Finance() {
             <div className="bg-paper rounded-3xl border border-stone-200 p-6 md:p-8 shadow-sm flex flex-col">
               <header className="w-full flex justify-between items-center mb-6">
                 <h3 className="font-serif text-2xl font-bold flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                     <TrendingDown className="w-4 h-4" />
+                  </div>
                   Distribusi Pengeluaran
                 </h3>
               </header>
@@ -2198,6 +2239,8 @@ export function Finance() {
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                   >
                     <Pie
+                      activeIndex={activeExpenseIndex}
+                      activeShape={renderActiveShape}
                       data={expenseChartData}
                       cx="50%"
                       cy="50%"
@@ -2208,7 +2251,10 @@ export function Finance() {
                       stroke="none"
                       labelLine={false}
                       label={renderCustomizedLabel}
-                      onClick={(data) => handleChartClick(data, "expense")}
+                      onClick={(data, index) => {
+                        setActiveExpenseIndex(activeExpenseIndex === index ? -1 : index);
+                        handleChartClick(data, "expense");
+                      }}
                       className="cursor-pointer"
                     >
                       {expenseChartData.map((entry, index) => (
@@ -2295,7 +2341,10 @@ export function Finance() {
 
             <div className="bg-paper rounded-3xl border border-stone-200 p-6 md:p-8 shadow-sm flex flex-col">
               <header className="w-full flex justify-between items-center mb-6">
-                <h3 className="font-serif text-2xl font-bold">
+                <h3 className="font-serif text-2xl font-bold flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                     <TrendingUp className="w-4 h-4" />
+                  </div>
                   Distribusi Pemasukan
                 </h3>
               </header>
@@ -2305,6 +2354,8 @@ export function Finance() {
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                   >
                     <Pie
+                      activeIndex={activeIncomeIndex}
+                      activeShape={renderActiveShape}
                       data={incomeChartData}
                       cx="50%"
                       cy="50%"
@@ -2315,7 +2366,10 @@ export function Finance() {
                       stroke="none"
                       labelLine={false}
                       label={renderCustomizedLabel}
-                      onClick={(data) => handleChartClick(data, "income")}
+                      onClick={(data, index) => {
+                        setActiveIncomeIndex(activeIncomeIndex === index ? -1 : index);
+                        handleChartClick(data, "income");
+                      }}
                       className="cursor-pointer"
                     >
                       {incomeChartData.map((entry, index) => (

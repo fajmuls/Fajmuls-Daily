@@ -201,28 +201,25 @@ export function NotesList() {
                     to={nt.link} 
                     onClick={playClick}
                     className={cn(
-                      "group bg-paper border-2 border-stone-200 rounded-[2rem] p-6 hover:border-stone-900 hover:shadow-brutal transition-all flex flex-col justify-between min-h-[180px] relative overflow-hidden",
-                      rotation
+                      "group border-2 border-stone-200 hover:border-stone-900 rounded-[2rem] p-6 hover:shadow-brutal transition-all flex flex-col justify-between min-h-[170px]",
+                      nt.bg
                     )}
                   >
-                    {/* Washi Tape effect */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-16 h-8 bg-stone-900/5 rotate-2 group-hover:bg-stone-900/10 transition-colors" />
-                    
                     <div>
                       <div className="flex justify-between items-start mb-4">
-                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 border border-stone-200 shadow-sm", nt.bg, nt.color)}>
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 border border-stone-300 shadow-sm bg-white/60", nt.color)}>
                           <nt.icon className="w-6 h-6" />
                         </div>
                         {count !== "..." && (
-                          <span className="text-[9px] uppercase font-black tracking-widest bg-stone-50 text-stone-400 px-3 py-1 rounded-full border border-stone-100">
+                          <span className="text-[9px] uppercase font-black tracking-widest bg-white/60 text-stone-600 px-3 py-1 rounded-full border border-stone-200">
                             {count} catatan
                           </span>
                         )}
                       </div>
-                      <h3 className="font-serif text-2xl font-black text-stone-900 group-hover:text-amber-600 transition-colors tracking-tight leading-none mb-2">
+                      <h3 className={cn("font-sans text-2xl font-black group-hover:text-amber-700 transition-colors tracking-tight leading-none mb-2", nt.color)}>
                         {nt.label}
                       </h3>
-                      <p className="text-stone-500 text-xs font-bold leading-relaxed">{nt.desc}</p>
+                      <p className="text-stone-600/80 text-xs font-bold leading-relaxed">{nt.desc}</p>
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs font-black text-stone-900 uppercase tracking-widest mt-4 group-hover:translate-x-1 transition-transform">

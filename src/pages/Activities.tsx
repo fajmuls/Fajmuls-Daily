@@ -77,6 +77,7 @@ export function Activities() {
   };
 
   const handleDeleteActivity = (id: string) => {
+    if(!window.confirm("Yakin ingin menghapus kegiatan harian ini? Data penyelesaian juga akan terhapus.")) return;
     playError();
     const updated = activities.filter(a => a.id !== id);
     const updatedComps = completions.filter(c => c.activityId !== id);
@@ -149,7 +150,7 @@ export function Activities() {
           <p className="text-stone-500 font-medium">Lacak rutinitas dan kebiasaan harian Anda setiap bulan.</p>
         </div>
 
-        <div className="flex items-center gap-4 bg-paper p-2 rounded-2xl border-2 border-stone-900 shadow-brutal">
+        <div className="flex items-center justify-between w-full md:w-[400px] bg-paper p-2 rounded-2xl border-2 border-stone-900 shadow-brutal shrink-0">
           <button onClick={() => { playClick(); setCurrentMonth(subMonths(currentMonth, 1)); }} className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -179,9 +180,10 @@ export function Activities() {
           </div>
           <button 
             onClick={handleAddActivity}
-            className="px-8 py-4 bg-accent-crimson text-white rounded-2xl font-black uppercase tracking-widest shadow-brutal border-2 border-stone-900 hover:-translate-y-1 transition-all active:translate-y-0"
+            className="px-8 py-4 flex items-center justify-center gap-2 bg-accent-crimson text-white rounded-2xl font-black uppercase tracking-widest shadow-brutal border-2 border-stone-900 hover:-translate-y-1 transition-all active:translate-y-0 shrink-0"
           >
-            Tambah Kegiatan
+            <Plus className="w-5 h-5" />
+            <span>Tambah</span>
           </button>
         </div>
       </section>
@@ -217,7 +219,7 @@ export function Activities() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-stone-50 border-b-2 border-stone-900">
-                <th className="p-6 text-left border-r-2 border-stone-900 min-w-[200px]">
+                <th className="p-4 text-left border-r-2 border-stone-900 min-w-[160px]">
                   <div className="flex items-center gap-2">
                     <Award className="w-5 h-5 text-accent-crimson" />
                     <span className="text-xs font-black uppercase tracking-tighter">Nama Kegiatan</span>
@@ -225,8 +227,8 @@ export function Activities() {
                 </th>
                 {weeks.map((week, wIdx) => (
                   <React.Fragment key={wIdx}>
-                    <th className="px-4 py-6 text-center border-r-2 border-stone-200 bg-stone-100/50" colSpan={week.length}>
-                       <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">Mng {wIdx + 1}</span>
+                    <th className="px-2 py-4 text-center border-r-2 border-stone-200 bg-stone-100/50" colSpan={week.length}>
+                       <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Minggu {wIdx + 1}</span>
                     </th>
                   </React.Fragment>
                 ))}
@@ -265,7 +267,7 @@ export function Activities() {
               ) : (
                 activities.map(act => (
                   <tr key={act.id} className="border-b border-stone-100 hover:bg-stone-50 transition-colors group/row">
-                    <td className="p-6 border-r-2 border-stone-900 font-bold text-stone-800 bg-stone-50/30">
+                    <td className="p-4 border-r-2 border-stone-900 font-bold text-sm text-stone-800 bg-stone-50/30">
                       {act.name}
                     </td>
                     {daysInMonth.map((day, dIdx) => {
@@ -276,13 +278,13 @@ export function Activities() {
                           <button 
                             onClick={() => toggleCompletion(act.id, day)}
                             className={cn(
-                              "w-8 h-8 rounded-lg border-2 transition-all flex items-center justify-center mx-auto",
+                              "w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center mx-auto cursor-pointer",
                               isCompleted 
                                 ? "bg-accent-crimson border-stone-900 text-white shadow-sm" 
                                 : "bg-white border-stone-200 hover:border-stone-400"
                             )}
                           >
-                             {isCompleted && <CheckCircle2 className="w-4 h-4" />}
+                             {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
                           </button>
                         </td>
                       );
