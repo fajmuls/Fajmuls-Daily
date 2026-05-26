@@ -401,29 +401,19 @@ export function Finance() {
       let targetName = data.payload.name;
       const originalData = type === "expense" ? expenseData : incomeData;
 
-      // If clicking "Lainnya", find the first category in Lainnya
       if (targetName === "Lainnya") {
         const others = originalData.filter(
           (d) => parseFloat(d.displayPercent) < 3,
         );
         if (others.length > 0) {
-          // Highlight all categories in "Lainnya" or just scroll to the first one
-          // The user said: "Yang disorot adalah yang sudah dikelompokkan ke dalam lainnya."
-          // We'll set a special state to highlight all of them
           setHighlightedCategory("Lainnya");
-          const el = document.getElementById(`detail-${type}-Lainnya-Header`);
-          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
           setTimeout(() => setHighlightedCategory(null), 5000);
           return;
         }
       }
 
-      const el = document.getElementById(`detail-${type}-${targetName}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        setHighlightedCategory(targetName);
-        setTimeout(() => setHighlightedCategory(null), 3000);
-      }
+      setHighlightedCategory(targetName);
+      setTimeout(() => setHighlightedCategory(null), 3000);
     }
   };
 
@@ -1020,6 +1010,17 @@ export function Finance() {
     const ey = my;
     const textAnchor = cos >= 0 ? 'start' : 'end';
 
+    const actualName = payload?.payload?.name || payload?.name;
+    const isExpense = expenseData.some((d) => d.name === actualName);
+    const catType = isExpense ? "expense" : "income";
+    const prefIcon =
+      financeCategoryPrefs[actualName]?.iconName ||
+      categoryToIcon[actualName] ||
+      (catType === "income" ? "TrendingUp" : "TrendingDown");
+    const IconProps =
+      (LucideIcons as any)[prefIcon] ||
+      (catType === "income" ? TrendingUp : TrendingDown);
+
     return (
       <g>
         <Sector
@@ -1031,13 +1032,26 @@ export function Finance() {
           endAngle={endAngle}
           fill={fill}
         />
-        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
-        <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" className="font-bold text-[10px]">
+        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" strokeWidth={2} />
+        <circle cx={ex} cy={ey} r={3} fill={fill} stroke="none" />
+        
+        <foreignObject x={ex + (cos >= 0 ? 1 : -1) * 12 + (cos >= 0 ? 0 : -20)} y={ey - 24} width={20} height={20}>
+          <div
+            className="flex items-center justify-center bg-white rounded-full w-full h-full border-2 shadow-sm"
+            style={{ borderColor: fill, color: fill }}
+          >
+            <IconProps className="w-2.5 h-2.5" />
+          </div>
+        </foreignObject>
+
+        <text x={ex + (cos >= 0 ? 1 : -1) * 36} y={ey - 10} textAnchor={textAnchor} fill="#1c1917" className="font-black tracking-tighter text-[11px]">
           {payload.name}
         </text>
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999" className="font-medium text-[9px]">
-          {`Rp ${value.toLocaleString("id-ID")} (${(percent * 100).toFixed(1)}%)`}
+        <text x={ex + (cos >= 0 ? 1 : -1) * 36} y={ey + 4} textAnchor={textAnchor} fill="#57534e" className="font-bold font-mono tracking-tighter text-[10px]">
+          {`Rp ${value.toLocaleString("id-ID")}`}
+        </text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 36} y={ey + 18} textAnchor={textAnchor} fill="#78716c" className="font-black text-[9px] tracking-widest uppercase">
+          {`${(percent * 100).toFixed(1)}%`}
         </text>
       </g>
     );
@@ -2140,7 +2154,7 @@ export function Finance() {
                 </div>
                 <div>
                   <h3 className="font-serif text-2xl font-bold text-stone-900">
-                    Tren Aliran Kas
+                    Grafik Keuangan
                   </h3>
                   <p className="text-xs text-stone-500 font-bold uppercase tracking-widest mt-0.5">
                     Laporan pergerakan arus kas masuk (pemasukan) dan keluar (pengeluaran).
@@ -2262,6 +2276,9 @@ export function Finance() {
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                   >
                     <Pie
+                      isAnimationActive={false}
+                      activeIndex={activeExpenseIndex}
+                      activeShape={renderActiveShape}
                       data={expenseChartData}
                       cx="50%"
                       cy="50%"
@@ -2273,10 +2290,11 @@ export function Finance() {
                       strokeWidth={2}
                       labelLine={false}
                       label={renderCustomizedLabel}
-                      onClick={(data) => {
+                      onClick={(data, index) => {
+                        setActiveExpenseIndex(activeExpenseIndex === index ? -1 : index);
                         handleChartClick(data, "expense");
                       }}
-                      className="cursor-pointer"
+                      className="cursor-pointer outline-none"
                     >
                       {expenseChartData.map((entry, index) => (
                         <Cell
@@ -2375,6 +2393,9 @@ export function Finance() {
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                   >
                     <Pie
+                      isAnimationActive={false}
+                      activeIndex={activeIncomeIndex}
+                      activeShape={renderActiveShape}
                       data={incomeChartData}
                       cx="50%"
                       cy="50%"
@@ -2386,10 +2407,11 @@ export function Finance() {
                       strokeWidth={2}
                       labelLine={false}
                       label={renderCustomizedLabel}
-                      onClick={(data) => {
+                      onClick={(data, index) => {
+                        setActiveIncomeIndex(activeIncomeIndex === index ? -1 : index);
                         handleChartClick(data, "income");
                       }}
-                      className="cursor-pointer"
+                      className="cursor-pointer outline-none"
                     >
                       {incomeChartData.map((entry, index) => (
                         <Cell

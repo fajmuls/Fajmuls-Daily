@@ -9,6 +9,7 @@ import {
   Plus, 
   Trash2, 
   CheckCircle2, 
+  Check,
   ListTodo,
   TrendingUp,
   Award,
@@ -221,7 +222,7 @@ export function Activities() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-stone-50 border-b-2 border-stone-900">
-                <th className="p-4 text-left border-r-2 border-stone-900 min-w-[160px]">
+                <th className="p-4 text-left border-r-2 border-stone-900 min-w-[120px]" rowSpan={2}>
                   <div className="flex items-center gap-2">
                     <Award className="w-5 h-5 text-rose-600" />
                     <span className="text-xs font-black uppercase tracking-tighter">Nama Kegiatan</span>
@@ -230,16 +231,15 @@ export function Activities() {
                 {weeks.map((week, wIdx) => (
                   <React.Fragment key={wIdx}>
                     <th className="px-2 py-4 text-center border-r-2 border-stone-200 bg-stone-100/50" colSpan={week.length}>
-                       <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Minggu {wIdx + 1} ({format(week[0], 'd')} - {format(week[week.length - 1], 'd')})</span>
+                       <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">MG {wIdx + 1}</span>
                     </th>
                   </React.Fragment>
                 ))}
-                <th className="p-6 text-center min-w-[80px] bg-stone-900 text-white">
+                <th className="p-6 text-center min-w-[80px] bg-stone-900 text-white" rowSpan={2}>
                   <span className="text-[10px] font-black uppercase tracking-widest">Aksi</span>
                 </th>
               </tr>
               <tr className="bg-white border-b-2 border-stone-900">
-                <th className="border-r-2 border-stone-900"></th>
                 {daysInMonth.map((day, dIdx) => (
                   <th 
                     key={dIdx} 
@@ -249,11 +249,11 @@ export function Activities() {
                     )}
                   >
                     <div className="text-sm font-black">{format(day, 'd')}</div>
-                    <div className="text-[8px] opacity-90 uppercase tracking-tighter mt-0.5">{format(day, 'EEEE', { locale: id })}</div>
-                    <div className="text-[8px] opacity-60 uppercase font-mono tracking-tighter mt-0.5">{format(day, 'dd/MM/yy')}</div>
+                    <div className="text-[9px] opacity-90 uppercase tracking-widest mt-0.5">
+                      {format(day, 'EEEEEE', { locale: id })}
+                    </div>
                   </th>
                 ))}
-                <th className="bg-stone-100 border-l border-stone-900"></th>
               </tr>
             </thead>
             <tbody>
