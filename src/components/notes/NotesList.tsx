@@ -17,7 +17,8 @@ import {
   Trash2, 
   ShieldAlert, 
   Square,
-  ArrowRight
+  ArrowRight,
+  Plus
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { NoteType, SpecialNote } from '../../types';
