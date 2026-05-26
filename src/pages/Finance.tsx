@@ -402,6 +402,8 @@ export function Finance() {
 
   const [highlightedCategory, setHighlightedCategory] = useState<string | null>(null);
 
+  const [editingGroupName, setEditingGroupName] = useState<{ old: string; new: string; type: "income" | "expense" } | null>(null);
+
   const categories = Array.from(new Set(financeRecords.map((r) => r.category)));
 
   const handleChartClick = (data: any, type: "expense" | "income") => {
@@ -1044,7 +1046,7 @@ export function Finance() {
     return mainData;
   }, [incomeData]);
 
-  const [trendFilter, setTrendFilter] = useState<"1m" | "6m" | "1y">("6m");
+  const [trendFilter, setTrendFilter] = useState<"1m" | "4w" | "6m" | "1y" | "2y">("6m");
 
   const trendData = useMemo(() => {
     const list: any[] = [];
@@ -1063,14 +1065,27 @@ export function Finance() {
           pengeluaran: 0,
         });
       }
+    } else if (trendFilter === "4w") {
+      // Last 4 weeks (Per Minggu)
+      for (let i = 3; i >= 0; i--) {
+        const d = subDays(now, i * 7);
+        list.push({
+          weekIdx: i,
+          label: `Minggu ${4-i}`,
+          pemasukan: 0,
+          pengeluaran: 0,
+          start: subDays(now, (i + 1) * 7),
+          end: subDays(now, i * 7),
+        });
+      }
     } else {
-      const monthCount = trendFilter === "1y" ? 11 : 5;
+      const monthCount = trendFilter === "2y" ? 23 : trendFilter === "1y" ? 11 : 5;
       for (let i = monthCount; i >= 0; i--) {
         const d = subMonths(now, i);
         list.push({
           year: d.getFullYear(),
           month: d.getMonth(),
-          label: format(d, "MMM yyyy", { locale: id }),
+          label: format(d, "MMM yy", { locale: id }),
           pemasukan: 0,
           pengeluaran: 0,
         });
@@ -1083,6 +1098,8 @@ export function Finance() {
       let item = null;
       if (trendFilter === "1m") {
         item = list.find((m) => m.year === recordDate.getFullYear() && m.month === recordDate.getMonth() && m.date === recordDate.getDate());
+      } else if (trendFilter === "4w") {
+        item = list.find((m) => recordDate >= m.start && recordDate <= m.end);
       } else {
         item = list.find((m) => m.year === recordDate.getFullYear() && m.month === recordDate.getMonth());
       }
@@ -2138,7 +2155,7 @@ export function Finance() {
                               {group.records.map((record) => (
                                 <div
                                   key={record.id}
-                                  className="p-3 flex items-center justify-between hover:bg-stone-50 transition-all group relative focus-within:z-[50] group-hover:z-[40] z-0 px-4 pr-12"
+                                  className="p-3 flex items-center justify-between hover:bg-stone-50 transition-all group relative focus-within:z-[50] group-hover:z-[40] z-0 px-4 pr-16"
                                 >
                                   <div
                                     className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-all"
@@ -2195,10 +2212,10 @@ export function Finance() {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex-1 flex justify-end mr-4">
                                     <p
                                       className={cn(
-                                        "font-black text-xs tracking-tighter text-right",
+                                        "font-black text-xs tracking-tighter",
                                         record.type === "income"
                                           ? "text-green-600"
                                           : "text-red-600",
@@ -2209,12 +2226,12 @@ export function Finance() {
                                         : `${record.type === "income" ? "+" : "-"}Rp ${record.amount.toLocaleString("id-ID")}`}
                                     </p>
                                   </div>
-                                  <div className="absolute top-0.5 right-0.5">
+                                  <div className="absolute top-1.5 right-1.5">
                                     <ActionMenu
                                       items={[
                                         {
                                           label: "Ubah Data",
-                                          icon: <Edit3 className="w-2 h-2" />,
+                                          icon: <Edit3 className="w-3.5 h-3.5" />,
                                           onClick: () => {
                                             setEditingRecord(record);
                                             setShowAddModal(true);
@@ -2222,7 +2239,7 @@ export function Finance() {
                                         },
                                         {
                                           label: "Hapus",
-                                          icon: <Trash2 className="w-2 h-2" />,
+                                          icon: <Trash2 className="w-3.5 h-3.5" />,
                                           onClick: () =>
                                             showConfirm(
                                               "Hapus transaksi ini?",
@@ -2234,8 +2251,8 @@ export function Finance() {
                                           variant: "danger",
                                         },
                                       ]}
-                                      triggerClassName="h-2.5 w-2.5 p-0 rounded-[2px] bg-white/95 backdrop-blur-sm shadow-sm border border-stone-200"
-                                      iconSize={1.5}
+                                      triggerClassName="h-8 w-8 p-0 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-stone-200 hover:border-stone-900 transition-all"
+                                      iconSize={5}
                                       headerTitle="Opsi Transaksi"
                                     />
                                   </div>
@@ -2296,24 +2313,32 @@ export function Finance() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={trendFilter}
-                  onChange={(e) => setTrendFilter(e.target.value as any)}
-                  className="bg-paper text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border-2 border-stone-200 outline-none hover:border-stone-400 focus:border-stone-900 transition-colors cursor-pointer"
-                >
-                  <option value="1m">30 Hari</option>
-                  <option value="6m">6 Bulan</option>
-                  <option value="1y">1 Tahun</option>
-                </select>
-                <span className="text-[10px] uppercase font-black tracking-widest bg-stone-900 text-white px-3.5 py-1.5 rounded-full border border-stone-200 shadow-sm hidden sm:block">
-                  Metrik Real-time
-                </span>
+              <div className="flex flex-wrap items-center gap-1.5 bg-stone-100 p-1 rounded-2xl border border-stone-200">
+                {[
+                  { id: "1m", label: "30H" },
+                  { id: "4w", label: "4M" },
+                  { id: "6m", label: "6B" },
+                  { id: "1y", label: "1T" },
+                  { id: "2y", label: "2T" },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setTrendFilter(f.id as any)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all",
+                      trendFilter === f.id
+                        ? "bg-white text-stone-900 shadow-sm ring-1 ring-stone-200"
+                        : "text-stone-400 hover:text-stone-600"
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
               </div>
             </header>
 
             {/* Line Chart Component */}
-            <div className="w-full h-[350px] min-w-0 bg-white/40 p-4 rounded-3xl border border-stone-200">
+            <div className="w-full h-[300px] min-w-0 bg-white/40 p-2 rounded-3xl border border-stone-100">
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart
                   data={trendData}
@@ -3142,6 +3167,7 @@ export function Finance() {
                        {type}
                     </h5>
                     {Object.keys(financeMappings)
+                      .filter(group => group !== "Kebutuhan")
                       .filter(group => {
                         const pref = financeCategoryPrefs["__GROUP_TYPE_" + group];
                         if (pref) return pref.color === (type === "Pemasukan" ? "income" : "expense");
@@ -3166,15 +3192,7 @@ export function Finance() {
                                     label: "Ubah Nama Grup",
                                     icon: <Edit3 className="w-3.5 h-3.5" />,
                                     onClick: () => {
-                                       const newName = prompt("Nama grup baru:", group);
-                                       if (newName && newName !== group) {
-                                          const currentCats = financeMappings[group];
-                                          const currentType = (financeCategoryPrefs["__GROUP_TYPE_" + group] as any)?.color || (type === "Pemasukan" ? "income" : "expense");
-                                          deleteFinanceMapping(group);
-                                          updateFinanceMapping(newName, currentCats);
-                                          updateCategoryPref("__GROUP_TYPE_" + newName, { color: currentType, iconName: "" });
-                                          playSuccess();
-                                       }
+                                       setEditingGroupName({ old: group, new: group, type: type === "Pemasukan" ? "income" : "expense" });
                                     }
                                   },
                                   {
@@ -3554,6 +3572,91 @@ export function Finance() {
         onClose={() => setShowSyncModal(false)}
         contextType="finance"
       />
+
+      {/* Custom Group Rename Modal */}
+      <AnimatePresence>
+        {editingGroupName && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingGroupName(null)}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white border-2 border-stone-900 rounded-[2rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-[110] overflow-hidden"
+            >
+              <div className="p-6 border-b-2 border-stone-900 bg-stone-50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Edit3 className="w-5 h-5 text-stone-900" />
+                  <h3 className="font-bold text-lg text-stone-900">Ubah Nama Grup</h3>
+                </div>
+                <button onClick={() => setEditingGroupName(null)} className="p-1 hover:bg-stone-200 rounded-full transition-all">
+                  <X className="w-5 h-5 text-stone-900" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 block mb-2 px-1">Nama Grup Baru</label>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editingGroupName.new}
+                    onChange={(e) => setEditingGroupName({ ...editingGroupName, new: e.target.value })}
+                    className="w-full bg-stone-50 border-2 border-stone-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-stone-900 transition-all shadow-inner"
+                    placeholder="Masukkan nama grup..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const { old, new: newName, type } = editingGroupName;
+                        if (newName && newName !== old) {
+                          const currentCats = financeMappings[old] || [];
+                          const currentType = (financeCategoryPrefs["__GROUP_TYPE_" + old] as any)?.color || type;
+                          deleteFinanceMapping(old);
+                          updateFinanceMapping(newName, currentCats);
+                          updateCategoryPref("__GROUP_TYPE_" + newName, { color: currentType, iconName: "" });
+                          playSuccess();
+                        }
+                        setEditingGroupName(null);
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setEditingGroupName(null)}
+                    className="flex-1 py-3.5 rounded-xl font-bold text-sm text-stone-500 hover:bg-stone-50 transition-all"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => {
+                      const { old, new: newName, type } = editingGroupName;
+                      if (newName && newName !== old) {
+                        const currentCats = financeMappings[old] || [];
+                        const currentType = (financeCategoryPrefs["__GROUP_TYPE_" + old] as any)?.color || type;
+                        deleteFinanceMapping(old);
+                        updateFinanceMapping(newName, currentCats);
+                        updateCategoryPref("__GROUP_TYPE_" + newName, { color: currentType, iconName: "" });
+                        playSuccess();
+                      }
+                      setEditingGroupName(null);
+                    }}
+                    className="flex-1 py-3.5 bg-stone-900 text-white rounded-xl font-bold text-sm shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* AI Parsing Modal */}
       <AnimatePresence>

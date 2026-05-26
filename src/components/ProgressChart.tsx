@@ -84,12 +84,6 @@ export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, fi
 
         {/* Grid Lines - Every 10% */}
         <div className="absolute top-[4.5rem] left-0 right-0 h-1 flex justify-between px-0.5 pointer-events-none">
-          {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(p => (
-            <div key={p} className="flex flex-col items-center">
-              <div className={cn("h-2.5 w-0.5 transition-colors", p % 50 === 0 ? "bg-stone-600" : "bg-stone-300")} />
-              <span className="text-[7px] font-black text-stone-400 mt-2">{p}%</span>
-            </div>
-          ))}
         </div>
 
         {/* Labels above/below for segments */}

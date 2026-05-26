@@ -32,12 +32,12 @@ export function Dashboard() {
         <div className="p-3 bg-stone-900 text-white rounded-2xl shadow-lg ring-4 ring-stone-100">
            <Wallet className="w-6 h-6" />
         </div>
-        <div className="font-serif text-2xl font-black tracking-tight text-stone-900">Fajmuls<span className="text-stone-300">Daily</span></div>
+        <div className="font-sans text-2xl font-black tracking-tight text-stone-900">Fajmuls<span className="text-stone-300">Daily</span></div>
       </div>
 
       {showGreeting && (
         <header className="space-y-2 relative group">
-          <h1 className="font-serif text-5xl md:text-7xl font-bold tracking-tight text-stone-900">
+          <h1 className="font-sans text-5xl md:text-7xl font-bold tracking-tight text-stone-900">
             Selamat Siang.
           </h1>
           <p className="text-xl text-stone-500 font-medium tracking-wide">
@@ -145,7 +145,7 @@ export function Dashboard() {
           </div>
           <div>
             <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Dokumentasi</p>
-            <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
+            <h2 className="text-4xl font-bold font-sans flex items-baseline gap-2">
               {docs.length} <span className="text-xl text-stone-400 font-sans font-normal">foto</span>
             </h2>
             <p className="text-stone-500 mt-2">Tersimpan di Cloud</p>
@@ -164,7 +164,7 @@ export function Dashboard() {
           </div>
           <div>
             <p className="text-sm uppercase tracking-widest text-stone-400 font-bold mb-2">Spesial</p>
-            <h2 className="text-4xl font-bold font-serif flex items-baseline gap-2">
+            <h2 className="text-4xl font-bold font-sans flex items-baseline gap-2">
               {specials.length} <span className="text-xl text-stone-400 font-sans font-normal">item</span>
             </h2>
             <p className="text-stone-500 mt-2">Catatan sangat penting & rahasia</p>
