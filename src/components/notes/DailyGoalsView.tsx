@@ -208,8 +208,8 @@ export function DailyGoalsView() {
             <ChevronLeft className="w-5 h-5 text-stone-600" />
           </button>
           <div>
-            <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
-              Daily Goals <Award className="w-6 h-6 text-yellow-500 animate-bounce" />
+            <h1 className="font-serif text-2xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
+              Daily Goals <Award className="w-5 h-5 text-yellow-500 animate-bounce" />
             </h1>
             <p className="text-stone-500 text-xs mt-1 font-medium">
               Kelola pencapaian harian Anda secara terintegrasi.
@@ -290,8 +290,8 @@ export function DailyGoalsView() {
               />
             </svg>
             <div className="absolute flex flex-col items-center justify-center leading-none">
-              <span className="text-3xl font-black text-stone-900">{completionStats.percentage}%</span>
-              <span className="text-[8px] font-black uppercase text-stone-400 tracking-wider mt-1">Selesai</span>
+              <span className="text-2xl font-black text-stone-900">{completionStats.percentage}%</span>
+              <span className="text-[7px] font-black uppercase text-stone-400 tracking-wider mt-0.5">Selesai</span>
             </div>
           </div>
 
@@ -349,9 +349,9 @@ export function DailyGoalsView() {
       <div className="bg-paper p-6 md:p-8 rounded-[2.5rem] border-2 border-stone-900 shadow-brutal space-y-6">
         <div className="flex items-center justify-between border-b border-stone-100 pb-4">
           <div>
-            <h2 className="font-serif text-2xl font-bold text-stone-900">Daftar Target Harian</h2>
+            <h2 className="font-serif text-xl font-bold text-stone-900">Daftar Target Harian</h2>
             {currentGoals.length > 0 && (
-              <p className="text-xs text-stone-400 font-bold uppercase tracking-wider mt-1">{format(selectedDate, 'dd MMMM yyyy', { locale: id })}</p>
+              <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mt-0.5">{format(selectedDate, 'dd MMMM yyyy', { locale: id })}</p>
             )}
           </div>
 
@@ -404,11 +404,11 @@ export function DailyGoalsView() {
                       </button>
                       
                       <div className="flex flex-col items-start leading-tight">
-                        <span className={cn("font-bold text-sm", isSelected ? "line-through text-stone-400" : "text-stone-900")}>
+                        <span className={cn("font-bold text-xs", isSelected ? "line-through text-stone-400" : "text-stone-900")}>
                           {g.text}
                         </span>
                         <span className={cn(
-                          "text-[8px] font-black uppercase tracking-wider mt-1 px-2 py-0.5 rounded-md",
+                          "text-[7px] font-black uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded-md",
                           g.category === 'Ibadah' ? "bg-indigo-100 text-indigo-700" :
                           g.category === 'Kesehatan' ? "bg-emerald-100 text-emerald-700" :
                           g.category === 'Belajar' ? "bg-blue-100 text-blue-700" :

@@ -144,8 +144,8 @@ export function Docs() {
   return (
     <div className="animate-in fade-in duration-500 max-w-4xl mx-auto space-y-10">
       <header>
-        <h1 className="font-serif text-5xl font-bold text-stone-900 mb-2">Dokumentasi Harian</h1>
-        <p className="text-stone-500 text-lg">Simpan foto, kenangan, dan dokumen penting Anda.</p>
+        <h1 className="font-serif text-3xl font-bold text-stone-900 mb-1">Dokumentasi Harian</h1>
+        <p className="text-stone-500 text-sm italic">Simpan foto, kenangan, dan dokumen penting Anda.</p>
       </header>
 
       {pendingFile && previewUrl ? (
