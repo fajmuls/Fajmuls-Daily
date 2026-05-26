@@ -1110,6 +1110,7 @@ export function Finance() {
     percent,
     payload,
     name,
+    index,
   }: any) => {
     const RADIAN = Math.PI / 180;
     // Push labels further out to avoid overlapping with the chart lines
@@ -1122,6 +1123,10 @@ export function Finance() {
     const actualName = payload?.payload?.name || name || payload?.name;
     const isExpense = expenseData.some((d) => d.name === actualName);
     const catType = isExpense ? "expense" : "income";
+    
+    if (isExpense && activeExpenseIndex === index) return null;
+    if (!isExpense && activeIncomeIndex === index) return null;
+
     const prefIcon =
       financeCategoryPrefs[actualName]?.iconName ||
       categoryToIcon[actualName] ||
