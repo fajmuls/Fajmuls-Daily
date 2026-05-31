@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
-import { ArrowLeft, Car, MapPin, Play, Square, Map, ChevronRight, Plus, Archive, Trash2, Clock, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Car, MapPin, Play, Square, Map, ChevronRight, Plus, Archive, Trash2, Clock, CheckCircle2, ArrowDownUp, X } from 'lucide-react';
 import { format, differenceInMinutes, differenceInHours } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
@@ -11,7 +11,7 @@ import { useAudio } from '../../hooks/useAudio';
 export function TripsView() {
   const navigate = useNavigate();
   const { playClick, playSuccess, playError } = useAudio();
-  const { trips, tripTemplates, addTrip, updateTrip, deleteTrip, addTripTemplate, showConfirm } = useAppContext();
+  const { trips, tripTemplates, addTrip, updateTrip, deleteTrip, addTripTemplate, deleteTripTemplate, showConfirm } = useAppContext();
 
   const [activeTab, setActiveTab] = useState<'ongoing' | 'history'>('ongoing');
   
@@ -28,21 +28,30 @@ export function TripsView() {
   const finishedTrips = trips.filter(t => t.status === 'completed');
 
   const startTrip = () => {
-    if (!originCity || !originDetail || !destCity || !destDetail || !vehicle) {
+    if (!originCity || !destCity || !vehicle) {
       playError();
-      alert("Semua field lokasi dan kendaraan harus diisi!");
+      alert("Kota asal, tujuan, dan kendaraan harus diisi!");
       return;
     }
     const origin: TripLocation = { city: originCity, detail: originDetail };
     const destination: TripLocation = { city: destCity, detail: destDetail };
     
     if (saveAsTemplate) {
-      addTripTemplate({
-        id: Date.now().toString(),
-        origin,
-        destination,
-        vehicle,
-      });
+      const exists = tripTemplates.some(t => 
+        t.origin.city.toLowerCase() === originCity.toLowerCase() && 
+        t.destination.city.toLowerCase() === destCity.toLowerCase() && 
+        t.vehicle === vehicle &&
+        (t.origin.detail || '').toLowerCase() === (originDetail || '').toLowerCase() &&
+        (t.destination.detail || '').toLowerCase() === (destDetail || '').toLowerCase()
+      );
+      if (!exists) {
+        addTripTemplate({
+          id: Date.now().toString(),
+          origin,
+          destination,
+          vehicle,
+        });
+      }
     }
 
     addTrip({
@@ -64,6 +73,13 @@ export function TripsView() {
     setDestCity(''); setDestDetail('');
     setSaveAsTemplate(false);
     setVehicle('Mobil');
+  };
+
+  const reverseLocations = () => {
+    setOriginCity(destCity);
+    setOriginDetail(destDetail);
+    setDestCity(originCity);
+    setDestDetail(originDetail);
   };
 
   const selectTemplate = (t: TripTemplate) => {
@@ -133,7 +149,7 @@ export function TripsView() {
         <div className="space-y-6">
           <button 
             onClick={() => { playClick(); setShowNewModal(true); }}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 bg-teal-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-teal-700 transition-all shadow-md active:scale-95"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-teal-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-teal-700 transition-all shadow-md active:scale-95"
           >
             <Plus className="w-5 h-5" /> Mulai Perjalanan Baru
           </button>
@@ -172,17 +188,28 @@ export function TripsView() {
                       <div className="absolute -left-[29px] top-1 w-4 h-4 bg-white border-2 border-stone-300 rounded-full z-10" />
                       <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mb-1">Dari</p>
                       <p className="font-serif text-2xl font-black leading-none text-stone-900">{trip.origin.city}</p>
-                      <p className="text-sm text-stone-500 font-medium">{trip.origin.detail}</p>
+                      {trip.origin.detail && <p className="text-sm text-stone-500 font-medium">{trip.origin.detail}</p>}
                     </div>
                     <div className="relative">
                       <div className="absolute -left-[29px] top-1 w-4 h-4 bg-white border-2 border-teal-500 rounded-full z-10" />
                       <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mb-1">Tujuan</p>
                       <p className="font-serif text-2xl font-black leading-none text-stone-900">{trip.destination.city}</p>
-                      <p className="text-sm text-stone-500 font-medium">{trip.destination.detail}</p>
+                      {trip.destination.detail && <p className="text-sm text-stone-500 font-medium">{trip.destination.detail}</p>}
                     </div>
                   </div>
 
-                  <div className="mt-8 flex items-center justify-between border-t border-stone-100 pt-6">
+                  <div className="w-full h-40 md:h-48 rounded-xl overflow-hidden mt-6 border border-stone-200 bg-stone-100">
+                    <iframe 
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(`${trip.origin.city} to ${trip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
+                      width="100%" 
+                      height="100%" 
+                      frameBorder="0" 
+                      style={{ border: 0 }} 
+                      allowFullScreen 
+                    />
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between border-t border-stone-100 pt-6">
                     <div className="flex items-center gap-2 text-stone-500 font-medium text-sm">
                       <Car className="w-5 h-5" /> {trip.vehicle}
                     </div>
@@ -208,19 +235,21 @@ export function TripsView() {
             <div className="space-y-4">
               {finishedTrips.map(trip => (
                 <div key={trip.id} className="bg-white p-6 rounded-[2rem] border border-stone-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 group">
-                  <div className="flex-1 flex items-center gap-6">
+                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-6">
                     <div className="w-12 h-12 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-center shrink-0 text-stone-400">
                       <MapPin className="w-6 h-6" />
                     </div>
                     <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-                      <div>
-                        <p className="font-serif text-xl font-black text-stone-900 leading-none">{trip.origin.city}</p>
-                        <p className="text-xs text-stone-500 mt-1">{trip.origin.detail}</p>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Dari</p>
+                        <p className="font-serif text-xl font-black text-stone-900 leading-none truncate">{trip.origin.city}</p>
+                        {trip.origin.detail && <p className="text-xs text-stone-500 mt-1 truncate">{trip.origin.detail}</p>}
                       </div>
-                      <ChevronRight className="w-5 h-5 text-stone-300 hidden md:block" />
-                      <div>
-                        <p className="font-serif text-xl font-black text-stone-900 leading-none">{trip.destination.city}</p>
-                        <p className="text-xs text-stone-500 mt-1">{trip.destination.detail}</p>
+                      <ChevronRight className="w-5 h-5 text-stone-300 hidden md:block shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Ke</p>
+                        <p className="font-serif text-xl font-black text-stone-900 leading-none truncate">{trip.destination.city}</p>
+                        {trip.destination.detail && <p className="text-xs text-stone-500 mt-1 truncate">{trip.destination.detail}</p>}
                       </div>
                     </div>
                   </div>
@@ -233,7 +262,7 @@ export function TripsView() {
                     </div>
                     <button 
                       onClick={() => showConfirm("Hapus riwayat ini?", () => deleteTrip(trip.id))}
-                      className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                      className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -247,7 +276,7 @@ export function TripsView() {
 
       {showNewModal && (
         <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex justify-center items-end md:items-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 md:p-8 animate-in slide-in-from-bottom-8">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 md:p-8 animate-in slide-in-from-bottom-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-serif text-2xl font-black">Perjalanan Baru</h2>
             </div>
@@ -257,10 +286,18 @@ export function TripsView() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">Dari Template Tersimpan</p>
                 <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
                   {tripTemplates.map(t => (
-                    <button key={t.id} onClick={() => { playClick(); selectTemplate(t); }} className="shrink-0 px-4 py-2 bg-stone-50 border border-stone-200 hover:border-teal-500 rounded-xl text-left transition-colors">
-                      <p className="text-xs font-bold text-stone-900">{t.origin.city} &rarr; {t.destination.city}</p>
-                      <p className="text-[9px] text-stone-500 mt-0.5">{t.vehicle}</p>
-                    </button>
+                    <div key={t.id} className="shrink-0 relative group flex items-start">
+                      <button onClick={() => { playClick(); selectTemplate(t); }} className="px-4 py-2 border border-stone-200 hover:border-teal-500 rounded-xl text-left transition-colors bg-white">
+                        <p className="text-xs font-bold text-stone-900">{t.origin.city} &rarr; {t.destination.city}</p>
+                        <p className="text-[9px] text-stone-500 mt-0.5">{t.vehicle}</p>
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); showConfirm("Hapus template?", () => deleteTripTemplate(t.id)); }} 
+                        className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:scale-110"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -273,9 +310,19 @@ export function TripsView() {
                   <input type="text" value={originCity} onChange={e => setOriginCity(e.target.value)} placeholder="Ciamis" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat *</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="lowercase font-normal">(opsional)</span></label>
                   <input type="text" value={originDetail} onChange={e => setOriginDetail(e.target.value)} placeholder="Rumah" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
                 </div>
+              </div>
+
+              <div className="flex items-center justify-center -my-2 relative z-10 w-full">
+                <button 
+                  onClick={() => { playClick(); reverseLocations(); }} 
+                  className="bg-white p-2 rounded-full border border-stone-200 hover:border-teal-400 text-stone-400 hover:text-teal-600 transition-all shadow-sm"
+                  title="Tukar Asal & Tujuan"
+                >
+                  <ArrowDownUp className="w-4 h-4" />
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -284,12 +331,12 @@ export function TripsView() {
                   <input type="text" value={destCity} onChange={e => setDestCity(e.target.value)} placeholder="Bandung" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat *</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="lowercase font-normal">(opsional)</span></label>
                   <input type="text" value={destDetail} onChange={e => setDestDetail(e.target.value)} placeholder="Rumah Mang Jepi" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 pt-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kendaraan *</label>
                 <div className="flex gap-2">
                   {['Motor', 'Mobil', 'Kereta', 'Bus'].map(v => (
@@ -323,3 +370,4 @@ export function TripsView() {
     </div>
   );
 }
+

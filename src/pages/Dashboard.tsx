@@ -1,16 +1,20 @@
-import { format } from 'date-fns';
+import { format, differenceInMinutes, differenceInHours } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
-import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X, TrendingUp } from 'lucide-react';
+import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X, TrendingUp, Map, Car, Square, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAudio } from '../hooks/useAudio';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export function Dashboard() {
-  const { notes, financeRecords, docs, specials, missedPrayers, loading, hideAmounts } = useAppContext();
+  const { playSuccess, playClick } = useAudio();
+  const { notes, financeRecords, docs, specials, missedPrayers, trips, updateTrip, showConfirm, loading, hideAmounts } = useAppContext();
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
+  const { isInstallable, installPWA } = usePWAInstall();
 
   const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
 
@@ -26,13 +30,44 @@ export function Dashboard() {
     qadha: missedPrayers.length
   };
 
+  const ongoingTrips = trips.filter(t => t.status === 'ongoing');
+
+  const endTrip = (trip: any) => {
+    showConfirm(`Selesaikan perjalanan dari ${trip.origin.city} ke ${trip.destination.city}?`, () => {
+      updateTrip({
+        ...trip,
+        status: 'completed',
+        endTime: Date.now(),
+      });
+      playSuccess();
+    });
+  };
+
+  const formatDuration = (start: number) => {
+    const mins = differenceInMinutes(Date.now(), start);
+    const hrs = differenceInHours(Date.now(), start);
+    if (hrs > 0) return `${hrs}j ${mins % 60}m berlalu`;
+    return `${mins} menit berlalu`;
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center gap-4 mb-4">
-        <div className="p-3 bg-stone-900 text-white rounded-2xl shadow-lg ring-4 ring-stone-100">
-           <Wallet className="w-6 h-6" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-stone-900 text-white rounded-2xl shadow-lg ring-4 ring-stone-100">
+             <Wallet className="w-6 h-6" />
+          </div>
+          <div className="font-sans text-2xl font-black tracking-tight text-stone-900">Fajmuls<span className="text-stone-300">Daily</span></div>
         </div>
-        <div className="font-sans text-2xl font-black tracking-tight text-stone-900">Fajmuls<span className="text-stone-300">Daily</span></div>
+        
+        {isInstallable && (
+          <button 
+            onClick={() => { playClick(); installPWA(); }}
+            className="flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all"
+          >
+            <Download className="w-4 h-4" /> Install App
+          </button>
+        )}
       </div>
 
       {showGreeting && (
@@ -61,6 +96,58 @@ export function Dashboard() {
            Tampilkan Salam +
          </button>
       )}
+
+      {ongoingTrips.map(trip => (
+        <div key={trip.id} className="bg-teal-50 border-2 border-teal-500 rounded-[2.5rem] overflow-hidden shadow-brutal animate-in slide-in-from-top-4 flex flex-col md:flex-row relative">
+          <div className="p-6 md:w-1/2 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <span className="flex items-center gap-1.5 px-3 py-1 bg-teal-200 text-teal-900 text-[9px] font-black uppercase tracking-widest rounded-full">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-600"></span>
+                  </span>
+                  Perjalanan Aktif
+                </span>
+                <span className="text-stone-500 text-[10px] font-bold uppercase tracking-widest">{formatDuration(trip.startTime)}</span>
+              </div>
+
+              <div className="space-y-1 mb-6">
+                <p className="text-[10px] font-black uppercase tracking-widest text-teal-600/70">Asal &amp; Tujuan</p>
+                <p className="font-serif text-3xl font-black text-teal-950 leading-tight">
+                  {trip.origin.city} &rarr; {trip.destination.city}
+                </p>
+                <div className="text-sm font-medium text-teal-800 flex items-center gap-2">
+                  <Car className="w-4 h-4" /> {trip.vehicle}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <Link to="/notes/trips" className="flex-1 text-center py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest bg-white border-2 border-teal-200 hover:border-teal-400 text-teal-800 transition-all">
+                Detail
+              </Link>
+              <button 
+                onClick={() => endTrip(trip)}
+                className="flex-1 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest bg-teal-900 hover:bg-black text-white transition-all flex items-center justify-center gap-2 shadow-md"
+              >
+                <Square className="w-4 h-4" /> Selesaikan
+              </button>
+            </div>
+          </div>
+          
+          <div className="md:w-1/2 h-48 md:h-auto min-h-[200px] border-t-2 md:border-t-0 md:border-l-2 border-teal-500 bg-stone-200">
+            <iframe 
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(`${trip.origin.city} to ${trip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
+              width="100%" 
+              height="100%" 
+              frameBorder="0" 
+              style={{ border: 0 }} 
+              allowFullScreen 
+            />
+          </div>
+        </div>
+      ))}
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
         {/* Finance Snippet */}
