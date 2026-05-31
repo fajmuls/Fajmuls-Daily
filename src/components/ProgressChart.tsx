@@ -61,7 +61,7 @@ export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, fi
         })}
       </div>
 
-      <div className="relative pb-4">
+      <div className="relative pb-10">
         <div className="relative h-6 md:h-8 w-full bg-stone-100 rounded-full flex overflow-hidden shadow-inner border border-stone-200/50">
           {data.map((item, i) => {
             const color = financeCategoryPrefs[item.name]?.color || getCategoryColor(item.name, type);
@@ -84,6 +84,41 @@ export function ProgressChart({ data, type, getCategoryColor, categoryToIcon, fi
               />
             );
           })}
+        </div>
+        
+        {/* Percentage markers below the bar */}
+        <div className="absolute left-0 right-0 top-full mt-2 h-6 w-full pointer-events-none">
+          {(() => {
+            let cumulative = 0;
+            return data.map((item, i) => {
+              const percent = parseFloat(item.displayPercent);
+              if (percent < 3 && activeIndex !== i) {
+                cumulative += percent;
+                return null; // Skip tiny segments unless highlighted
+              }
+              const currentPercent = percent;
+              
+              // Place label in the middle of current segment
+              const leftPos = cumulative + (currentPercent / 2);
+              cumulative += percent;
+              
+              return (
+                <div 
+                  key={`label-${i}`} 
+                  className={cn(
+                    "absolute top-0 flex flex-col items-center transition-opacity duration-300",
+                    activeIndex !== null && activeIndex !== i ? "opacity-30" : "opacity-100"
+                  )}
+                  style={{ left: `${leftPos}%`, transform: 'translateX(-50%)' }}
+                >
+                  <div className="w-px h-2 bg-stone-300 mb-1" />
+                  <span className="text-[9px] font-black tracking-tighter text-stone-500 whitespace-nowrap">
+                    {item.displayPercent}%
+                  </span>
+                </div>
+              );
+            });
+          })()}
         </div>
       </div>
     </div>

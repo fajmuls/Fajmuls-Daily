@@ -18,7 +18,8 @@ import {
   ShieldAlert, 
   Square,
   ArrowRight,
-  Plus
+  Plus,
+  Map
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { NoteType, SpecialNote } from '../../types';
@@ -26,9 +27,10 @@ import { WorkspaceSyncModal } from '../WorkspaceSyncModal';
 import { useAudio } from '../../hooks/useAudio';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const NOTE_TYPES: { type: NoteType | 'prayer-list'; icon: any; label: string; color: string; bg: string; link: string; desc: string }[] = [
+const NOTE_TYPES: { type: NoteType | 'prayer-list' | 'trips'; icon: any; label: string; color: string; bg: string; link: string; desc: string }[] = [
   { type: 'normal', icon: FileText, label: 'Biasa / Umum', color: 'text-stone-700', bg: 'bg-stone-100', link: '/notes/normal-list', desc: 'Catatan umum, ide, draf teks & jurnal.' },
   { type: 'prayer-list', icon: Moon, label: 'Qadha Shalat', color: 'text-indigo-700', bg: 'bg-indigo-100', link: '/notes/prayers', desc: 'Daftar & status qadha shalat fardhu.' },
+  { type: 'trips', icon: Map, label: 'Summary Perjalanan', color: 'text-teal-700', bg: 'bg-teal-100', link: '/notes/trips', desc: 'Detail perjalanan antar kota & histori log.' },
   { type: 'ig', icon: Instagram, label: 'Catatan IG', color: 'text-pink-700', bg: 'bg-pink-100', link: '/notes/ig-list', desc: 'Ide takarir, lirik lagu, & post IG.' },
   { type: 'daily-goal', icon: CheckSquare, label: 'Daily Goals', color: 'text-blue-700', bg: 'bg-blue-100', link: '/notes/daily-goals', desc: 'Target pencapaian & resolusi harian.' },
   { type: 'personal', icon: Lock, label: 'Data Pribadi', color: 'text-emerald-700', bg: 'bg-emerald-100', link: '/notes/personal-list', desc: 'Data sensitif tersandi & rahasia.' },
@@ -36,7 +38,7 @@ const NOTE_TYPES: { type: NoteType | 'prayer-list'; icon: any; label: string; co
 ];
 
 export function NotesList() {
-  const { notes, specials, addSpecial, deleteSpecial } = useAppContext();
+  const { notes, specials, trips, addSpecial, deleteSpecial } = useAppContext();
   const { playSuccess, playError, playClick } = useAudio();
   const [showSync, setShowSync] = useState(false);
   const [activeTab, setActiveTab] = useState<'standard' | 'special'>('standard');
@@ -115,8 +117,9 @@ export function NotesList() {
   };
 
   // Helper metrics
-  const getNoteCount = (type: NoteType | 'prayer-list') => {
+  const getNoteCount = (type: NoteType | 'prayer-list' | 'trips') => {
     if (type === 'prayer-list') return "..."; // Dynamically rendered inside respective list
+    if (type === 'trips') return trips.length;
     return notes.filter(n => n.type === type).length;
   };
 

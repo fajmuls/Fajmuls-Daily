@@ -131,3 +131,26 @@ export interface SpecialNote {
   content: string;
   createdAt: number;
 }
+
+export interface TripLocation {
+  city: string;
+  detail: string;
+}
+
+export interface TripSummary {
+  id: string;
+  origin: TripLocation;
+  destination: TripLocation;
+  vehicle: string;
+  status: 'ongoing' | 'completed';
+  startTime: number;
+  endTime?: number;
+  createdAt: number;
+}
+
+export interface TripTemplate {
+  id: string;
+  origin: TripLocation;
+  destination: TripLocation;
+  vehicle: string;
+}
