@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
-import { ArrowLeft, Car, MapPin, Play, Square, Map, ChevronRight, Plus, Archive, Trash2, Clock, CheckCircle2, ArrowDownUp, X } from 'lucide-react';
+import { ArrowLeft, Car, MapPin, Play, Square, Map, ChevronRight, Plus, Archive, Trash2, Clock, CheckCircle2, ArrowDownUp, X, Mic, MoreVertical } from 'lucide-react';
 import { format, differenceInMinutes, differenceInHours } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
@@ -18,6 +18,8 @@ export function TripsView() {
   // New Trip modal state
   const [showNewModal, setShowNewModal] = useState(false);
   const [newTripMode, setNewTripMode] = useState<'tracking' | 'manual'>('tracking');
+  const [openTemplateMenuId, setOpenTemplateMenuId] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
   const [originCity, setOriginCity] = useState('');
   const [originDetail, setOriginDetail] = useState('');
   const [destCity, setDestCity] = useState('');
@@ -165,6 +167,43 @@ export function TripsView() {
       return `${hrs}j ${mins % 60}m`;
     }
     return `${mins} menit`;
+  };
+
+  const startVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Browser Anda tidak mendukung input suara. Gunakan Chrome atau Safari.");
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'id-ID';
+    
+    setIsListening(true);
+    playClick();
+    
+    recognition.onresult = (event: any) => {
+      const text = event.results[0][0].transcript.toLowerCase();
+      // Handle format: "dari [A] ke [B]"
+      const match = text.match(/dari (.+) ke (.+)/i);
+      if (match) {
+        setOriginCity(match[1].trim());
+        setDestCity(match[2].trim());
+        playSuccess();
+      } else {
+        alert(`Terdengar: "${text}". Format tidak dikenali. Ucapkan misalnya: 'Dari Ciamis ke Bandung'`);
+      }
+    };
+    
+    recognition.onerror = () => {
+      setIsListening(false);
+      alert("Terjadi kesalahan saat mendengarkan.");
+    };
+    
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+    
+    recognition.start();
   };
 
   return (
@@ -328,47 +367,79 @@ export function TripsView() {
                 );
               })()}
 
-              {finishedTrips.map(trip => (
-                <div key={trip.id} className="bg-white rounded-[2rem] border border-stone-200 shadow-sm overflow-hidden group">
-                  <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-6">
-                      <div className="w-12 h-12 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-center shrink-0 text-stone-400">
-                        <MapPin className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-                        <div className="min-w-0">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Dari</p>
-                          <p className="font-serif text-xl font-black text-stone-900 leading-none truncate">{trip.origin.city}</p>
-                          {trip.origin.detail && <p className="text-xs text-stone-500 mt-1 truncate">{trip.origin.detail}</p>}
+              {(() => {
+                const groupedTrips = new globalThis.Map<string, TripSummary[]>();
+                finishedTrips.forEach(trip => {
+                  const key = `${trip.origin.city}|${trip.destination.city}`;
+                  if (!groupedTrips.has(key)) {
+                    groupedTrips.set(key, []);
+                  }
+                  groupedTrips.get(key)!.push(trip);
+                });
+
+                return Array.from(groupedTrips.entries()).map(([key, routeTrips]) => {
+                  const firstTrip = routeTrips[0];
+                  return (
+                <div key={key} className="bg-white rounded-[2rem] border border-stone-200 shadow-sm overflow-hidden group">
+                  <div className="p-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+                      <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-6">
+                        <div className="w-12 h-12 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-center shrink-0 text-stone-400">
+                          <MapPin className="w-6 h-6" />
                         </div>
-                        <ChevronRight className="w-5 h-5 text-stone-300 hidden md:block shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Ke</p>
-                          <p className="font-serif text-xl font-black text-stone-900 leading-none truncate">{trip.destination.city}</p>
-                          {trip.destination.detail && <p className="text-xs text-stone-500 mt-1 truncate">{trip.destination.detail}</p>}
+                        <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Dari</p>
+                            <p className="font-serif text-2xl font-black text-stone-900 leading-none truncate">{firstTrip.origin.city}</p>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-stone-300 hidden md:block shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Ke</p>
+                            <p className="font-serif text-2xl font-black text-stone-900 leading-none truncate">{firstTrip.destination.city}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between md:justify-end gap-6 md:w-auto shrink-0 border-t md:border-t-0 pt-4 md:pt-0 border-stone-100">
-                      <div className="flex flex-col text-right">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                          {format(trip.startTime, 'HH:mm')} - {trip.endTime ? format(trip.endTime, 'HH:mm') : '?'}, {format(trip.startTime, 'd MMM yyyy', { locale: localeId })}
-                        </span>
-                        <span className="font-mono text-sm font-bold text-stone-900 bg-stone-50 px-2 py-0.5 rounded-lg mt-1 w-fit ml-auto border border-stone-200">
-                          {trip.endTime ? formatDuration(trip.startTime, trip.endTime) : '-'}
-                        </span>
-                      </div>
-                      <button 
-                        onClick={() => showConfirm("Hapus riwayat ini?", () => deleteTrip(trip.id))}
-                        className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    
+                    <div className="space-y-2">
+                      {routeTrips.map(trip => (
+                        <div key={trip.id} className="flex items-center justify-between p-3 bg-stone-50 border border-stone-100 rounded-xl group/item">
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                            <div className="flex items-center gap-2 text-stone-700">
+                              <Car className="w-4 h-4 text-stone-400" />
+                              <span className="text-xs font-bold">{trip.vehicle}</span>
+                            </div>
+                            <div className="hidden md:block w-px h-4 bg-stone-200"></div>
+                            <div className="text-xs text-stone-500 font-medium">
+                              {trip.origin.detail && <span className="mr-2">Dari: {trip.origin.detail}</span>}
+                              {trip.destination.detail && <span>Ke: {trip.destination.detail}</span>}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col text-right">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                                {format(trip.startTime, 'HH:mm')} - {trip.endTime ? format(trip.endTime, 'HH:mm') : '?'}, {format(trip.startTime, 'd MMM yyyy', { locale: localeId })}
+                              </span>
+                              <span className="font-mono text-sm font-bold text-stone-900 mt-0.5">
+                                {trip.endTime ? formatDuration(trip.startTime, trip.endTime) : '-'}
+                              </span>
+                            </div>
+                            <button 
+                              onClick={() => showConfirm("Hapus riwayat ini?", () => deleteTrip(trip.id))}
+                              className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover/item:opacity-100 shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="w-full h-40 border-t border-stone-200 bg-stone-100">
+                  
+                  <div className="w-full h-64 border-t border-stone-200 bg-stone-100">
                     <iframe 
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(`${trip.origin.city} to ${trip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(`${firstTrip.origin.city} to ${firstTrip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
                       width="100%" 
                       height="100%" 
                       frameBorder="0" 
@@ -377,7 +448,9 @@ export function TripsView() {
                     />
                   </div>
                 </div>
-              ))}
+                  );
+                });
+              })()}
             </div>
           )}
         </div>
@@ -388,6 +461,16 @@ export function TripsView() {
           <div className="bg-white w-full max-w-lg rounded-3xl p-6 md:p-8 animate-in slide-in-from-bottom-8 relative max-h-[85vh] overflow-y-auto custom-scrollbar shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-serif text-2xl font-black">Perjalanan Baru</h2>
+              <button 
+                onClick={startVoiceInput} 
+                className={cn(
+                  "p-3 rounded-full flex items-center justify-center transition-all",
+                  isListening ? "bg-red-100 text-red-600 animate-pulse" : "bg-teal-50 text-teal-600 hover:bg-teal-100"
+                )}
+                title="Input suara (Cth: Dari Ciamis ke Bandung)"
+              >
+                <Mic className="w-5 h-5" />
+              </button>
             </div>
             
             <div className="flex gap-2 p-1 bg-stone-100 rounded-2xl w-full mb-6">
@@ -410,17 +493,30 @@ export function TripsView() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">Dari Template Tersimpan</p>
                 <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
                   {tripTemplates.map(t => (
-                    <div key={t.id} className="shrink-0 relative group flex items-start">
-                      <button onClick={() => { playClick(); selectTemplate(t); }} className="px-4 py-2 border border-stone-200 hover:border-teal-500 rounded-xl text-left transition-colors bg-white">
+                    <div key={t.id} className="shrink-0 relative flex items-start">
+                      <button onClick={() => { playClick(); selectTemplate(t); }} className="px-4 py-2 border border-stone-200 hover:border-teal-500 rounded-xl text-left transition-colors bg-white w-full pr-8">
                         <p className="text-xs font-bold text-stone-900">{t.origin.city} &rarr; {t.destination.city}</p>
                         <p className="text-[9px] text-stone-500 mt-0.5">{t.vehicle}</p>
                       </button>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); showConfirm("Hapus template?", () => deleteTripTemplate(t.id)); }} 
-                        className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:scale-110"
+                        onClick={(e) => { e.stopPropagation(); setOpenTemplateMenuId(openTemplateMenuId === t.id ? null : t.id); }} 
+                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-stone-400 hover:text-stone-700 transition-colors"
                       >
-                        <X className="w-3 h-3" />
+                        <MoreVertical className="w-4 h-4" />
                       </button>
+                      {openTemplateMenuId === t.id && (
+                        <div className="absolute top-10 right-0 bg-white shadow-xl border border-stone-100 rounded-xl py-1 z-20 min-w-[120px]">
+                          <button
+                            onClick={() => { 
+                              setOpenTemplateMenuId(null);
+                              showConfirm("Hapus template?", () => deleteTripTemplate(t.id)); 
+                            }}
+                            className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-stone-50 font-bold flex items-center gap-2"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Hapus
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
