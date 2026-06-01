@@ -51,9 +51,15 @@ export function CustomDialogs() {
               className="relative bg-paper w-full max-w-sm rounded-[2rem] overflow-hidden shadow-2xl border border-stone-200"
             >
               <div className="p-8 text-center space-y-6">
-                <div className="w-20 h-20 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto rotate-12 group-hover:rotate-0 transition-transform">
-                  <AlertCircle className="w-10 h-10" />
-                </div>
+                {confirmDialog?.isDestructive ? (
+                  <div className="w-20 h-20 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto rotate-12 group-hover:rotate-0 transition-transform">
+                    <AlertCircle className="w-10 h-10" />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 bg-teal-100 text-teal-600 rounded-3xl flex items-center justify-center mx-auto -rotate-12 group-hover:rotate-0 transition-transform">
+                    <CheckCircle2 className="w-10 h-10" />
+                  </div>
+                )}
                 <div>
                   <h3 className="text-2xl font-serif font-bold text-stone-900">Konfirmasi</h3>
                   <p className="text-stone-500 mt-2 font-medium leading-relaxed">
@@ -73,9 +79,14 @@ export function CustomDialogs() {
                       confirmDialog.onConfirm();
                       closeConfirm();
                     }}
-                    className="py-4 bg-red-600 text-white rounded-2xl font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
+                    className={cn(
+                      "py-4 text-white rounded-2xl font-bold shadow-lg transition-all",
+                      confirmDialog?.isDestructive 
+                        ? "bg-red-600 shadow-red-200 hover:bg-red-700" 
+                        : "bg-teal-600 shadow-teal-200 hover:bg-teal-700"
+                    )}
                   >
-                    Ya, Hapus
+                    {confirmDialog?.confirmText || "Ya"}
                   </button>
                 </div>
               </div>

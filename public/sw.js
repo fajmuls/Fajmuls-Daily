@@ -33,3 +33,41 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  if (event.action === 'end-trip') {
+    const tripId = event.notification.data?.tripId;
+    
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+        // Send a message to all open windows to end the trip
+        windowClients.forEach((client) => {
+          client.postMessage({
+            type: 'END_TRIP',
+            tripId: tripId
+          });
+        });
+
+        // Or focus an existing window if it exists
+        if (windowClients.length > 0) {
+          windowClients[0].focus();
+        } else {
+          clients.openWindow('/notes/trips');
+        }
+      })
+    );
+  } else {
+    // Default click opens app
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+        if (windowClients.length > 0) {
+          windowClients[0].focus();
+        } else {
+          clients.openWindow('/');
+        }
+      })
+    );
+  }
+});

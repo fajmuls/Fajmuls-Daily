@@ -54,7 +54,7 @@ export function TripsView() {
       }
     }
 
-    addTrip({
+    const newTrip = {
       id: Date.now().toString(),
       origin,
       destination,
@@ -62,7 +62,28 @@ export function TripsView() {
       status: 'ongoing',
       startTime: Date.now(),
       createdAt: Date.now(),
-    });
+    } as TripSummary;
+
+    addTrip(newTrip);
+
+    if ('Notification' in window && 'serviceWorker' in navigator) {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification('Perjalanan Sedang Berlangsung', {
+              body: `Dari ${origin.city} ke ${destination.city}`,
+              icon: '/icon-192.png',
+              tag: `trip-${newTrip.id}`,
+              requireInteraction: true,
+              data: { tripId: newTrip.id },
+              actions: [
+                { action: 'end-trip', title: 'Selesaikan' }
+              ]
+            });
+          });
+        }
+      });
+    }
 
     playSuccess();
     setShowNewModal(false);
@@ -98,8 +119,15 @@ export function TripsView() {
         status: 'completed',
         endTime: Date.now(),
       });
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.getNotifications({ tag: `trip-${trip.id}` }).then(notifications => {
+            notifications.forEach(n => n.close());
+          });
+        });
+      }
       playSuccess();
-    });
+    }, false, 'Selesaikan');
   };
 
   const formatDuration = (start: number, end: number) => {
@@ -232,40 +260,93 @@ export function TripsView() {
               Belum ada riwayat perjalanan.
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Stats Summary */}
+              {(() => {
+                const routeStats = new Map();
+                finishedTrips.forEach(trip => {
+                  const r1 = `${trip.origin.city}-${trip.destination.city}`.toLowerCase();
+                  const r2 = `${trip.destination.city}-${trip.origin.city}`.toLowerCase();
+                  const key = r1 < r2 ? `${r1}|${r2}` : `${r2}|${r1}`;
+                  const title = r1 < r2 ? `${trip.origin.city} ↔ ${trip.destination.city}` : `${trip.destination.city} ↔ ${trip.origin.city}`;
+                  
+                  if (!routeStats.has(key)) {
+                    routeStats.set(key, { title, count: 0, totalMinutes: 0 });
+                  }
+                  const stat = routeStats.get(key);
+                  stat.count += 1;
+                  if (trip.endTime) {
+                    stat.totalMinutes += differenceInMinutes(trip.endTime, trip.startTime);
+                  }
+                });
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array.from(routeStats.values()).map((stat, i) => (
+                      <div key={i} className="p-4 bg-teal-50 border border-teal-200 rounded-2xl flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-teal-600 mb-1">Rute Sering</p>
+                          <p className="font-bold text-teal-900">{stat.title}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-black text-teal-700">{stat.count}x</p>
+                          <p className="text-[10px] uppercase font-bold text-teal-500">
+                            {stat.totalMinutes > 60 ? `${Math.floor(stat.totalMinutes / 60)}j ${stat.totalMinutes % 60}m` : `${stat.totalMinutes} menit`} total
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
               {finishedTrips.map(trip => (
-                <div key={trip.id} className="bg-white p-6 rounded-[2rem] border border-stone-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 group">
-                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-6">
-                    <div className="w-12 h-12 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-center shrink-0 text-stone-400">
-                      <MapPin className="w-6 h-6" />
+                <div key={trip.id} className="bg-white rounded-[2rem] border border-stone-200 shadow-sm overflow-hidden group">
+                  <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-6">
+                      <div className="w-12 h-12 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-center shrink-0 text-stone-400">
+                        <MapPin className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Dari</p>
+                          <p className="font-serif text-xl font-black text-stone-900 leading-none truncate">{trip.origin.city}</p>
+                          {trip.origin.detail && <p className="text-xs text-stone-500 mt-1 truncate">{trip.origin.detail}</p>}
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-stone-300 hidden md:block shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Ke</p>
+                          <p className="font-serif text-xl font-black text-stone-900 leading-none truncate">{trip.destination.city}</p>
+                          {trip.destination.detail && <p className="text-xs text-stone-500 mt-1 truncate">{trip.destination.detail}</p>}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Dari</p>
-                        <p className="font-serif text-xl font-black text-stone-900 leading-none truncate">{trip.origin.city}</p>
-                        {trip.origin.detail && <p className="text-xs text-stone-500 mt-1 truncate">{trip.origin.detail}</p>}
+                    <div className="flex items-center justify-between md:justify-end gap-6 md:w-auto shrink-0 border-t md:border-t-0 pt-4 md:pt-0 border-stone-100">
+                      <div className="flex flex-col text-right">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                          {format(trip.startTime, 'HH:mm')} - {trip.endTime ? format(trip.endTime, 'HH:mm') : '?'}, {format(trip.startTime, 'd MMM yyyy', { locale: localeId })}
+                        </span>
+                        <span className="font-mono text-sm font-bold text-stone-900 bg-stone-50 px-2 py-0.5 rounded-lg mt-1 w-fit ml-auto border border-stone-200">
+                          {trip.endTime ? formatDuration(trip.startTime, trip.endTime) : '-'}
+                        </span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-stone-300 hidden md:block shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1">Ke</p>
-                        <p className="font-serif text-xl font-black text-stone-900 leading-none truncate">{trip.destination.city}</p>
-                        {trip.destination.detail && <p className="text-xs text-stone-500 mt-1 truncate">{trip.destination.detail}</p>}
-                      </div>
+                      <button 
+                        onClick={() => showConfirm("Hapus riwayat ini?", () => deleteTrip(trip.id))}
+                        className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between md:justify-end gap-6 md:w-64 shrink-0 border-t md:border-t-0 pt-4 md:pt-0 border-stone-100">
-                    <div className="flex flex-col text-right">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">{format(trip.startTime, 'd MMM yyyyy', { locale: localeId })}</span>
-                      <span className="font-mono text-sm font-bold text-stone-900 bg-stone-50 px-2 py-0.5 rounded-lg mt-1 w-fit ml-auto border border-stone-200">
-                        {trip.endTime ? formatDuration(trip.startTime, trip.endTime) : '-'}
-                      </span>
-                    </div>
-                    <button 
-                      onClick={() => showConfirm("Hapus riwayat ini?", () => deleteTrip(trip.id))}
-                      className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div className="w-full h-40 border-t border-stone-200 bg-stone-100">
+                    <iframe 
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(`${trip.origin.city} to ${trip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
+                      width="100%" 
+                      height="100%" 
+                      frameBorder="0" 
+                      style={{ border: 0 }} 
+                      allowFullScreen 
+                    />
                   </div>
                 </div>
               ))}
@@ -303,36 +384,36 @@ export function TripsView() {
               </div>
             )}
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Asal *</label>
-                  <input type="text" value={originCity} onChange={e => setOriginCity(e.target.value)} placeholder="Ciamis" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
+                  <input type="text" value={originCity} onChange={e => setOriginCity(e.target.value)} placeholder="Ciamis" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="lowercase font-normal">(opsional)</span></label>
-                  <input type="text" value={originDetail} onChange={e => setOriginDetail(e.target.value)} placeholder="Rumah" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
+                  <input type="text" value={originDetail} onChange={e => setOriginDetail(e.target.value)} placeholder="Rumah" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
                 </div>
               </div>
 
-              <div className="flex items-center justify-center -my-2 relative z-10 w-full">
+              <div className="flex items-center justify-center -my-1 relative z-10 w-full">
                 <button 
                   onClick={() => { playClick(); reverseLocations(); }} 
-                  className="bg-white p-2 rounded-full border border-stone-200 hover:border-teal-400 text-stone-400 hover:text-teal-600 transition-all shadow-sm"
+                  className="bg-white p-1.5 rounded-full border border-stone-200 hover:border-teal-400 text-stone-400 hover:text-teal-600 transition-all shadow-sm"
                   title="Tukar Asal & Tujuan"
                 >
                   <ArrowDownUp className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Tujuan *</label>
-                  <input type="text" value={destCity} onChange={e => setDestCity(e.target.value)} placeholder="Bandung" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
+                  <input type="text" value={destCity} onChange={e => setDestCity(e.target.value)} placeholder="Bandung" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="lowercase font-normal">(opsional)</span></label>
-                  <input type="text" value={destDetail} onChange={e => setDestDetail(e.target.value)} placeholder="Rumah Mang Jepi" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
+                  <input type="text" value={destDetail} onChange={e => setDestDetail(e.target.value)} placeholder="Rumah Mang Jepi" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
                 </div>
               </div>
 
@@ -340,7 +421,7 @@ export function TripsView() {
                 <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kendaraan *</label>
                 <div className="flex gap-2">
                   {['Motor', 'Mobil', 'Kereta', 'Bus'].map(v => (
-                    <button key={v} onClick={() => setVehicle(v)} className={cn("flex-1 py-3 text-xs font-bold rounded-xl border transition-all", vehicle === v ? "bg-teal-50 border-teal-500 text-teal-700" : "bg-stone-50 border-stone-200 text-stone-500")}>
+                    <button key={v} onClick={() => setVehicle(v)} className={cn("flex-1 py-2 text-[11px] font-bold rounded-xl border transition-all", vehicle === v ? "bg-teal-50 border-teal-500 text-teal-700" : "bg-stone-50 border-stone-200 text-stone-500")}>
                       {v}
                     </button>
                   ))}
@@ -355,12 +436,12 @@ export function TripsView() {
                 <input type="checkbox" className="hidden" checked={saveAsTemplate} onChange={e => setSaveAsTemplate(e.target.checked)} />
               </label>
 
-              <div className="flex gap-3 pt-6 border-t border-stone-100">
-                <button onClick={() => { playClick(); setShowNewModal(false); }} className="flex-1 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors">
+              <div className="flex gap-3 pt-4 border-t border-stone-100 mt-2">
+                <button onClick={() => { playClick(); setShowNewModal(false); }} className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors">
                   Batal
                 </button>
-                <button onClick={startTrip} className="flex-1 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest bg-teal-600 hover:bg-teal-700 text-white transition-colors flex items-center justify-center gap-2 shadow-md">
-                  <Play className="w-4 h-4 fill-white" /> Mulai Perjalanan
+                <button onClick={startTrip} className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest bg-teal-600 hover:bg-teal-700 text-white transition-colors flex items-center justify-center gap-2 shadow-md">
+                  <Play className="w-4 h-4 fill-white" /> Mulai
                 </button>
               </div>
             </div>

@@ -25,7 +25,7 @@ interface AppState {
   trips: TripSummary[];
   tripTemplates: TripTemplate[];
   loading: boolean;
-  confirmDialog: { isOpen: boolean; message: string; onConfirm: () => void } | null;
+  confirmDialog: { isOpen: boolean; message: string; onConfirm: () => void; isDestructive?: boolean; confirmText?: string } | null;
   alertMessage: string | null;
   financeMappings: { [key: string]: string[] };
   financeCategoryPrefs: { [key: string]: { iconName: string; color: string } };
@@ -36,7 +36,7 @@ interface AppState {
   setSoundEnabled: (enabled: boolean) => void;
   setHideAmounts: (hide: boolean) => void;
   setAlert: (message: string | null) => void;
-  showConfirm: (message: string, onConfirm: () => void) => void;
+  showConfirm: (message: string, onConfirm: () => void, isDestructive?: boolean, confirmText?: string) => void;
   closeConfirm: () => void;
   updateFinanceMapping: (group: string, categories: string[]) => void;
   deleteFinanceMapping: (group: string) => void;
@@ -82,7 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [savings, setSavings] = useState<SavingGoal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; message: string; onConfirm: () => void } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; message: string; onConfirm: () => void; isDestructive?: boolean; confirmText?: string } | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [financeMappings, setFinanceMappings] = useState<{ [key: string]: string[] }>({});
   const [financeCategoryPrefs, setFinanceCategoryPrefs] = useState<{ [key: string]: { iconName: string; color: string } }>({});
@@ -98,8 +98,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }, 3000);
     }
   };
-  const showConfirm = (message: string, onConfirm: () => void) => {
-    setConfirmDialog({ isOpen: true, message, onConfirm });
+  const showConfirm = (message: string, onConfirm: () => void, isDestructive = true, confirmText = "Ya, Hapus") => {
+    setConfirmDialog({ isOpen: true, message, onConfirm, isDestructive, confirmText });
   };
   const closeConfirm = () => {
     setConfirmDialog(null);

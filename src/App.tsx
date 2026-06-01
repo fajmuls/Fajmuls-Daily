@@ -13,6 +13,7 @@ import { Docs } from './pages/Docs';
 import { Activities } from './pages/Activities';
 import { AuthWrapper } from './components/AuthWrapper';
 import { CustomDialogs } from './components/CustomDialogs';
+import { TripNotificationHandler } from './components/TripNotificationHandler';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
       <AppProvider>
         <HashRouter>
           <CustomDialogs />
+          <TripNotificationHandler />
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />

@@ -39,8 +39,15 @@ export function Dashboard() {
         status: 'completed',
         endTime: Date.now(),
       });
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.getNotifications({ tag: `trip-${trip.id}` }).then(notifications => {
+            notifications.forEach(n => n.close());
+          });
+        });
+      }
       playSuccess();
-    });
+    }, false, 'Selesaikan');
   };
 
   const formatDuration = (start: number) => {
