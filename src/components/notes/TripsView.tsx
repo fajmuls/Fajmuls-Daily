@@ -263,7 +263,7 @@ export function TripsView() {
             <div className="space-y-6">
               {/* Stats Summary */}
               {(() => {
-                const routeStats = new Map();
+                const routeStats = new globalThis.Map();
                 finishedTrips.forEach(trip => {
                   const r1 = `${trip.origin.city}-${trip.destination.city}`.toLowerCase();
                   const r2 = `${trip.destination.city}-${trip.origin.city}`.toLowerCase();
