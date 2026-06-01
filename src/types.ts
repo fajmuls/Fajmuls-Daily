@@ -146,6 +146,10 @@ export interface TripSummary {
   startTime: number;
   endTime?: number;
   createdAt: number;
+  tollCost?: number;
+  fuelCost?: number;
+  conditions?: string[];
+  receipts?: { id: string; url: string; name: string }[];
 }
 
 export interface TripTemplate {

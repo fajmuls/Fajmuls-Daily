@@ -58,6 +58,21 @@
   --shadow-brutal-sm: 2px 2px 0px 0px var(--shadow-color);
   --shadow-brutal-lg: 6px 6px 0px 0px var(--shadow-color);
   --shadow-brutal-active: 0px 0px 0px 0px var(--shadow-color);
+
+  --animate-slideRight: slideRight 3s ease-in-out infinite;
+  --animate-slideRightIcon: slideRightIcon 3s ease-in-out infinite;
+
+  @keyframes slideRight {
+    0% { transform: translateX(-100%); width: 0%; }
+    50% { transform: translateX(50%); width: 30%; }
+    100% { transform: translateX(400%); width: 0%; }
+  }
+
+  @keyframes slideRightIcon {
+    0% { transform: translateX(-400%) rotate(90deg); opacity: 0; }
+    50% { transform: translateX(0) rotate(90deg); opacity: 1; }
+    100% { transform: translateX(400%) rotate(90deg); opacity: 0; }
+  }
 }
 
 html {

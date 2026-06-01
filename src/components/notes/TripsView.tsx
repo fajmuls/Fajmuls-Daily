@@ -7,19 +7,21 @@ import { id as localeId } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { TripLocation, TripSummary, TripTemplate } from '../../types';
 import { useAudio } from '../../hooks/useAudio';
+import { EndTripModal } from './EndTripModal';
 
 export function TripsView() {
   const navigate = useNavigate();
   const { playClick, playSuccess, playError } = useAudio();
-  const { trips, tripTemplates, addTrip, updateTrip, deleteTrip, addTripTemplate, deleteTripTemplate, showConfirm } = useAppContext();
+  const { trips, tripTemplates, addTrip, updateTrip, deleteTrip, addTripTemplate, deleteTripTemplate, showConfirm, addFinanceRecord } = useAppContext();
 
   const [activeTab, setActiveTab] = useState<'ongoing' | 'history'>('ongoing');
   
   // New Trip modal state
   const [showNewModal, setShowNewModal] = useState(false);
-  const [newTripMode, setNewTripMode] = useState<'tracking' | 'manual'>('tracking');
+  const [newTripMode, setNewTripMode] = useState<'tracking' | 'normal' | 'manual'>('tracking');
   const [openTemplateMenuId, setOpenTemplateMenuId] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [tripToEnd, setTripToEnd] = useState<TripSummary | null>(null);
   const [originCity, setOriginCity] = useState('');
   const [originDetail, setOriginDetail] = useState('');
   const [destCity, setDestCity] = useState('');
@@ -33,12 +35,17 @@ export function TripsView() {
   const finishedTrips = trips.filter(t => t.status === 'completed');
 
   const startTrip = () => {
-    if (!originCity || !destCity || !vehicle) {
+    let finalOriginCity = originCity;
+    if (newTripMode === 'tracking' && !originCity) {
+      finalOriginCity = "Lokasi Saat Ini";
+    }
+
+    if (!finalOriginCity || !destCity || !vehicle) {
       playError();
       alert("Kota asal, tujuan, dan kendaraan harus diisi!");
       return;
     }
-    const origin: TripLocation = { city: originCity, detail: originDetail };
+    const origin: TripLocation = { city: finalOriginCity, detail: originDetail };
     const destination: TripLocation = { city: destCity, detail: destDetail };
     
     if (saveAsTemplate) {
@@ -143,21 +150,56 @@ export function TripsView() {
   };
 
   const endTrip = (trip: TripSummary) => {
-    showConfirm(`Selesaikan perjalanan dari ${trip.origin.city} ke ${trip.destination.city}?`, () => {
-      updateTrip({
-        ...trip,
-        status: 'completed',
-        endTime: Date.now(),
-      });
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(registration => {
-          registration.getNotifications({ tag: `trip-${trip.id}` }).then(notifications => {
-            notifications.forEach(n => n.close());
-          });
+    setTripToEnd(trip);
+  };
+
+  const handleEndTrip = (tripId: string, details: { tollCost: number; fuelCost: number; conditions: string[]; receipts: { id: string; url: string; name: string }[] }) => {
+    const trip = trips.find(t => t.id === tripId);
+    if (!trip) return;
+
+    updateTrip({
+      ...trip,
+      status: 'completed',
+      endTime: Date.now(),
+      tollCost: details.tollCost,
+      fuelCost: details.fuelCost,
+      conditions: details.conditions,
+      receipts: details.receipts
+    });
+
+    // Auto-record costs to Finance
+    if (details.tollCost > 0 || details.fuelCost > 0) {
+      if (details.fuelCost > 0) {
+        addFinanceRecord({
+          id: Date.now().toString(),
+          amount: details.fuelCost,
+          type: 'expense',
+          category: 'Transport',
+          note: `Bensin ${trip.origin.city} - ${trip.destination.city}`,
+          createdAt: Date.now()
         });
       }
-      playSuccess();
-    }, false, 'Selesaikan');
+      if (details.tollCost > 0) {
+        addFinanceRecord({
+          id: (Date.now() + 1).toString(),
+          amount: details.tollCost,
+          type: 'expense',
+          category: 'Transport',
+          note: `Tol ${trip.origin.city} - ${trip.destination.city}`,
+          createdAt: Date.now() + 1
+        });
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.getNotifications({ tag: `trip-${trip.id}` }).then(notifications => {
+          notifications.forEach(n => n.close());
+        });
+      });
+    }
+    playSuccess();
+    setTripToEnd(null);
   };
 
   const formatDuration = (start: number, end: number) => {
@@ -403,35 +445,69 @@ export function TripsView() {
                     
                     <div className="space-y-2">
                       {routeTrips.map(trip => (
-                        <div key={trip.id} className="flex items-center justify-between p-3 bg-stone-50 border border-stone-100 rounded-xl group/item">
-                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-                            <div className="flex items-center gap-2 text-stone-700">
-                              <Car className="w-4 h-4 text-stone-400" />
-                              <span className="text-xs font-bold">{trip.vehicle}</span>
+                        <div key={trip.id} className="flex flex-col p-3 bg-stone-50 border border-stone-100 rounded-xl group/item">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                              <div className="flex items-center gap-2 text-stone-700">
+                                <Car className="w-4 h-4 text-stone-400" />
+                                <span className="text-xs font-bold">{trip.vehicle}</span>
+                              </div>
+                              <div className="hidden md:block w-px h-4 bg-stone-200"></div>
+                              <div className="text-xs text-stone-500 font-medium">
+                                {trip.origin.detail && <span className="mr-2">Dari: {trip.origin.detail}</span>}
+                                {trip.destination.detail && <span>Ke: {trip.destination.detail}</span>}
+                              </div>
                             </div>
-                            <div className="hidden md:block w-px h-4 bg-stone-200"></div>
-                            <div className="text-xs text-stone-500 font-medium">
-                              {trip.origin.detail && <span className="mr-2">Dari: {trip.origin.detail}</span>}
-                              {trip.destination.detail && <span>Ke: {trip.destination.detail}</span>}
+                            
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col text-right">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                                  {format(trip.startTime, 'HH:mm')} - {trip.endTime ? format(trip.endTime, 'HH:mm') : '?'}, {format(trip.startTime, 'd MMM yyyy', { locale: localeId })}
+                                </span>
+                                <span className="font-mono text-sm font-bold text-stone-900 mt-0.5">
+                                  {trip.endTime ? formatDuration(trip.startTime, trip.endTime) : '-'}
+                                </span>
+                              </div>
+                              <button 
+                                onClick={() => showConfirm("Hapus riwayat ini?", () => deleteTrip(trip.id))}
+                                className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover/item:opacity-100 shrink-0"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-4">
-                            <div className="flex flex-col text-right">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                                {format(trip.startTime, 'HH:mm')} - {trip.endTime ? format(trip.endTime, 'HH:mm') : '?'}, {format(trip.startTime, 'd MMM yyyy', { locale: localeId })}
-                              </span>
-                              <span className="font-mono text-sm font-bold text-stone-900 mt-0.5">
-                                {trip.endTime ? formatDuration(trip.startTime, trip.endTime) : '-'}
-                              </span>
+                          {/* Trip Details: Conditions, Costs, Receipts */}
+                          {(trip.conditions?.length || trip.tollCost || trip.fuelCost || trip.receipts?.length) ? (
+                            <div className="mt-3 pt-3 border-t border-stone-200 flex flex-wrap gap-4 items-start">
+                              {trip.conditions && trip.conditions.length > 0 && (
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {trip.conditions.map(c => (
+                                    <span key={c} className="px-2 py-0.5 bg-stone-200 text-stone-600 rounded text-[10px] font-bold uppercase tracking-widest">
+                                      {c}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {(trip.tollCost! > 0 || trip.fuelCost! > 0) && (
+                                <div className="flex gap-3 text-xs font-mono font-bold text-stone-600">
+                                  {trip.fuelCost! > 0 && <span>Bensin: {trip.fuelCost?.toLocaleString('id-ID')}</span>}
+                                  {trip.tollCost! > 0 && <span>Tol: {trip.tollCost?.toLocaleString('id-ID')}</span>}
+                                </div>
+                              )}
+
+                              {trip.receipts && trip.receipts.length > 0 && (
+                                <div className="flex gap-2">
+                                  {trip.receipts.map(r => (
+                                    <a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded shrink-0 overflow-hidden border border-stone-200 hover:opacity-80 transition-opacity">
+                                      <img src={r.url} alt="Struk" className="w-full h-full object-cover" />
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            <button 
-                              onClick={() => showConfirm("Hapus riwayat ini?", () => deleteTrip(trip.id))}
-                              className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors opacity-100 md:opacity-0 md:group-hover/item:opacity-100 shrink-0"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -475,20 +551,37 @@ export function TripsView() {
             
             <div className="flex gap-2 p-1 bg-stone-100 rounded-2xl w-full mb-6">
               <button
-                onClick={() => { playClick(); setNewTripMode('tracking'); }}
-                className={cn("flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", newTripMode === 'tracking' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
+                onClick={() => { 
+                  playClick(); 
+                  setNewTripMode('tracking');
+                  if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(() => {
+                      setOriginCity("Lokasi Saat Ini");
+                      setOriginDetail("");
+                    }, undefined, { enableHighAccuracy: true });
+                  } else {
+                    setOriginCity("Lokasi Otomatis");
+                  }
+                }}
+                className={cn("flex-1 py-2.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all", newTripMode === 'tracking' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
               >
                 Tracking
               </button>
               <button
-                onClick={() => { playClick(); setNewTripMode('manual'); }}
-                className={cn("flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", newTripMode === 'manual' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
+                onClick={() => { playClick(); setNewTripMode('normal'); }}
+                className={cn("flex-1 py-2.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all", newTripMode === 'normal' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
               >
-                Manual Log
+                Biasa
+              </button>
+              <button
+                onClick={() => { playClick(); setNewTripMode('manual'); }}
+                className={cn("flex-1 py-2.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all", newTripMode === 'manual' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
+              >
+                Riwayat Log
               </button>
             </div>
 
-            {tripTemplates.length > 0 && newTripMode === 'tracking' && (
+            {tripTemplates.length > 0 && newTripMode !== 'manual' && (
               <div className="mb-6">
                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">Dari Template Tersimpan</p>
                 <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
@@ -528,28 +621,24 @@ export function TripsView() {
                 <div className="space-y-1.5 flex flex-col">
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Asal *</label>
-                    {newTripMode === 'tracking' && (
-                      <button 
-                        onClick={() => {
-                          if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(() => {
-                              setOriginCity("Lokasi Saat Ini");
-                              setOriginDetail("");
-                            }, undefined, { enableHighAccuracy: true });
-                          }
-                        }} 
-                        className="text-[9px] text-teal-600 font-bold hover:underline"
-                        title="Gunakan GPS"
-                      >
-                        Lacak Otomatis
-                      </button>
-                    )}
                   </div>
-                  <input type="text" value={originCity} onChange={e => setOriginCity(e.target.value)} placeholder="Ciamis" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
+                  {newTripMode === 'tracking' ? (
+                    <div className="w-full p-2.5 bg-teal-50 border border-teal-200 rounded-xl text-sm font-bold text-teal-700 flex items-center gap-2">
+                       <MapPin className="w-4 h-4" /> Lokasi GPS Saat Ini
+                    </div>
+                  ) : (
+                    <input type="text" value={originCity} onChange={e => setOriginCity(e.target.value)} placeholder="Ciamis" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
+                  )}
                 </div>
                 <div className="space-y-1.5 flex flex-col justify-end">
                   <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="lowercase font-normal">(opsional)</span></label>
-                  <input type="text" value={originDetail} onChange={e => setOriginDetail(e.target.value)} placeholder="Rumah" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
+                  {newTripMode === 'tracking' ? (
+                    <div className="w-full p-2.5 bg-stone-100 border border-stone-200 rounded-xl text-sm font-medium text-stone-500 cursor-not-allowed">
+                       (Otomatis)
+                    </div>
+                  ) : (
+                    <input type="text" value={originDetail} onChange={e => setOriginDetail(e.target.value)} placeholder="Rumah" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
+                  )}
                 </div>
               </div>
 
@@ -620,6 +709,12 @@ export function TripsView() {
           </div>
         </div>
       )}
+
+      <EndTripModal 
+        trip={tripToEnd} 
+        onClose={() => setTripToEnd(null)} 
+        onEndTrip={handleEndTrip} 
+      />
     </div>
   );
 }

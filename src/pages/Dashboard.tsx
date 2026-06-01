@@ -1,7 +1,7 @@
 import { format, differenceInMinutes, differenceInHours } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
-import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X, TrendingUp, Map, Car, Square, Download } from 'lucide-react';
+import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X, TrendingUp, Map, Car, Square, Download, Navigation } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
@@ -9,12 +9,15 @@ import { db } from '../lib/firebase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAudio } from '../hooks/useAudio';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { EndTripModal } from '../components/notes/EndTripModal';
+import { TripSummary } from '../types';
 
 export function Dashboard() {
   const { playSuccess, playClick } = useAudio();
-  const { notes, financeRecords, docs, specials, missedPrayers, trips, updateTrip, showConfirm, loading, hideAmounts } = useAppContext();
+  const { notes, financeRecords, docs, specials, missedPrayers, trips, updateTrip, showConfirm, loading, hideAmounts, addFinanceRecord } = useAppContext();
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
   const { isInstallable, installPWA } = usePWAInstall();
+  const [tripToEnd, setTripToEnd] = useState<TripSummary | null>(null);
 
   const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
 
@@ -33,21 +36,55 @@ export function Dashboard() {
   const ongoingTrips = trips.filter(t => t.status === 'ongoing');
 
   const endTrip = (trip: any) => {
-    showConfirm(`Selesaikan perjalanan dari ${trip.origin.city} ke ${trip.destination.city}?`, () => {
-      updateTrip({
-        ...trip,
-        status: 'completed',
-        endTime: Date.now(),
-      });
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(registration => {
-          registration.getNotifications({ tag: `trip-${trip.id}` }).then(notifications => {
-            notifications.forEach(n => n.close());
-          });
+    setTripToEnd(trip);
+  };
+
+  const handleEndTrip = (tripId: string, details: { tollCost: number; fuelCost: number; conditions: string[]; receipts: { id: string; url: string; name: string }[] }) => {
+    const trip = trips.find(t => t.id === tripId);
+    if (!trip) return;
+
+    updateTrip({
+      ...trip,
+      status: 'completed',
+      endTime: Date.now(),
+      tollCost: details.tollCost,
+      fuelCost: details.fuelCost,
+      conditions: details.conditions,
+      receipts: details.receipts
+    });
+
+    if (details.tollCost > 0 || details.fuelCost > 0) {
+      if (details.fuelCost > 0) {
+        addFinanceRecord({
+          id: Date.now().toString(),
+          amount: details.fuelCost,
+          type: 'expense',
+          category: 'Transport',
+          note: `Bensin ${trip.origin.city} - ${trip.destination.city}`,
+          createdAt: Date.now()
         });
       }
-      playSuccess();
-    }, false, 'Selesaikan');
+      if (details.tollCost > 0) {
+        addFinanceRecord({
+          id: (Date.now() + 1).toString(),
+          amount: details.tollCost,
+          type: 'expense',
+          category: 'Transport',
+          note: `Tol ${trip.origin.city} - ${trip.destination.city}`,
+          createdAt: Date.now() + 1
+        });
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.getNotifications({ tag: `trip-${trip.id}` }).then(notifications => {
+          notifications.forEach(n => n.close());
+        });
+      });
+    }
+    playSuccess();
+    setTripToEnd(null);
   };
 
   const formatDuration = (start: number) => {
@@ -121,10 +158,25 @@ export function Dashboard() {
 
               <div className="space-y-1 mb-6">
                 <p className="text-[10px] font-black uppercase tracking-widest text-teal-600/70">Asal &amp; Tujuan</p>
-                <p className="font-serif text-3xl font-black text-teal-950 leading-tight">
-                  {trip.origin.city} &rarr; {trip.destination.city}
-                </p>
-                <div className="text-sm font-medium text-teal-800 flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif text-3xl font-black text-teal-950 leading-tight truncate">
+                      {trip.origin.city}
+                    </p>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center relative px-2">
+                    <div className="w-full h-1.5 bg-teal-200/50 rounded-full overflow-hidden relative">
+                      <div className="absolute inset-0 bg-teal-500 rounded-full animate-[slideRight_3s_ease-in-out_infinite]" style={{ width: '30%' }}></div>
+                    </div>
+                    <Navigation className="w-5 h-5 text-teal-700 absolute text-center animate-[slideRightIcon_3s_ease-in-out_infinite] rotate-90" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-right">
+                    <p className="font-serif text-3xl font-black text-teal-950 leading-tight truncate">
+                      {trip.destination.city}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-sm font-medium text-teal-800 flex items-center gap-2 mt-4">
                   <Car className="w-4 h-4" /> {trip.vehicle}
                 </div>
               </div>
@@ -265,6 +317,12 @@ export function Dashboard() {
           </div>
         </div>
       </section>
+
+      <EndTripModal 
+        trip={tripToEnd} 
+        onClose={() => setTripToEnd(null)} 
+        onEndTrip={handleEndTrip} 
+      />
     </div>
   );
 }
