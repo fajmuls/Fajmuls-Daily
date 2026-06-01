@@ -17,12 +17,15 @@ export function TripsView() {
   
   // New Trip modal state
   const [showNewModal, setShowNewModal] = useState(false);
+  const [newTripMode, setNewTripMode] = useState<'tracking' | 'manual'>('tracking');
   const [originCity, setOriginCity] = useState('');
   const [originDetail, setOriginDetail] = useState('');
   const [destCity, setDestCity] = useState('');
   const [destDetail, setDestDetail] = useState('');
   const [vehicle, setVehicle] = useState('Mobil');
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [manualStartTime, setManualStartTime] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+  const [manualEndTime, setManualEndTime] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
 
   const ongoingTrips = trips.filter(t => t.status === 'ongoing');
   const finishedTrips = trips.filter(t => t.status === 'completed');
@@ -54,46 +57,71 @@ export function TripsView() {
       }
     }
 
-    const newTrip = {
-      id: Date.now().toString(),
-      origin,
-      destination,
-      vehicle,
-      status: 'ongoing',
-      startTime: Date.now(),
-      createdAt: Date.now(),
-    } as TripSummary;
+    if (newTripMode === 'manual') {
+      const startT = new Date(manualStartTime).getTime();
+      const endT = new Date(manualEndTime).getTime();
+      if (endT <= startT) {
+        playError();
+        alert("Waktu selesai harus lebih besar dari waktu mulai.");
+        return;
+      }
+      addTrip({
+        id: Date.now().toString(),
+        origin,
+        destination,
+        vehicle,
+        status: 'completed',
+        startTime: startT,
+        endTime: endT,
+        createdAt: Date.now(),
+      } as TripSummary);
+      playSuccess();
+      setShowNewModal(false);
+      setActiveTab('history');
+    } else {
+      const newTrip = {
+        id: Date.now().toString(),
+        origin,
+        destination,
+        vehicle,
+        status: 'ongoing',
+        startTime: Date.now(),
+        createdAt: Date.now(),
+      } as TripSummary;
 
-    addTrip(newTrip);
+      addTrip(newTrip);
 
-    if ('Notification' in window && 'serviceWorker' in navigator) {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification('Perjalanan Sedang Berlangsung', {
-              body: `Dari ${origin.city} ke ${destination.city}`,
-              icon: '/icon-192.png',
-              tag: `trip-${newTrip.id}`,
-              requireInteraction: true,
-              data: { tripId: newTrip.id },
-              actions: [
-                { action: 'end-trip', title: 'Selesaikan' }
-              ]
+      if ('Notification' in window && 'serviceWorker' in navigator) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            navigator.serviceWorker.ready.then(registration => {
+              registration.showNotification(`Perjalanan ke ${destination.city}`, {
+                body: `Sedang tracking dari ${origin.city}...`,
+                icon: '/icon-192.png',
+                tag: `trip-${newTrip.id}`,
+                requireInteraction: true,
+                data: { tripId: newTrip.id },
+                actions: [
+                  { action: 'end-trip', title: 'Selesaikan' }
+                ]
+              });
             });
-          });
-        }
-      });
-    }
+          }
+        });
+      }
 
-    playSuccess();
-    setShowNewModal(false);
-    setActiveTab('ongoing');
+      playSuccess();
+      setShowNewModal(false);
+      setActiveTab('ongoing');
+    }
     
     // reset form
     setOriginCity(''); setOriginDetail('');
     setDestCity(''); setDestDetail('');
     setSaveAsTemplate(false);
     setVehicle('Mobil');
+    setManualStartTime(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+    setManualEndTime(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   };
 
   const reverseLocations = () => {
@@ -356,13 +384,28 @@ export function TripsView() {
       )}
 
       {showNewModal && (
-        <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex justify-center items-end md:items-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 md:p-8 animate-in slide-in-from-bottom-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex justify-center items-start pt-[10vh] md:items-center md:pt-0 p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 md:p-8 animate-in slide-in-from-bottom-8 relative max-h-[85vh] overflow-y-auto custom-scrollbar shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-serif text-2xl font-black">Perjalanan Baru</h2>
             </div>
             
-            {tripTemplates.length > 0 && (
+            <div className="flex gap-2 p-1 bg-stone-100 rounded-2xl w-full mb-6">
+              <button
+                onClick={() => { playClick(); setNewTripMode('tracking'); }}
+                className={cn("flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", newTripMode === 'tracking' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
+              >
+                Tracking
+              </button>
+              <button
+                onClick={() => { playClick(); setNewTripMode('manual'); }}
+                className={cn("flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", newTripMode === 'manual' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
+              >
+                Manual Log
+              </button>
+            </div>
+
+            {tripTemplates.length > 0 && newTripMode === 'tracking' && (
               <div className="mb-6">
                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">Dari Template Tersimpan</p>
                 <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
@@ -386,11 +429,29 @@ export function TripsView() {
 
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Asal *</label>
+                <div className="space-y-1.5 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Asal *</label>
+                    {newTripMode === 'tracking' && (
+                      <button 
+                        onClick={() => {
+                          if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(() => {
+                              setOriginCity("Lokasi Saat Ini");
+                              setOriginDetail("");
+                            }, undefined, { enableHighAccuracy: true });
+                          }
+                        }} 
+                        className="text-[9px] text-teal-600 font-bold hover:underline"
+                        title="Gunakan GPS"
+                      >
+                        Lacak Otomatis
+                      </button>
+                    )}
+                  </div>
                   <input type="text" value={originCity} onChange={e => setOriginCity(e.target.value)} placeholder="Ciamis" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 flex flex-col justify-end">
                   <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="lowercase font-normal">(opsional)</span></label>
                   <input type="text" value={originDetail} onChange={e => setOriginDetail(e.target.value)} placeholder="Rumah" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
                 </div>
@@ -417,6 +478,19 @@ export function TripsView() {
                 </div>
               </div>
 
+              {newTripMode === 'manual' && (
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Waktu Mulai *</label>
+                    <input type="datetime-local" value={manualStartTime} onChange={e => setManualStartTime(e.target.value)} className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-xs font-bold font-mono" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Waktu Selesai *</label>
+                    <input type="datetime-local" value={manualEndTime} onChange={e => setManualEndTime(e.target.value)} className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-xs font-bold font-mono" />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2 pt-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kendaraan *</label>
                 <div className="flex gap-2">
@@ -428,20 +502,22 @@ export function TripsView() {
                 </div>
               </div>
 
-              <label className="flex items-center gap-3 pt-2 cursor-pointer group">
-                <div className={cn("w-5 h-5 rounded border flex items-center justify-center transition-all", saveAsTemplate ? "bg-teal-500 border-teal-500" : "bg-white border-stone-300 group-hover:border-teal-400")}>
-                  {saveAsTemplate && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                </div>
-                <span className="text-xs font-bold text-stone-700">Simpan sebagai template</span>
-                <input type="checkbox" className="hidden" checked={saveAsTemplate} onChange={e => setSaveAsTemplate(e.target.checked)} />
-              </label>
+              {newTripMode === 'tracking' && (
+                <label className="flex items-center gap-3 pt-2 cursor-pointer group w-fit">
+                  <div className={cn("w-5 h-5 rounded border flex items-center justify-center transition-all", saveAsTemplate ? "bg-teal-500 border-teal-500" : "bg-white border-stone-300 group-hover:border-teal-400")}>
+                    {saveAsTemplate && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                  </div>
+                  <span className="text-xs font-bold text-stone-700">Simpan sebagai template</span>
+                  <input type="checkbox" className="hidden" checked={saveAsTemplate} onChange={e => setSaveAsTemplate(e.target.checked)} />
+                </label>
+              )}
 
               <div className="flex gap-3 pt-4 border-t border-stone-100 mt-2">
                 <button onClick={() => { playClick(); setShowNewModal(false); }} className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors">
                   Batal
                 </button>
                 <button onClick={startTrip} className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest bg-teal-600 hover:bg-teal-700 text-white transition-colors flex items-center justify-center gap-2 shadow-md">
-                  <Play className="w-4 h-4 fill-white" /> Mulai
+                  <Play className="w-4 h-4 fill-white" /> {newTripMode === 'tracking' ? 'Mulai Tracking' : 'Simpan Log'}
                 </button>
               </div>
             </div>
