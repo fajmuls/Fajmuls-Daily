@@ -7,6 +7,7 @@ import { ArrowLeft, Trash2, Save, ShieldCheck, Plus, X, Copy, ClipboardPaste } f
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 import { encryptText, decryptText } from '../../lib/crypto';
+import { PinLock } from './PinLock';
 
 export function PersonalNoteView() {
   const { id } = useParams();
@@ -137,6 +138,7 @@ export function PersonalNoteView() {
   };
 
   return (
+    <PinLock>
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
         <button onClick={() => { playClick(); navigate('/notes/personal-list'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
@@ -242,5 +244,6 @@ export function PersonalNoteView() {
         </div>
       </div>
     </div>
+    </PinLock>
   );
 }

@@ -2740,11 +2740,137 @@ export function Finance() {
               </div>
             </div>
           </div>
+
+          {/* Drilldown List */}
+          {highlightedCategory && (
+            <div className="bg-paper rounded-[2.5rem] border-2 border-stone-900 p-6 md:p-8 shadow-sm flex flex-col mt-8 animate-in slide-in-from-bottom-4 duration-500">
+              <header className="w-full flex justify-between items-center mb-6 border-b border-stone-200 pb-4">
+                <h3 className="font-serif text-xl font-bold flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                     <ListFilter className="w-4 h-4" />
+                  </div>
+                  <span>Rincian Transaksi: <span className="text-indigo-600">{highlightedCategory}</span></span>
+                </h3>
+                <button
+                  onClick={() => setHighlightedCategory(null)}
+                  className="p-2 border border-stone-200 rounded-full text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </header>
+              <div className="space-y-3">
+                {filteredRecords
+                  .filter((r) => {
+                    if (highlightedCategory === "Lainnya") {
+                      // Filter for "Lainnya" categories for BOTH income and expense
+                      const inExpenseMain = expenseData.some(d => d.name === r.category && parseFloat(d.displayPercent) >= 3);
+                      const inIncomeMain = incomeData.some(d => d.name === r.category && parseFloat(d.displayPercent) >= 3);
+                      return !inExpenseMain && !inIncomeMain;
+                    }
+                    return r.category === highlightedCategory;
+                  })
+                  .map((record) => {
+                    const pref = financeCategoryPrefs[record.category];
+                    const iconName = pref?.iconName || getCategoryIcon(record.category, record.type);
+                    const Icon = (LucideIcons as any)[iconName] || DollarSign;
+                    const catColor = pref?.color || getCategoryColor(record.category, record.type);
+
+                    return (
+                      <div
+                        key={record.id}
+                        className="bg-white border border-stone-100 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow group cursor-pointer"
+                        onClick={() => {
+                          setEditingRecord(record);
+                          setAmount(record.amount.toString());
+                          setCategory(record.category);
+                          setNote(record.note || "");
+                          setShowAddModal(true);
+                        }}
+                      >
+                         <div className="flex items-center gap-4">
+                          <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform"
+                            style={{ backgroundColor: catColor }}
+                          >
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-stone-900 text-sm">
+                              {record.note || "Tanpa keterangan"}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                               <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest bg-stone-100 px-2 py-0.5 rounded-full">
+                                {record.category}
+                              </p>
+                              <span className="text-[10px] text-stone-400 font-medium">
+                                {format(record.createdAt, "d MMM yyyy", { locale: id })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p
+                            className={cn(
+                              "font-black tracking-tighter text-base",
+                              record.type === "income" ? "text-green-600" : "text-stone-900"
+                            )}
+                          >
+                            {record.type === "income" ? "+" : "-"} Rp {record.amount.toLocaleString("id-ID")}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {activeTab === "planning" && (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+          
+          {/* Smart Budgeting 50/30/20 */}
+          {(() => {
+             const avgIncome = financeRecords.filter(r => r.type === "income").reduce((acc, r) => acc + r.amount, 0) || 0;
+             const rule50 = avgIncome * 0.50;
+             const rule30 = avgIncome * 0.30;
+             const rule20 = avgIncome * 0.20;
+
+             return (
+              <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 p-6 md:p-8 rounded-[2.5rem] shadow-brutal border-4 border-indigo-900 relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-8 opacity-[0.05] scale-150 rotate-12 transition-transform group-hover:rotate-0 pointer-events-none">
+                    <TrendingUp className="w-48 h-48 text-indigo-200" />
+                 </div>
+                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
+                    <div className="flex-1">
+                       <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-800/50 text-indigo-200 text-[10px] font-black uppercase tracking-widest rounded-full mb-4">
+                         ✨ AI Assistant
+                       </span>
+                       <h3 className="font-serif text-3xl font-bold text-white mb-2">Smart Budgeting</h3>
+                       <p className="text-indigo-200/80 font-medium text-sm max-w-sm leading-relaxed">
+                         Berdasarkan total pendapatanmu (Rp {avgIncome.toLocaleString('id-ID')}), berikut adalah rekomendasi alokasi ideal menggunakan The 50/30/20 Rule:
+                       </p>
+                    </div>
+                    <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
+                       <div className="bg-indigo-800/30 border border-indigo-700/50 rounded-2xl p-4">
+                          <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-1">Kebutuhan (50%)</p>
+                          <p className="font-mono text-white text-base md:text-lg font-bold">Rp {rule50.toLocaleString('id-ID')}</p>
+                       </div>
+                       <div className="bg-indigo-800/30 border border-indigo-700/50 rounded-2xl p-4">
+                          <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-1">Keinginan (30%)</p>
+                          <p className="font-mono text-white text-base md:text-lg font-bold">Rp {rule30.toLocaleString('id-ID')}</p>
+                       </div>
+                       <div className="bg-indigo-800/30 border border-indigo-700/50 rounded-2xl p-4">
+                          <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-1">Tabungan (20%)</p>
+                          <p className="font-mono text-white text-base md:text-lg font-bold">Rp {rule20.toLocaleString('id-ID')}</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+             );
+          })()}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <section className="bg-paper p-8 rounded-[2.5rem] border border-stone-200 shadow-sm space-y-8 flex flex-col">
               <div className="flex items-center justify-between">

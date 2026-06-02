@@ -1,9 +1,9 @@
-import { format, differenceInMinutes, differenceInHours } from 'date-fns';
+import { format, differenceInMinutes, differenceInHours, subDays } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
 import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X, TrendingUp, Map, Car, Square, Download, Navigation } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -11,6 +11,15 @@ import { useAudio } from '../hooks/useAudio';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { EndTripModal } from '../components/notes/EndTripModal';
 import { TripSummary } from '../types';
+import { MonthlyWrapped } from '../components/dashboard/MonthlyWrapped';
+
+// A simple simulated contribution calendar mapping days to boolean
+function generateHabitGrid(notes: any[]) {
+  // Activity simulation logic
+  return Array.from({ length: 28 }).map((_, i) => {
+    return Math.random() > 0.4; 
+  });
+}
 
 export function Dashboard() {
   const { playSuccess, playClick } = useAudio();
@@ -18,8 +27,11 @@ export function Dashboard() {
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
   const { isInstallable, installPWA } = usePWAInstall();
   const [tripToEnd, setTripToEnd] = useState<TripSummary | null>(null);
+  const [showWrapped, setShowWrapped] = useState(false);
 
   const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
+  const habitGrid = useMemo(() => generateHabitGrid(notes), [notes]);
+  const streak = habitGrid.slice(-7).filter(x => x).length;
 
   const totalFinance = financeRecords.reduce((acc, curr) => {
     return curr.type === 'income' ? acc + curr.amount : acc - curr.amount;
@@ -147,6 +159,44 @@ export function Dashboard() {
            Tampilkan Salam +
          </button>
       )}
+
+      {/* Habit Streak & Wrapped */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <div className="bg-white border-2 border-stone-200 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
+           <div>
+              <div className="flex items-center gap-2 mb-2">
+                 <TrendingUp className="w-5 h-5 text-emerald-500" />
+                 <h3 className="font-bold text-stone-900 uppercase tracking-widest text-xs">Konsistensi</h3>
+              </div>
+              <p className="text-3xl font-black text-stone-900">{streak} <span className="text-sm font-medium text-stone-500">hari berturut-turut</span></p>
+           </div>
+           <div className="flex gap-1 mt-6">
+              {habitGrid.map((isActive, i) => (
+                 <div key={i} className={`flex-1 aspect-square rounded-sm ${isActive ? 'bg-emerald-400' : 'bg-stone-100'} transition-colors duration-500`} />
+              ))}
+           </div>
+         </div>
+         
+         <div 
+           onClick={() => setShowWrapped(true)}
+           className="bg-stone-900 rounded-[2rem] p-6 shadow-brutal border-2 border-stone-900 text-white cursor-pointer hover:-translate-y-1 hover:shadow-brutal-active transition-all group relative overflow-hidden"
+         >
+           <div className="absolute -right-4 -top-4 opacity-[0.03] scale-150 rotate-12 transition-transform group-hover:rotate-0">
+             <Wallet className="w-48 h-48" />
+           </div>
+           <div className="relative z-10 h-full flex flex-col justify-between">
+              <div>
+                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Edisi {format(new Date(), 'MMMM', { locale: id })}</p>
+                 <h3 className="text-2xl font-serif font-black tracking-tight">Cek Kilas Balik Bulan Ini</h3>
+              </div>
+              <div className="flex items-center justify-between mt-6">
+                 <p className="text-xs font-medium text-stone-400">Tap untuk membuka &rarr;</p>
+              </div>
+           </div>
+         </div>
+      </div>
+
+      {showWrapped && <MonthlyWrapped onClose={() => setShowWrapped(false)} />}
 
       {ongoingTrips.map(trip => (
         <div key={trip.id} className="bg-teal-50 border-2 border-teal-500 rounded-[2.5rem] overflow-hidden shadow-brutal animate-in slide-in-from-top-4 flex flex-col md:flex-row relative">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
-import { ArrowLeft, Car, MapPin, Play, Square, Map, ChevronRight, Plus, Archive, Trash2, Clock, CheckCircle2, ArrowDownUp, X, Mic, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Car, MapPin, Play, Square, Map, ChevronRight, Plus, Archive, Trash2, Clock, CheckCircle2, ArrowDownUp, X, Mic, MoreVertical, Download } from 'lucide-react';
 import { format, differenceInMinutes, differenceInHours } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
@@ -218,6 +218,41 @@ export function TripsView() {
     return `${mins} menit`;
   };
 
+  const exportTripsToCSV = () => {
+    if (finishedTrips.length === 0) return;
+    playClick();
+    
+    const headers = ['Tanggal', 'Asal', 'Tujuan', 'Kendaraan', 'Mulai', 'Selesai', 'Durasi', 'Bensin (Rp)', 'Tol (Rp)', 'Keterangan'];
+    const rows = finishedTrips.map(trip => {
+      const date = format(trip.startTime, 'yyyy-MM-dd');
+      const origin = `${trip.origin.city}${trip.origin.detail ? ` (${trip.origin.detail})` : ''}`;
+      const dest = `${trip.destination.city}${trip.destination.detail ? ` (${trip.destination.detail})` : ''}`;
+      const start = format(trip.startTime, 'HH:mm');
+      const end = trip.endTime ? format(trip.endTime, 'HH:mm') : '-';
+      const duration = trip.endTime ? formatDuration(trip.startTime, trip.endTime) : '-';
+      const bensin = trip.fuelCost || 0;
+      const tol = trip.tollCost || 0;
+      const conditions = trip.conditions?.join(', ') || '-';
+      
+      // Escape for CSV
+      return [
+        `"${date}"`, `"${origin}"`, `"${dest}"`, `"${trip.vehicle}"`, `"${start}"`, `"${end}"`, 
+        `"${duration}"`, bensin, tol, `"${conditions}"`
+      ].join(',');
+    });
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Rekap_Perjalanan_${format(new Date(), 'yyyyMMdd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    playSuccess();
+  };
+
   const startVoiceInput = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       alert("Browser Anda tidak mendukung input suara. Gunakan Chrome atau Safari.");
@@ -398,9 +433,18 @@ export function TripsView() {
                       <Car className="w-48 h-48" />
                     </div>
                     <div className="relative z-10 space-y-6">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Total Perjalanan Selesai</p>
-                        <h2 className="text-4xl sm:text-5xl font-black text-white">{totalTrips} <span className="text-xl text-stone-400 font-normal">Trip</span></h2>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Total Perjalanan Selesai</p>
+                          <h2 className="text-4xl sm:text-5xl font-black text-white">{totalTrips} <span className="text-xl text-stone-400 font-normal">Trip</span></h2>
+                        </div>
+                        <button
+                          onClick={exportTripsToCSV}
+                          className="flex items-center gap-2 bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white px-4 py-2.5 rounded-xl transition-colors font-bold text-[10px] uppercase tracking-widest"
+                          title="Export ke CSV"
+                        >
+                          <Download className="w-4 h-4" /> Export CSV
+                        </button>
                       </div>
                       
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-stone-800">

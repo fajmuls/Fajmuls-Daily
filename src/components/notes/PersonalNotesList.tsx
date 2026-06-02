@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { decryptText } from '../../lib/crypto';
+import { PinLock } from './PinLock';
 
 export function PersonalNotesList() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export function PersonalNotesList() {
   };
 
   return (
+    <PinLock>
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
         <button onClick={() => { playClick(); navigate('/notes'); }} className="p-3 bg-paper rounded-full border border-stone-200 hover:bg-stone-50 transition-colors">
@@ -136,5 +138,6 @@ export function PersonalNotesList() {
         </div>
       )}
     </div>
+    </PinLock>
   );
 }
