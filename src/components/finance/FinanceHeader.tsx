@@ -19,6 +19,7 @@ interface FinanceHeaderProps {
   formatCurrency: (amount: number) => string;
   currency: string;
   setCurrency: (val: any) => void;
+  healthScore: number;
 }
 
 export function FinanceHeader({
@@ -36,8 +37,15 @@ export function FinanceHeader({
   totalExpense,
   formatCurrency,
   currency,
-  setCurrency
+  setCurrency,
+  healthScore
 }: FinanceHeaderProps) {
+  const getHealthColor = (score: number) => {
+    if (score > 80) return "text-emerald-400";
+    if (score > 50) return "text-yellow-400";
+    return "text-rose-400";
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-stone-200 pb-6">
@@ -104,7 +112,19 @@ export function FinanceHeader({
         <div className="flex justify-between items-start mb-2 relative z-10">
           <p className="text-stone-400 uppercase tracking-widest text-[10px] font-bold mt-2">Saldo Tersedia</p>
           <div className="flex gap-2">
-            <div className="p-1 px-4 bg-white/10 rounded-2xl flex items-center gap-2 backdrop-blur-sm">
+            <div className="p-1 px-4 bg-white/10 rounded-2xl flex flex-col items-end backdrop-blur-sm">
+              <span className="text-[8px] font-black uppercase tracking-tighter text-white/50">Health Score</span>
+              <div className="flex items-center gap-2">
+                <span className={cn("text-sm font-black", getHealthColor(healthScore))}>{healthScore}%</span>
+                <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className={cn("h-full", healthScore > 80 ? "bg-emerald-400" : healthScore > 50 ? "bg-yellow-400" : "bg-rose-400")}
+                    style={{ width: `${healthScore}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="p-1 px-4 bg-white/10 rounded-2xl flex items-center gap-2 backdrop-blur-sm h-fit">
               <div className={cn("w-2 h-2 rounded-full", balance >= 0 ? "bg-green-400" : "bg-red-400 animate-pulse")} />
               <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">{balance >= 0 ? "Surplus" : "Defisit"}</span>
             </div>

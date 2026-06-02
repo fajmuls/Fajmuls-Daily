@@ -2,7 +2,7 @@ import React, { useState, useMemo, FormEvent, useEffect } from "react";
 import { format, isSameDay, addMonths, subMonths } from "date-fns";
 import { id } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus, X, Save, Calculator, Tag, Calendar, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Plus, Minus, X, Save, Calculator, Tag, Calendar, ChevronLeft, ChevronRight, Search, Camera, Repeat, Loader2 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "../lib/utils";
@@ -29,6 +29,9 @@ export function AddFinanceModal({
   const [type, setType] = useState<"income" | "expense">(initialRecord ? initialRecord.type : "expense");
   const [selectedIcon, setSelectedIcon] = useState(initialRecord && initialRecord.iconName ? initialRecord.iconName : "Tag");
   const [addRecordDate, setAddRecordDate] = useState<Date>(initialRecord ? new Date(initialRecord.createdAt) : new Date());
+  const [isRecurring, setIsRecurring] = useState(initialRecord && !!initialRecord.recurring);
+  const [recurringFreq, setRecurringFreq] = useState<"daily" | "weekly" | "monthly" | "yearly">(initialRecord?.recurring?.frequency || "monthly");
+  const [isScanning, setIsScanning] = useState(false);
   
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCategoryPopup, setShowCategoryPopup] = useState(false);
@@ -36,7 +39,9 @@ export function AddFinanceModal({
   const [calendarView, setCalendarView] = useState(new Date());
   const [lastInitialRecord, setLastInitialRecord] = useState<any>(null);
   const [catSearch, setCatSearch] = useState("");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const lastPlayTime = React.useRef(0);
+
   const playClickSurgically = () => {
     const now = Date.now();
     if (now - lastPlayTime.current > 120) {
@@ -53,9 +58,45 @@ export function AddFinanceModal({
       setType(initialRecord ? initialRecord.type : "expense");
       setSelectedIcon(initialRecord && initialRecord.iconName ? initialRecord.iconName : "Tag");
       setAddRecordDate(initialRecord ? new Date(initialRecord.createdAt) : new Date());
+      setIsRecurring(initialRecord && !!initialRecord.recurring);
+      setRecurringFreq(initialRecord?.recurring?.frequency || "monthly");
       setLastInitialRecord(initialRecord);
     }
   }, [isOpen, initialRecord, lastInitialRecord]);
+
+  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsScanning(true);
+    playClickSurgically();
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64String = reader.result as string;
+        const response = await fetch('/api/ai/receipt-parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            image: base64String,
+            categories: Object.values(financeMappings).flat()
+          })
+        });
+        const data = await response.json();
+        if (data.amount) setExpression(data.amount.toString());
+        if (data.category) setCategory(data.category);
+        if (data.note) setNote(data.note);
+        if (data.date) setAddRecordDate(new Date(data.date));
+        playSuccess();
+      };
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const daysInMonth = Array.from(
     { length: new Date(calendarView.getFullYear(), calendarView.getMonth() + 1, 0).getDate() },
@@ -108,7 +149,7 @@ export function AddFinanceModal({
 
     const parentCategory = categoryToGroup[category] || "";
 
-    addFinanceRecord({
+    const recordData: any = {
       id: initialRecord ? initialRecord.id : uuidv4(),
       amount: evaluatedValue,
       category,
@@ -117,12 +158,22 @@ export function AddFinanceModal({
       type,
       createdAt: addRecordDate.getTime(),
       iconName: selectedIcon,
-    });
+    };
+
+    if (isRecurring) {
+      recordData.recurring = {
+        frequency: recurringFreq,
+        nextDate: addMonths(addRecordDate, recurringFreq === 'monthly' ? 1 : recurringFreq === 'yearly' ? 12 : 1).getTime() // Simple logic for now
+      };
+    }
+
+    addFinanceRecord(recordData);
 
     setExpression("");
     setCategory("");
     setNote("");
     setSelectedIcon("Tag");
+    setIsRecurring(false);
     setShowAddModalWrapper(false);
     playSuccess();
   };
@@ -181,9 +232,27 @@ export function AddFinanceModal({
                <h3 className="font-serif text-2xl font-bold text-stone-900">
                  {initialRecord ? "Ubah Catatan" : "Tambah Catatan"}
                </h3>
-               <button onClick={() => setShowAddModalWrapper(false)} className="p-2 hover:bg-white rounded-xl transition-all shadow-sm">
-                 <X className="w-5 h-5 text-stone-500" />
-               </button>
+               <div className="flex items-center gap-2">
+                 <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleScanReceipt}
+                 />
+                 <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isScanning}
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-indigo-200 disabled:opacity-50"
+                  title="Scan Struk dengan AI"
+                 >
+                   {isScanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+                   {isScanning ? "Scanning..." : "Scan Struk"}
+                 </button>
+                 <button onClick={() => setShowAddModalWrapper(false)} className="p-2 hover:bg-white rounded-xl transition-all shadow-sm">
+                   <X className="w-5 h-5 text-stone-500" />
+                 </button>
+               </div>
              </div>
              
              {/* Modal Form Content */}
@@ -248,6 +317,43 @@ export function AddFinanceModal({
                          type === "income" ? "bg-white text-emerald-600" : "bg-stone-300 text-stone-600"
                        )}>+</span>
                        <span>Masuk</span>
+                     </button>
+                   </div>
+                 </div>
+
+                 {/* Recurring Option */}
+                 <div className="p-3 bg-stone-50 border border-stone-200 rounded-2xl flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                     <div className={cn("p-2 rounded-lg", isRecurring ? "bg-indigo-100 text-indigo-600" : "bg-stone-200 text-stone-500")}>
+                       <Repeat className="w-4 h-4" />
+                     </div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Transaksi Rutin</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     {isRecurring && (
+                       <select 
+                        value={recurringFreq}
+                        onChange={(e: any) => setRecurringFreq(e.target.value)}
+                        className="bg-white border border-stone-200 rounded-lg text-[10px] font-black px-2 py-1 outline-none"
+                       >
+                         <option value="daily">Harian</option>
+                         <option value="weekly">Mingguan</option>
+                         <option value="monthly">Bulanan</option>
+                         <option value="yearly">Tahunan</option>
+                       </select>
+                     )}
+                     <button 
+                      type="button"
+                      onClick={() => setIsRecurring(!isRecurring)}
+                      className={cn(
+                        "w-10 h-6 rounded-full relative transition-all",
+                        isRecurring ? "bg-indigo-600" : "bg-stone-300"
+                      )}
+                     >
+                       <div className={cn(
+                         "w-4 h-4 bg-white rounded-full absolute top-1 transition-all",
+                         isRecurring ? "right-1" : "left-1"
+                       )} />
                      </button>
                    </div>
                  </div>

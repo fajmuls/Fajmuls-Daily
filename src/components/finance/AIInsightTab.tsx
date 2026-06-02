@@ -63,9 +63,13 @@ export function AIInsightTab({ financeRecords }: AIInsightTabProps) {
           
           <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 border border-white/20">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                 <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-                 <p className="font-bold text-white/80 animate-pulse capitalize">Menganalisis pola belanja Anda...</p>
+              <div className="space-y-4 py-4">
+                 <div className="h-4 bg-white/20 rounded-full w-full animate-pulse" />
+                 <div className="h-4 bg-white/20 rounded-full w-5/6 animate-pulse" />
+                 <div className="h-4 bg-white/20 rounded-full w-4/6 animate-pulse" />
+                 <div className="flex justify-center pt-8">
+                    <p className="font-bold text-white/50 text-[10px] uppercase tracking-widest animate-pulse">Berpikir...</p>
+                 </div>
               </div>
             ) : insight ? (
               <div className="space-y-4">

@@ -287,6 +287,36 @@ export function Finance() {
   const totalExpense = financeRecords.reduce((acc, curr) => (curr.type === "expense" ? acc + curr.amount : acc), 0);
   const balance = totalIncome - totalExpense;
 
+  const healthScore = useMemo(() => {
+    if (totalIncome === 0) return 50;
+    const savingsRate = balance / totalIncome;
+    // Score components: 
+    // Savings rate (max 50 points): > 30% = 50, 0% = 25, < 0% = 0-25
+    let score = 0;
+    if (savingsRate > 0.3) score += 50;
+    else if (savingsRate > 0) score += 25 + (savingsRate / 0.3) * 25;
+    else score += Math.max(0, 25 + (savingsRate * 25));
+
+    // Budget compliance (max 50 points)
+    const totalBudget = budgets.reduce((acc, curr) => acc + curr.amount, 0);
+    if (totalBudget > 0) {
+      const budgetUsage = totalExpense / totalBudget;
+      if (budgetUsage < 0.8) score += 50;
+      else if (budgetUsage < 1) score += 30 + (1 - budgetUsage) * 100;
+      else score += Math.max(0, 30 - (budgetUsage - 1) * 50);
+    } else {
+      score += 25; // Neutral if no budget
+    }
+    
+    return Math.min(100, Math.round(score));
+  }, [totalIncome, totalExpense, balance, budgets]);
+
+  const getHealthColor = (score: number) => {
+    if (score > 80) return "text-emerald-500";
+    if (score > 50) return "text-yellow-500";
+    return "text-rose-500";
+  };
+
   const handleAIParsing = async () => {
     if (!aiPrompt.trim()) return;
     setIsParsing(true);
@@ -384,6 +414,7 @@ export function Finance() {
         hideAmounts={hideAmounts} setHideAmounts={setHideAmounts}
         balance={balance} totalIncome={totalIncome} totalExpense={totalExpense}
         formatCurrency={formatCurrency} currency={currency} setCurrency={setCurrency}
+        healthScore={healthScore}
       />
 
       <div className="mt-8">

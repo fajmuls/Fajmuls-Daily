@@ -48,6 +48,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const { addFinanceRecord, addNote, darkMode, setDarkMode, soundEnabled, setSoundEnabled, trips } = useAppContext();
   const ongoingTrips = trips.filter(t => t.status === 'ongoing');
+  const { financeRecords, budgets, savings, notes } = useAppContext();
 
   const handleVoiceCommand = async (text: string) => {
     const lower = text.toLowerCase();
@@ -55,6 +56,7 @@ export function Layout({ children }: { children: ReactNode }) {
     setVoiceHint("Memproses perintah...");
 
     try {
+      // First try standard intent
       const response = await fetch("/api/ai/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,7 +96,24 @@ export function Layout({ children }: { children: ReactNode }) {
         setVoiceHint(`Pindah ke: ${result.data.path}`);
         playSuccess();
       } else {
-        // Fallback or Unknown
+        // Use Voice Memory for questions
+        const memResponse = await fetch("/api/ai/voice-memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            query: text, 
+            dataPool: { financeRecords, budgets, savings, notes }
+          }),
+        });
+        const memResult = await memResponse.json();
+        if (memResult.answer) {
+          setVoiceHint(memResult.answer);
+          playSuccess();
+          // Keep hint longer for reading
+          setTimeout(() => setVoiceHint(null), 8000);
+          return;
+        }
+        
         setVoiceHint("Perintah tidak dikenali.");
         setTimeout(() => setVoiceHint(null), 2000);
       }

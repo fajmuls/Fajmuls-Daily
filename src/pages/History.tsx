@@ -22,6 +22,7 @@ import { useAppContext } from '../store';
 import { useAudio } from '../hooks/useAudio';
 import { cn } from '../lib/utils';
 import { v4 as uuidv4 } from 'uuid';
+import { TripTrackingMap } from '../components/dashboard/TripTrackingMap';
 
 interface RoutineActivity {
   id: string;
@@ -41,6 +42,8 @@ export function History() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [newActivityName, setNewActivityName] = useState("");
   const [activeTab, setActiveTab] = useState<'routine' | 'trips'>('routine');
+
+  const [expandedTripMap, setExpandedTripMap] = useState<string | null>(null);
 
   const completedTrips = useMemo(() => trips.filter(t => t.status === 'completed'), [trips]);
 
@@ -294,51 +297,76 @@ export function History() {
             </div>
           ) : (
             completedTrips.map(trip => (
-              <div key={trip.id} className="bg-white border-2 border-stone-900 rounded-[2.5rem] p-6 shadow-brutal flex flex-col md:flex-row gap-6">
-                 <div className="md:w-1/3 space-y-4">
-                    <div className="flex items-center gap-2">
-                       <div className="w-8 h-8 bg-stone-900 text-white rounded-lg flex items-center justify-center">
-                          <Car className="w-4 h-4" />
-                       </div>
-                       <div>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-stone-400">Kendaraan</p>
-                          <p className="text-xs font-bold text-stone-900">{trip.vehicle}</p>
-                       </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                       <div className="flex items-center gap-2">
-                          <MapPin className="w-3.5 h-3.5 text-stone-400" />
-                          <p className="text-xs font-medium text-stone-600 truncate">{trip.origin.detail || trip.origin.city}</p>
-                       </div>
-                       <div className="w-px h-4 bg-stone-200 ml-1.5" />
-                       <div className="flex items-center gap-2">
-                          <MapPin className="w-3.5 h-3.5 text-red-500" />
-                          <p className="text-xs font-medium text-stone-600 truncate">{trip.destination.detail || trip.destination.city}</p>
-                       </div>
-                    </div>
-                 </div>
+              <div key={trip.id} className="flex flex-col gap-4">
+               <div className="bg-white border-2 border-stone-900 rounded-[2.5rem] p-6 shadow-brutal flex flex-col md:flex-row gap-6">
+                  <div className="md:w-1/3 space-y-4">
+                     <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-stone-900 text-white rounded-lg flex items-center justify-center">
+                           <Car className="w-4 h-4" />
+                        </div>
+                        <div>
+                           <p className="text-[8px] font-black uppercase tracking-widest text-stone-400">Kendaraan</p>
+                           <p className="text-xs font-bold text-stone-900">{trip.vehicle}</p>
+                        </div>
+                     </div>
+                     
+                     <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                           <MapPin className="w-3.5 h-3.5 text-stone-400" />
+                           <p className="text-xs font-medium text-stone-600 truncate">{trip.origin.detail || trip.origin.city}</p>
+                        </div>
+                        <div className="w-px h-4 bg-stone-200 ml-1.5" />
+                        <div className="flex items-center gap-2">
+                           <MapPin className="w-3.5 h-3.5 text-red-500" />
+                           <p className="text-xs font-medium text-stone-600 truncate">{trip.destination.detail || trip.destination.city}</p>
+                        </div>
+                     </div>
+                  </div>
 
-                 <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
-                       <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Tanggal</p>
-                       <p className="text-xs font-bold text-stone-900">{format(trip.startTime, 'd MMM yyyy')}</p>
-                    </div>
-                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
-                       <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Waktu</p>
-                       <p className="text-xs font-bold text-stone-900">{format(trip.startTime, 'HH:mm')} - {format(trip.endTime!, 'HH:mm')}</p>
-                    </div>
-                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
-                       <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Total Biaya</p>
-                       <p className="text-xs font-bold text-stone-900">Rp {((trip.tollCost || 0) + (trip.fuelCost || 0)).toLocaleString('id-ID')}</p>
-                    </div>
-                 </div>
-                 
-                 <div className="flex items-center justify-center">
-                    <button className="p-3 bg-stone-50 hover:bg-stone-900 hover:text-white rounded-2xl border border-stone-100 transition-all">
-                       <MapIcon className="w-5 h-5" />
-                    </button>
-                 </div>
+                  <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                     <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                        <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Tanggal</p>
+                        <p className="text-xs font-bold text-stone-900">{format(trip.startTime, 'd MMM yyyy')}</p>
+                     </div>
+                     <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                        <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Waktu</p>
+                        <p className="text-xs font-bold text-stone-900">{format(trip.startTime, 'HH:mm')} - {format(trip.endTime!, 'HH:mm')}</p>
+                     </div>
+                     <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                        <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Total Biaya</p>
+                        <p className="text-xs font-bold text-stone-900">Rp {((trip.tollCost || 0) + (trip.fuelCost || 0)).toLocaleString('id-ID')}</p>
+                     </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-center">
+                     <button 
+                      onClick={() => { setExpandedTripMap(expandedTripMap === trip.id ? null : trip.id); playClick(); }}
+                      className={cn(
+                        "p-3 rounded-2xl border border-stone-100 transition-all",
+                        expandedTripMap === trip.id ? "bg-stone-900 text-white" : "bg-stone-50 hover:bg-stone-900 hover:text-white"
+                      )}
+                     >
+                        <MapIcon className="w-5 h-5" />
+                     </button>
+                  </div>
+               </div>
+               
+               <AnimatePresence>
+                 {expandedTripMap === trip.id && (
+                   <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 400, opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden bg-stone-50 rounded-[2.5rem] border-2 border-stone-900 shadow-brutal"
+                   >
+                     <TripTrackingMap 
+                      origin={trip.origin} 
+                      destination={trip.destination} 
+                      ongoing={false} 
+                     />
+                   </motion.div>
+                 )}
+               </AnimatePresence>
               </div>
             ))
           )}

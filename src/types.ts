@@ -79,6 +79,10 @@ export interface FinanceRecord {
   createdAt: number;
   iconName?: string;
   isDetailed?: boolean; // New: mark for detailed records
+  recurring?: {
+    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    nextDate: number;
+  };
 }
 
 export interface Budget {

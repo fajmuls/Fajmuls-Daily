@@ -89,6 +89,50 @@ app.post("/api/ai/finance-analysis", async (req, res) => {
   }
 });
 
+app.post("/api/ai/receipt-parse", async (req, res) => {
+  const { image, categories } = req.body;
+  if (!image) return res.status(400).json({ error: "No image" });
+
+  try {
+    const aiResponse = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: [
+        { text: `Extract financial data from this receipt. Return JSON: { amount: number, category: string, date: string (YYYY-MM-DD), note: string, type: "expense" }
+        Use the following categories if they fit, otherwise infer: ${categories?.join(", ") || "Infer"}` },
+        { inlineData: { data: image.split(",")[1], mimeType: "image/jpeg" } }
+      ],
+      config: { responseMimeType: "application/json" }
+    });
+
+    res.json(JSON.parse(aiResponse.text));
+  } catch (error: any) {
+    console.error("AI Receipt Parse Error:", error);
+    res.status(500).json({ error: "Gagal memproses struk." });
+  }
+});
+
+app.post("/api/ai/voice-memory", async (req, res) => {
+  const { query, dataPool } = req.body;
+  if (!query) return res.status(400).json({ error: "No query" });
+
+  try {
+    const aiResponse = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: `You are a helpful financial assistant with memory.
+      User Question: "${query}"
+      Context Data (Finance Records, Budgets, etc.): ${JSON.stringify(dataPool)}
+      
+      Provide a concise and helpful answer in Indonesian. Focus on accuracy relative to the data provided.
+      Return JSON: { answer: string }`,
+      config: { responseMimeType: "application/json" }
+    });
+
+    res.json(JSON.parse(aiResponse.text));
+  } catch (error: any) {
+    res.status(500).json({ error: "Gagal memproses suara." });
+  }
+});
+
 app.get("/api/maps/reverse-geocoding", async (req, res) => {
   const { lat, lng } = req.query;
   if (!lat || !lng) return res.status(400).json({ error: "Missing lat/lng" });

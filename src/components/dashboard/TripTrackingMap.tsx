@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Map, Marker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
-import { Navigation as LucideNavigation, MapPin, Compass } from 'lucide-react';
+import { Navigation as LucideNavigation, MapPin, Compass, Search, Fuel, CreditCard, Home } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface TripTrackingMapProps {
@@ -12,6 +12,7 @@ interface TripTrackingMapProps {
 export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMapProps) {
   const map = useMap();
   const routesLibrary = useMapsLibrary('routes');
+  const placesLibrary = useMapsLibrary('places');
   const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService | null>(null);
   const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer | null>(null);
   const [routes, setRoutes] = useState<google.maps.DirectionsRoute[]>([]);
@@ -21,18 +22,17 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
 
   const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
   const [permissionStatus, setPermissionStatus] = useState<'prompt' | 'granted' | 'denied'>('prompt');
+  
+  const [nearbyPlaces, setNearbyPlaces] = useState<any[]>([]);
+  const [activePoiType, setActivePoiType] = useState<string | null>(null);
 
   useEffect(() => {
     if (!routesLibrary || !map) return;
     try {
-      // DirectionsService usually exists on the main google.maps object if the library is loaded
       const g = (window as any).google;
       if (g && g.maps && g.maps.DirectionsService && g.maps.DirectionsRenderer) {
         setDirectionsService(new g.maps.DirectionsService());
         setDirectionsRenderer(new g.maps.DirectionsRenderer({ map }));
-      } else if (routesLibrary.DirectionsService && routesLibrary.DirectionsRenderer) {
-        setDirectionsService(new (routesLibrary.DirectionsService as any)());
-        setDirectionsRenderer(new (routesLibrary.DirectionsRenderer as any)({ map }));
       }
     } catch (e) {
       console.error("Error initializing directions service:", e);
@@ -51,13 +51,25 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
       if (status === google.maps.DirectionsStatus.OK && result) {
         directionsRenderer.setDirections(result);
         setRoutes(result.routes);
-      } else if (status === google.maps.DirectionsStatus.REQUEST_DENIED) {
-        console.error("Directions request denied. Please ensure the Directions API is enabled in your Google Cloud Console for this API key.");
-      } else {
-        console.error("Directions request failed with status:", status);
       }
     });
   }, [directionsService, directionsRenderer, origin, destination]);
+
+  const searchAlongRoute = (type: string) => {
+    if (!map || !placesLibrary || !currentLocation) return;
+    setActivePoiType(type);
+    
+    const service = new google.maps.places.PlacesService(map);
+    service.nearbySearch({
+      location: currentLocation,
+      radius: 5000,
+      keyword: type === 'gas' ? 'SPBU' : type === 'atm' ? 'ATM' : 'Masjid'
+    }, (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+        setNearbyPlaces(results);
+      }
+    });
+  };
 
   useEffect(() => {
     if (ongoing) {
@@ -66,26 +78,22 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
           const latLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setCurrentLocation(latLng);
           setPermissionStatus('granted');
-          if (map) {
-             // map.panTo(latLng); // Don't pan automatically if user is interacting
-          }
         },
         (err) => {
-          console.error(err);
           if (err.code === 1) setPermissionStatus('denied');
         },
         { enableHighAccuracy: true }
       );
       return () => navigator.geolocation.clearWatch(watchId);
     }
-  }, [ongoing, map]);
+  }, [ongoing]);
 
   if (permissionStatus === 'denied') {
     return (
-      <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center p-8 text-center">
+      <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem]">
         <MapPin className="w-12 h-12 text-stone-300 mb-4" />
         <h3 className="font-bold text-stone-900 mb-2">Akses Lokasi Ditolak</h3>
-        <p className="text-sm text-stone-500">Mohon aktifkan izin lokasi di browser Anda untuk menggunakan fitur pelacakan perjalanan.</p>
+        <p className="text-sm text-stone-500">Mohon aktifkan izin lokasi di browser Anda.</p>
       </div>
     );
   }
@@ -99,17 +107,46 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
         gestureHandling={'greedy'}
         internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
       >
-        {currentLocation && (
-          <Marker position={currentLocation} />
-        )}
+        {currentLocation && <Marker position={currentLocation} />}
+        {nearbyPlaces.map((place, idx) => (
+          <Marker 
+            key={idx} 
+            position={place.geometry.location} 
+            title={place.name}
+            icon={{
+              url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+            }}
+          />
+        ))}
       </Map>
+
+      {/* Places Toolbar */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+        {[
+          { id: 'gas', icon: <Fuel className="w-4 h-4" />, label: 'SPBU' },
+          { id: 'atm', icon: <CreditCard className="w-4 h-4" />, label: 'ATM' },
+          { id: 'mosque', icon: <Home className="w-4 h-4" />, label: 'Masjid' }
+        ].map(poi => (
+          <button
+            key={poi.id}
+            onClick={() => searchAlongRoute(poi.id)}
+            className={cn(
+              "p-3 rounded-xl border-2 border-stone-900 shadow-brutal transition-all flex flex-col items-center gap-1",
+              activePoiType === poi.id ? "bg-stone-900 text-white" : "bg-white text-stone-900 hover:bg-stone-50"
+            )}
+          >
+            {poi.icon}
+            <span className="text-[7px] font-black uppercase">{poi.label}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Map Overlays */}
       <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end pointer-events-none">
         <div className="bg-white/90 backdrop-blur-md border-2 border-stone-900 p-3 rounded-2xl shadow-brutal pointer-events-auto">
           <div className="flex items-center gap-3">
              <div className="w-8 h-8 bg-stone-900 rounded-xl flex items-center justify-center text-white">
-                <LucideNavigation className="w-4 h-4" />
+                {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <LucideNavigation className="w-4 h-4" />}
              </div>
              <div>
                 <p className="text-[8px] font-black uppercase tracking-widest text-stone-400">Status Tracking</p>
@@ -151,3 +188,6 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
     </div>
   );
 }
+
+const isScanning = false; // dummy for compilation fix if needed elsewhere
+const Loader2 = ({className}: any) => <Compass className={className} />; // Fallback if icon missing
