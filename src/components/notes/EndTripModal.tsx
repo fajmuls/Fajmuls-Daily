@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { TripSummary } from '../../types';
 import { X, CheckCircle2, UploadCloud, Loader2, Image as ImageIcon } from 'lucide-react';
@@ -10,7 +10,13 @@ interface EndTripModalProps {
   onClose: () => void;
   onEndTrip: (
     tripId: string, 
-    details: { tollCost: number; fuelCost: number; conditions: string[]; receipts: { id: string; url: string; name: string }[] }
+    details: { 
+      tollCost: number; 
+      fuelCost: number; 
+      conditions: string[]; 
+      receipts: { id: string; url: string; name: string }[];
+      finalDestination?: { city: string; detail: string };
+    }
   ) => void;
 }
 
@@ -23,6 +29,15 @@ export function EndTripModal({ trip, onClose, onEndTrip }: EndTripModalProps) {
   const [conditions, setConditions] = useState<string[]>([]);
   const [receipts, setReceipts] = useState<{ id: string; url: string; name: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [endDestCity, setEndDestCity] = useState('');
+  const [endDestDetail, setEndDestDetail] = useState('');
+
+  useEffect(() => {
+    if (trip) {
+      setEndDestCity(trip.destination.city === "Belum Ditentukan" ? "" : trip.destination.city);
+      setEndDestDetail(trip.destination.detail || "");
+    }
+  }, [trip]);
 
   const toggleCondition = (c: string) => {
     setConditions(prev => 
@@ -103,12 +118,17 @@ export function EndTripModal({ trip, onClose, onEndTrip }: EndTripModalProps) {
   if (!trip) return null;
 
   const handleSave = () => {
+    if (!endDestCity) {
+      alert("Kota Tujuan harus diisi untuk menyelesaikan perjalanan!");
+      return;
+    }
     playClick();
     onEndTrip(trip.id, {
       tollCost: parseInt(tollCost) || 0,
       fuelCost: parseInt(fuelCost) || 0,
       conditions,
-      receipts
+      receipts,
+      finalDestination: { city: endDestCity, detail: endDestDetail }
     });
   };
 
@@ -117,10 +137,21 @@ export function EndTripModal({ trip, onClose, onEndTrip }: EndTripModalProps) {
       <div className="bg-white w-full max-w-lg rounded-3xl p-6 md:p-8 animate-in slide-in-from-bottom-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
         <h2 className="font-serif text-2xl font-black text-stone-900 mb-2">Selesaikan Perjalanan</h2>
         <p className="text-stone-500 text-sm font-medium mb-6">
-          Dari <span className="font-bold text-stone-900">{trip.origin.city}</span> ke <span className="font-bold text-stone-900">{trip.destination.city}</span>
+          Berangkat dari <span className="font-bold text-stone-900">{trip.origin.city}</span>
         </p>
 
         <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Tujuan (Akhir) *</label>
+              <input type="text" value={endDestCity} onChange={e => setEndDestCity(e.target.value)} placeholder="Bandung" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="normal-case font-normal">(opsional)</span></label>
+              <input type="text" value={endDestDetail} onChange={e => setEndDestDetail(e.target.value)} placeholder="Gedung Sate" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Bensin (Rp)</label>

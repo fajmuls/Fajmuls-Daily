@@ -40,15 +40,15 @@ export function TripsView() {
       finalOriginCity = "Lokasi Saat Ini";
     }
 
-    if (!finalOriginCity || !destCity || !vehicle) {
+    if (!finalOriginCity || (!destCity && newTripMode !== 'tracking') || !vehicle) {
       playError();
       alert("Kota asal, tujuan, dan kendaraan harus diisi!");
       return;
     }
     const origin: TripLocation = { city: finalOriginCity, detail: originDetail };
-    const destination: TripLocation = { city: destCity, detail: destDetail };
+    const destination: TripLocation = { city: destCity || "Belum Ditentukan", detail: destDetail };
     
-    if (saveAsTemplate) {
+    if (saveAsTemplate && newTripMode === 'tracking') {
       const exists = tripTemplates.some(t => 
         t.origin.city.toLowerCase() === originCity.toLowerCase() && 
         t.destination.city.toLowerCase() === destCity.toLowerCase() && 
@@ -153,7 +153,13 @@ export function TripsView() {
     setTripToEnd(trip);
   };
 
-  const handleEndTrip = (tripId: string, details: { tollCost: number; fuelCost: number; conditions: string[]; receipts: { id: string; url: string; name: string }[] }) => {
+  const handleEndTrip = (tripId: string, details: { 
+    tollCost: number; 
+    fuelCost: number; 
+    conditions: string[]; 
+    receipts: { id: string; url: string; name: string }[];
+    finalDestination?: { city: string; detail: string };
+  }) => {
     const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
 
@@ -164,7 +170,8 @@ export function TripsView() {
       tollCost: details.tollCost,
       fuelCost: details.fuelCost,
       conditions: details.conditions,
-      receipts: details.receipts
+      receipts: details.receipts,
+      ...(details.finalDestination && { destination: details.finalDestination })
     });
 
     // Auto-record costs to Finance
@@ -370,7 +377,64 @@ export function TripsView() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Stats Summary */}
+              {/* Global Stats Summary */}
+              {(() => {
+                const totalTrips = finishedTrips.length;
+                let totalMinutes = 0;
+                let totalFuel = 0;
+                let totalToll = 0;
+
+                finishedTrips.forEach(trip => {
+                  if (trip.endTime) {
+                    totalMinutes += differenceInMinutes(trip.endTime, trip.startTime);
+                  }
+                  if (trip.fuelCost) totalFuel += trip.fuelCost;
+                  if (trip.tollCost) totalToll += trip.tollCost;
+                });
+
+                return (
+                  <div className="bg-stone-900 rounded-[2rem] p-6 text-white shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.05] scale-150 rotate-12 pointer-events-none">
+                      <Car className="w-48 h-48" />
+                    </div>
+                    <div className="relative z-10 space-y-6">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Total Perjalanan Selesai</p>
+                        <h2 className="text-4xl sm:text-5xl font-black text-white">{totalTrips} <span className="text-xl text-stone-400 font-normal">Trip</span></h2>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-stone-800">
+                        <div>
+                          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-1">Total Waktu</p>
+                          <p className="font-mono text-lg font-bold text-stone-100">
+                            {totalMinutes > 60 ? `${Math.floor(totalMinutes / 60)}j ${totalMinutes % 60}m` : `${totalMinutes}m`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-1">Bensin</p>
+                          <p className="font-mono text-lg font-bold text-stone-100 text-red-300">
+                            Rp {(totalFuel / 1000).toFixed(0)}k
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-1">Tol</p>
+                          <p className="font-mono text-lg font-bold text-stone-100 text-red-300">
+                            Rp {(totalToll / 1000).toFixed(0)}k
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-1">Total Pengeluaran</p>
+                          <p className="font-mono text-lg font-black text-red-400">
+                            Rp {((totalFuel + totalToll) / 1000).toFixed(0)}k
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Stats Summary by Route */}
               {(() => {
                 const routeStats = new globalThis.Map();
                 finishedTrips.forEach(trip => {
@@ -581,35 +645,23 @@ export function TripsView() {
               </button>
             </div>
 
-            {tripTemplates.length > 0 && newTripMode !== 'manual' && (
-              <div className="mb-6">
+            {tripTemplates.length > 0 && newTripMode === 'normal' && (
+              <div className="mb-6 relative">
                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">Dari Template Tersimpan</p>
-                <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                <div className="flex gap-2 overflow-x-auto pb-4 custom-scrollbar">
                   {tripTemplates.map(t => (
-                    <div key={t.id} className="shrink-0 relative flex items-start">
-                      <button onClick={() => { playClick(); selectTemplate(t); }} className="px-4 py-2 border border-stone-200 hover:border-teal-500 rounded-xl text-left transition-colors bg-white w-full pr-8">
-                        <p className="text-xs font-bold text-stone-900">{t.origin.city} &rarr; {t.destination.city}</p>
+                    <div key={t.id} className="shrink-0 relative flex items-start w-48">
+                      <button onClick={() => { playClick(); selectTemplate(t); }} className="px-4 py-2 border border-stone-200 hover:border-teal-500 rounded-xl text-left transition-colors bg-white w-full pr-10">
+                        <p className="text-xs font-bold text-stone-900 truncate">{t.origin.city} &rarr; {t.destination.city}</p>
                         <p className="text-[9px] text-stone-500 mt-0.5">{t.vehicle}</p>
                       </button>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); setOpenTemplateMenuId(openTemplateMenuId === t.id ? null : t.id); }} 
-                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-stone-400 hover:text-stone-700 transition-colors"
+                        onClick={() => { showConfirm("Hapus template?", () => deleteTripTemplate(t.id)); }} 
+                        className="absolute right-1 top-1 bottom-1 px-2.5 flex items-center justify-center text-red-500 hover:text-white bg-red-50 hover:bg-red-500 rounded-lg transition-colors z-20"
+                        title="Hapus template"
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      {openTemplateMenuId === t.id && (
-                        <div className="absolute top-10 right-0 bg-white shadow-xl border border-stone-100 rounded-xl py-1 z-20 min-w-[120px]">
-                          <button
-                            onClick={() => { 
-                              setOpenTemplateMenuId(null);
-                              showConfirm("Hapus template?", () => deleteTripTemplate(t.id)); 
-                            }}
-                            className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-stone-50 font-bold flex items-center gap-2"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Hapus
-                          </button>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -624,7 +676,7 @@ export function TripsView() {
                   </div>
                   {newTripMode === 'tracking' ? (
                     <div className="w-full p-2.5 bg-teal-50 border border-teal-200 rounded-xl text-sm font-bold text-teal-700 flex items-center gap-2">
-                       <MapPin className="w-4 h-4" /> Lokasi GPS Saat Ini
+                       <MapPin className="w-4 h-4 shrink-0" /> Lokasi GPS Saat Ini
                     </div>
                   ) : (
                     <input type="text" value={originCity} onChange={e => setOriginCity(e.target.value)} placeholder="Ciamis" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
@@ -642,26 +694,30 @@ export function TripsView() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-center -my-1 relative z-10 w-full">
-                <button 
-                  onClick={() => { playClick(); reverseLocations(); }} 
-                  className="bg-white p-1.5 rounded-full border border-stone-200 hover:border-teal-400 text-stone-400 hover:text-teal-600 transition-all shadow-sm"
-                  title="Tukar Asal & Tujuan"
-                >
-                  <ArrowDownUp className="w-4 h-4" />
-                </button>
-              </div>
+              {newTripMode !== 'tracking' && (
+                <>
+                  <div className="flex items-center justify-center -my-1 relative z-10 w-full">
+                    <button 
+                      onClick={() => { playClick(); reverseLocations(); }} 
+                      className="bg-white p-1.5 rounded-full border border-stone-200 hover:border-teal-400 text-stone-400 hover:text-teal-600 transition-all shadow-sm"
+                      title="Tukar Asal & Tujuan"
+                    >
+                      <ArrowDownUp className="w-4 h-4" />
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Tujuan *</label>
-                  <input type="text" value={destCity} onChange={e => setDestCity(e.target.value)} placeholder="Bandung" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="lowercase font-normal">(opsional)</span></label>
-                  <input type="text" value={destDetail} onChange={e => setDestDetail(e.target.value)} placeholder="Rumah Mang Jepi" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Tujuan *</label>
+                      <input type="text" value={destCity} onChange={e => setDestCity(e.target.value)} placeholder="Bandung" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tempat <span className="lowercase font-normal">(opsional)</span></label>
+                      <input type="text" value={destDetail} onChange={e => setDestDetail(e.target.value)} placeholder="Rumah Mang Jepi" className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {newTripMode === 'manual' && (
                 <div className="grid grid-cols-2 gap-3 pt-2">
