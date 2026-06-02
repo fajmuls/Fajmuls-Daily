@@ -442,7 +442,20 @@ export function Finance() {
       </div>
 
       <WorkspaceSyncModal isOpen={showSyncModal} onClose={() => setShowSyncModal(false)} contextType="finance" />
-      <AddFinanceModal />
+      <AddFinanceModal 
+        isOpen={showAddModal} 
+        onClose={() => { setShowAddModal(false); setEditingRecord(null); }}
+        addFinanceRecord={addFinanceRecord}
+        financeRecords={financeRecords}
+        categoryToGroup={categoryToGroup}
+        financeMappings={financeMappings}
+        financeCategoryPrefs={financeCategoryPrefs}
+        updateCategoryPref={updateCategoryPref}
+        updateFinanceMapping={updateFinanceMapping}
+        playSuccess={playSuccess}
+        playClick={playClick}
+        initialRecord={editingRecord}
+      />
     </div>
   );
 }

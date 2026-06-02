@@ -10,17 +10,17 @@ import { ICON_GROUPS } from "../data";
 import { getCategoryColor, getCategoryIcon } from "../lib/financeUtils";
 
 export function AddFinanceModal({
-  isOpen,
-  onClose,
-  addFinanceRecord,
-  financeRecords,
-  categoryToGroup,
-  financeMappings,
-  financeCategoryPrefs,
-  updateCategoryPref,
-  updateFinanceMapping,
-  playSuccess,
-  playClick,
+  isOpen = false,
+  onClose = () => {},
+  addFinanceRecord = () => {},
+  financeRecords = [],
+  categoryToGroup = {},
+  financeMappings = {},
+  financeCategoryPrefs = {},
+  updateCategoryPref = () => {},
+  updateFinanceMapping = () => {},
+  playSuccess = () => {},
+  playClick = () => {},
   initialRecord = null
 }: any) {
   const [expression, setExpression] = useState(initialRecord ? initialRecord.amount.toString() : "");
@@ -321,13 +321,13 @@ export function AddFinanceModal({
                             style={{ backgroundColor: financeCategoryPrefs[category]?.color || "#ffffff" }}
                           >
                             {(() => {
-                              const prefIcon = financeCategoryPrefs[category]?.iconName || getCategoryIcon(category);
+                              const prefIcon = financeCategoryPrefs[category]?.iconName || getCategoryIcon(category, type, financeCategoryPrefs);
                               const Icon = (LucideIcons as any)[prefIcon] || Tag;
                               const prefColor = financeCategoryPrefs[category]?.color;
                               return (
                                 <Icon 
                                   className="w-5 h-5 transition-transform group-hover:scale-110" 
-                                  style={{ color: prefColor ? "#ffffff" : getCategoryColor(category) }} 
+                                  style={{ color: prefColor ? "#ffffff" : getCategoryColor(category, type, financeCategoryPrefs) }} 
                                 />
                               );
                             })()}
@@ -372,7 +372,7 @@ export function AddFinanceModal({
                   {/* Integrated Calculator Keypad */}
                   <div className="p-4 bg-stone-950 border border-stone-800 rounded-3xl shadow-lg w-full font-sans">
                     <div className="flex justify-between items-center mb-3 border-b border-stone-800 pb-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-stone-400 flex items-center gap-1.5 select-none font-sans">
+                       <span className="text-[9px] font-black uppercase tracking-widest text-stone-400 flex items-center gap-1.5 select-none font-sans">
                         <Calculator className="w-3.5 h-3.5" /> Kalkulator Terintegrasi
                       </span>
                       {expression && (
@@ -592,7 +592,7 @@ export function AddFinanceModal({
                           <div>
                              <p className="font-bold text-stone-900">Belum ada Kategori</p>
                              <p className="text-xs text-stone-500 mt-1 uppercase tracking-widest font-black leading-normal">
-                               Tambahkan Kategori atau Grup di tab Settings &gt; KUSTOMISASI KATEGORI
+                                Tambahkan Kategori atau Grup di tab Settings &gt; KUSTOMISASI KATEGORI
                              </p>
                           </div>
                        </div>
@@ -626,7 +626,7 @@ export function AddFinanceModal({
                                              isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg scale-105" : "bg-white border-stone-200 hover:border-stone-400 text-stone-700"
                                            )}
                                          >
-                                            <IconComp className="w-6 h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat, type, financeCategoryPrefs) }} />
+                                            <IconComp className="w-6 h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat as string, type, financeCategoryPrefs) }} />
                                             <span className={cn("text-[9px] font-extrabold uppercase tracking-wider truncate w-full text-center mt-1 px-1", isSelected ? "text-stone-200" : "text-stone-500")}>
                                               {cat}
                                             </span>
@@ -720,14 +720,14 @@ export function AddFinanceModal({
                              "#43A047", "#E53935", "#3949AB", "#FFC107", "#FF5722",
                              "#795548", "#1c1917", "#607D8B", "#E91E63", "#9C27B0"
                            ].map((c) => {
-                             const curPref = financeCategoryPrefs[category]?.color || getCategoryColor(category);
+                             const curPref = financeCategoryPrefs[category]?.color || getCategoryColor(category, type, financeCategoryPrefs);
                              const isSelected = curPref === c;
                              return (
                                <button
                                  key={c}
                                  type="button"
                                  onClick={() => {
-                                   const curIcon = financeCategoryPrefs[category]?.iconName || getCategoryIcon(category);
+                                   const curIcon = financeCategoryPrefs[category]?.iconName || getCategoryIcon(category, type, financeCategoryPrefs);
                                    updateCategoryPref(category, { color: c, iconName: curIcon });
                                    playClick();
                                  }}
@@ -746,9 +746,9 @@ export function AddFinanceModal({
                            <span className="text-[9px] font-black uppercase tracking-wide text-stone-400">Custom Warna:</span>
                            <input
                              type="color"
-                             value={financeCategoryPrefs[category]?.color || getCategoryColor(category)}
+                             value={financeCategoryPrefs[category]?.color || getCategoryColor(category, type, financeCategoryPrefs)}
                              onChange={(e) => {
-                               const curIcon = financeCategoryPrefs[category]?.iconName || getCategoryIcon(category);
+                               const curIcon = financeCategoryPrefs[category]?.iconName || getCategoryIcon(category, type, financeCategoryPrefs);
                                updateCategoryPref(category, { color: e.target.value, iconName: curIcon });
                              }}
                              className="w-8 h-6 cursor-pointer border-0 p-0 rounded-lg overflow-hidden bg-transparent shrink-0"
@@ -765,14 +765,14 @@ export function AddFinanceModal({
                              <div className="grid grid-cols-6 gap-2">
                                {gro.icons.map((icoName) => {
                                  const IcoComp = (LucideIcons as any)[icoName];
-                                 const curIcon = financeCategoryPrefs[category]?.iconName || getCategoryIcon(category);
+                                 const curIcon = financeCategoryPrefs[category]?.iconName || getCategoryIcon(category, type, financeCategoryPrefs);
                                  const isSelected = curIcon === icoName;
                                  return (
                                    <button
                                      key={icoName}
                                      type="button"
                                      onClick={() => {
-                                       const curColor = financeCategoryPrefs[category]?.color || getCategoryColor(category);
+                                       const curColor = financeCategoryPrefs[category]?.color || getCategoryColor(category, type, financeCategoryPrefs);
                                        updateCategoryPref(category, { iconName: icoName, color: curColor });
                                        setSelectedIcon(icoName);
                                        playClick();

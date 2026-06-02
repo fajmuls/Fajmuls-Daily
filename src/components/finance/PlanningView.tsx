@@ -59,7 +59,7 @@ export function PlanningView({
                     </div>
                     <div>
                       <h4 className="font-bold text-stone-900 text-sm">{budget.category}</h4>
-                      <p className="text-[10px] uppercase font-black tracking-widest text-stone-400">Target: {formatCurrencyFn(budget.amount)}</p>
+                      <p className="text-[10px] uppercase font-black tracking-widest text-stone-400">Target: {formatCurrency(budget.amount)}</p>
                     </div>
                   </div>
                   <button 
@@ -72,7 +72,7 @@ export function PlanningView({
                 
                 <div className="space-y-2">
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                    <span className={cn(percent > 90 ? "text-red-500" : "text-stone-400")}>Terpakai: {formatCurrencyFn(spent)}</span>
+                    <span className={cn(percent > 90 ? "text-red-500" : "text-stone-400")}>Terpakai: {formatCurrency(spent)}</span>
                     <span className="text-stone-900">{percent.toFixed(0)}%</span>
                   </div>
                   <div className="h-4 bg-stone-100 rounded-full overflow-hidden border border-stone-200">

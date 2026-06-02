@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
+import { Map, Marker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { Navigation as LucideNavigation, MapPin, Compass } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -51,6 +51,10 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
       if (status === google.maps.DirectionsStatus.OK && result) {
         directionsRenderer.setDirections(result);
         setRoutes(result.routes);
+      } else if (status === google.maps.DirectionsStatus.REQUEST_DENIED) {
+        console.error("Directions request denied. Please ensure the Directions API is enabled in your Google Cloud Console for this API key.");
+      } else {
+        console.error("Directions request failed with status:", status);
       }
     });
   }, [directionsService, directionsRenderer, origin, destination]);
@@ -91,18 +95,12 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
       <Map
         defaultCenter={{ lat: -6.2088, lng: 106.8456 }}
         defaultZoom={12}
-        mapId="TRIP_TRACKING_MAP"
         disableDefaultUI={true}
         gestureHandling={'greedy'}
         internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
       >
         {currentLocation && (
-          <AdvancedMarker position={currentLocation}>
-            <div className="relative">
-              <div className="absolute -inset-4 bg-blue-500/20 rounded-full animate-ping" />
-              <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg relative z-10" />
-            </div>
-          </AdvancedMarker>
+          <Marker position={currentLocation} />
         )}
       </Map>
 
