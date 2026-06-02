@@ -14,6 +14,7 @@ import { TripSummary } from '../types';
 import { MonthlyWrapped } from '../components/dashboard/MonthlyWrapped';
 import { TripTrackingMap } from '../components/dashboard/TripTrackingMap';
 import { APIProvider } from '@vis.gl/react-google-maps';
+import { cn } from '../lib/utils';
 
 // A simple simulated contribution calendar mapping days to boolean
 function generateHabitGrid(notes: any[]) {
@@ -25,7 +26,7 @@ function generateHabitGrid(notes: any[]) {
 
 export function Dashboard() {
   const { playSuccess, playClick } = useAudio();
-  const { notes, financeRecords, docs, specials, missedPrayers, trips, updateTrip, showConfirm, loading, hideAmounts, addFinanceRecord } = useAppContext();
+  const { notes, financeRecords, docs, specials, missedPrayers, trips, updateTrip, showConfirm, loading, hideAmounts, addFinanceRecord, budgets = [] } = useAppContext();
   const [showGreeting, setShowGreeting] = useLocalStorage('fajmus-show-greeting', true);
   const { isInstallable, installPWA } = usePWAInstall();
   const [tripToEnd, setTripToEnd] = useState<TripSummary | null>(null);
@@ -279,7 +280,7 @@ export function Dashboard() {
               <ArrowRight className="w-5 h-5 text-stone-700" />
             </Link>
           </div>
-          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="relative z-10 flex flex-col justify-between h-full w-full">
             <div>
               <p className="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-black mb-2">Total Saldo Aktif</p>
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-stone-900 bg-clip-text text-transparent bg-gradient-to-r from-stone-900 to-stone-600">
@@ -292,6 +293,38 @@ export function Dashboard() {
                 <p className="text-stone-500 text-xs font-bold uppercase tracking-widest">{financeRecords.length} Catatan Bulan Ini</p>
               </div>
             </div>
+
+            {budgets && budgets.length > 0 && (() => {
+              const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
+              const totalSpent = financeRecords
+                .filter(r => r.type === 'expense' && budgets.some(b => b.category === r.category))
+                .reduce((sum, r) => sum + r.amount, 0);
+              const quotaPercent = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
+              const remainingQuota = totalBudget > totalSpent ? totalBudget - totalSpent : 0;
+
+              return (
+                <div className="mt-6 pt-6 border-t border-stone-100 flex flex-col w-full space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-stone-500">
+                    <span>Sisa Kuota Belanja (Budgeting):</span>
+                    <span className={cn("font-mono font-bold", quotaPercent > 90 ? "text-red-500" : "text-stone-900")}>
+                      {hideAmounts ? "Rp •••" : `Rp ${remainingQuota.toLocaleString('id-ID')}`} ({quotaPercent.toFixed(0)}%)
+                    </span>
+                  </div>
+                  <div className="h-3 bg-stone-100 rounded-full overflow-hidden border border-stone-200">
+                    <div 
+                      className={cn(
+                        "h-full transition-all duration-1000", 
+                        quotaPercent >= 90 ? "bg-red-500" : quotaPercent > 70 ? "bg-yellow-500" : "bg-green-500"
+                      )}
+                      style={{ width: `${quotaPercent}%` }}
+                    />
+                  </div>
+                  {quotaPercent >= 90 && (
+                    <p className="text-[9px] text-red-500 font-black tracking-wide uppercase leading-none animate-pulse">⚠️ Hampir Melebih Kuota Belanja Bulanan!</p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
 

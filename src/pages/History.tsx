@@ -41,7 +41,7 @@ export function History() {
   const { showConfirm, activities, completions, addActivity, deleteActivity, toggleCompletion, trips } = useAppContext();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [newActivityName, setNewActivityName] = useState("");
-  const [activeTab, setActiveTab] = useState<'routine' | 'trips'>('routine');
+  const [activeTab, setActiveTab] = useState<'routine' | 'trips'>('trips');
 
   const [expandedTripMap, setExpandedTripMap] = useState<string | null>(null);
 
@@ -111,23 +111,12 @@ export function History() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-stone-200 pb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-rose-600 rounded-2xl shadow-brutal border-2 border-stone-900">
-               <CalendarRange className="w-6 h-6 text-white" />
+            <div className="p-3 bg-stone-900 text-white rounded-2xl shadow-brutal border-2 border-stone-900">
+               <Car className="w-6 h-6 text-white" />
             </div>
-            <h1 className="font-serif text-4xl font-bold text-stone-900 tracking-tight">Riwayat & Aktivitas</h1>
+            <h1 className="font-serif text-4xl font-bold text-stone-900 tracking-tight">Riwayat Perjalanan</h1>
           </div>
-          <p className="text-stone-500 font-medium">Lacak rutinitas dan perjalanan Anda.</p>
-        </div>
-
-        <div className="flex bg-stone-100 p-1 rounded-2xl border-2 border-stone-900 shadow-brutal">
-          <button 
-            onClick={() => { setActiveTab('routine'); playClick(); }}
-            className={cn("px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", activeTab === 'routine' ? "bg-white text-stone-900 shadow-sm" : "text-stone-400")}
-          >Rutinitas</button>
-          <button 
-            onClick={() => { setActiveTab('trips'); playClick(); }}
-            className={cn("px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", activeTab === 'trips' ? "bg-white text-stone-900 shadow-sm" : "text-stone-400")}
-          >Perjalanan</button>
+          <p className="text-stone-500 font-medium">Lacak rute, log BBM, tol, & histori detail perjalanan Anda.</p>
         </div>
       </header>
 
