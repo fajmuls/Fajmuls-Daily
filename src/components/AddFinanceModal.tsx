@@ -7,6 +7,7 @@ import * as LucideIcons from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "../lib/utils";
 import { ICON_GROUPS } from "../data";
+import { getCategoryColor, getCategoryIcon } from "../lib/financeUtils";
 
 export function AddFinanceModal({
   isOpen,
@@ -135,27 +136,6 @@ export function AddFinanceModal({
     }
   };
 
-  const getCategoryColor = (catName: string) => {
-    if (financeCategoryPrefs[catName]?.color) return financeCategoryPrefs[catName].color;
-    
-    const COLORS_EXPENSE = ["#FF4500", "#D81B60", "#8E24AA", "#1E88E5", "#00897B", "#43A047", "#E53935", "#3949AB"];
-    const COLORS_INCOME = ["#00C853", "#2962FF", "#FFAB00", "#C51162", "#00BFA5", "#FF6D00", "#6200EA", "#AEEA00"];
-    
-    const colors = type === "income" ? COLORS_INCOME : COLORS_EXPENSE;
-    let hash = 0;
-    for (let i = 0; i < catName.length; i++) {
-      hash = catName.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
-  };
-  
-  const getCategoryIcon = (catName: string) => {
-    if (financeCategoryPrefs[catName]?.iconName) return financeCategoryPrefs[catName].iconName;
-    const existingRecord = financeRecords.find((r: any) => r.category === catName && r.iconName);
-    if (existingRecord) return existingRecord.iconName;
-    return type === "income" ? "TrendingUp" : "TrendingDown";
-  };
-
   const unmappedCategories = useMemo(() => {
     const definedCats = new Set(Object.values(financeMappings).flat() as string[]);
     const usedCats = new Set(financeRecords.map((r: any) => r.category));
@@ -176,7 +156,7 @@ export function AddFinanceModal({
 
   const filteredUnmapped = useMemo(() => {
     const search = catSearch.toLowerCase();
-    return unmappedCategories.filter(c => c.toLowerCase().includes(search));
+    return unmappedCategories.filter(c => (c as string).toLowerCase().includes(search));
   }, [unmappedCategories, catSearch]);
 
   return (
@@ -626,7 +606,7 @@ export function AddFinanceModal({
                                <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold border-b border-stone-100 pb-1">{groupName}</label>
                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                                   {catArray.map((cat, i) => {
-                                     const iconName = getCategoryIcon(cat);
+                                     const iconName = getCategoryIcon(cat as string, type, financeCategoryPrefs);
                                      const IconComp = iconName ? (LucideIcons as any)[iconName] : Tag;
                                      const isSelected = category === cat;
 
@@ -646,7 +626,7 @@ export function AddFinanceModal({
                                              isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg scale-105" : "bg-white border-stone-200 hover:border-stone-400 text-stone-700"
                                            )}
                                          >
-                                            <IconComp className="w-6 h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat) }} />
+                                            <IconComp className="w-6 h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat, type, financeCategoryPrefs) }} />
                                             <span className={cn("text-[9px] font-extrabold uppercase tracking-wider truncate w-full text-center mt-1 px-1", isSelected ? "text-stone-200" : "text-stone-500")}>
                                               {cat}
                                             </span>
@@ -662,8 +642,9 @@ export function AddFinanceModal({
                            <div className="space-y-3">
                              <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold border-b border-stone-100 pb-1">Tanpa Grup</label>
                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                                {filteredUnmapped.map((cat, i) => {
-                                   const iconName = getCategoryIcon(cat);
+                                {filteredUnmapped.map((catAny, i) => {
+                                   const cat = catAny as string;
+                                   const iconName = getCategoryIcon(cat, type, financeCategoryPrefs);
                                    const IconComp = iconName ? (LucideIcons as any)[iconName] : Tag;
                                    const isSelected = category === cat;
 
@@ -683,7 +664,7 @@ export function AddFinanceModal({
                                            isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg scale-105" : "bg-white border-stone-200 hover:border-stone-400 text-stone-700"
                                          )}
                                        >
-                                          <IconComp className="w-6 h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat) }} />
+                                          <IconComp className="w-6 h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat as string, type, financeCategoryPrefs) }} />
                                           <span className={cn("text-[9px] font-extrabold uppercase tracking-wider truncate w-full text-center mt-1 px-1", isSelected ? "text-stone-200" : "text-stone-500")}>
                                             {cat}
                                           </span>

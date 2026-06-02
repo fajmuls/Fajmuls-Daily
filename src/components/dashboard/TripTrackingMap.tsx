@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
-import { Navigation, MapPin, Compass } from 'lucide-react';
+import { Navigation as LucideNavigation, MapPin, Compass } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface TripTrackingMapProps {
@@ -24,8 +24,19 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
 
   useEffect(() => {
     if (!routesLibrary || !map) return;
-    setDirectionsService(new routesLibrary.DirectionsService());
-    setDirectionsRenderer(new routesLibrary.DirectionsRenderer({ map }));
+    try {
+      // DirectionsService usually exists on the main google.maps object if the library is loaded
+      const g = (window as any).google;
+      if (g && g.maps && g.maps.DirectionsService && g.maps.DirectionsRenderer) {
+        setDirectionsService(new g.maps.DirectionsService());
+        setDirectionsRenderer(new g.maps.DirectionsRenderer({ map }));
+      } else if (routesLibrary.DirectionsService && routesLibrary.DirectionsRenderer) {
+        setDirectionsService(new (routesLibrary.DirectionsService as any)());
+        setDirectionsRenderer(new (routesLibrary.DirectionsRenderer as any)({ map }));
+      }
+    } catch (e) {
+      console.error("Error initializing directions service:", e);
+    }
   }, [routesLibrary, map]);
 
   useEffect(() => {
@@ -100,7 +111,7 @@ export function TripTrackingMap({ origin, destination, ongoing }: TripTrackingMa
         <div className="bg-white/90 backdrop-blur-md border-2 border-stone-900 p-3 rounded-2xl shadow-brutal pointer-events-auto">
           <div className="flex items-center gap-3">
              <div className="w-8 h-8 bg-stone-900 rounded-xl flex items-center justify-center text-white">
-                <Navigation className="w-4 h-4" />
+                <LucideNavigation className="w-4 h-4" />
              </div>
              <div>
                 <p className="text-[8px] font-black uppercase tracking-widest text-stone-400">Status Tracking</p>

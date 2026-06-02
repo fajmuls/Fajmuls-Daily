@@ -95,6 +95,7 @@ export interface SavingGoal {
   targetAmount: number;
   currentAmount: number;
   location: string; // e.g., 'Bank', 'Cash', 'Investment'
+  deadline?: string; // e.g., '2025-12-31'
   createdAt: number;
 }
 

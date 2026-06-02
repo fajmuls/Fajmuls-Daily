@@ -133,8 +133,8 @@ export function StatsView({
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  activeIndex={activeExpenseIndex}
-                  activeShape={renderActiveShape}
+                  activeIndex={activeExpenseIndex as any}
+                  activeShape={renderActiveShape as any}
                   data={expenseChartData}
                   cx="50%" cy="50%"
                   innerRadius={60}
@@ -167,8 +167,8 @@ export function StatsView({
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  activeIndex={activeIncomeIndex}
-                  activeShape={renderActiveShape}
+                  activeIndex={activeIncomeIndex as any}
+                  activeShape={renderActiveShape as any}
                   data={incomeChartData}
                   cx="50%" cy="50%"
                   innerRadius={60}

@@ -109,13 +109,15 @@ app.post("/api/ai/ocr", async (req, res) => {
   if (!image) return res.status(400).json({ error: "No image" });
 
   try {
-    const model = ai.models.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent([
-      "Tolong rangkum teks yang ada di gambar ini secara detail dan informatif (dalam Bahasa Indonesia). Jika ini adalah struk, sebutkan item-itemnya. Jika ini dokumen, rangkum isinya.",
-      { inlineData: { data: image.split(",")[1], mimeType: "image/jpeg" } }
-    ]);
+    const aiResponse = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: [
+        { text: "Tolong rangkum teks yang ada di gambar ini secara detail dan informatif (dalam Bahasa Indonesia). Jika ini adalah struk, sebutkan item-itemnya. Jika ini dokumen, rangkum isinya." },
+        { inlineData: { data: image.split(",")[1], mimeType: "image/jpeg" } }
+      ]
+    });
 
-    res.json({ text: result.response.text() });
+    res.json({ text: aiResponse.text });
   } catch (error: any) {
     console.error("AI OCR Error:", error);
     res.status(500).json({ error: "Gagal memproses gambar." });

@@ -41,6 +41,7 @@ import { ICON_GROUPS } from "../data";
 export function Finance() {
   const [showPrintView, setShowPrintView] = useState(false);
   const [currency, setCurrency] = useState<"IDR" | "USD" | "EUR" | "JPY">("IDR");
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({
     IDR: 1,
     USD: 0.000062,
@@ -323,7 +324,14 @@ export function Finance() {
       { category: "Makan", amount: 829000, type: "expense" as const },
       { category: "Belanja online", amount: 828000, type: "expense" as const },
     ];
-    const rs: FinanceRecord[] = rawData.map((d, i) => ({ id: uuidv4(), amount: d.amount, category: d.category, type: d.type, createdAt: Date.now() - i * 1000 }));
+    const rs: FinanceRecord[] = rawData.map((d, i) => ({ 
+      id: uuidv4(), 
+      amount: d.amount, 
+      category: d.category, 
+      type: d.type, 
+      note: "Data Histori",
+      createdAt: Date.now() - i * 1000 
+    }));
     showConfirm(`Tambahkan ${rs.length} data histori?`, () => { addFinanceRecordsBulk(rs); playSuccess(); });
   };
 
@@ -412,7 +420,6 @@ export function Finance() {
             addBudget={addBudget} deleteBudget={deleteBudget} addSaving={addSaving}
             updateSaving={updateSaving} deleteSaving={deleteSaving} showConfirm={showConfirm}
             playClick={playClick} playSuccess={playSuccess} playError={playError}
-            formatCurrencyFn={formatCurrency}
           />
         )}
 

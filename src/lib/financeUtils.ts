@@ -53,6 +53,15 @@ export const getCategoryColor = (catName: string, catType: "income" | "expense",
   return colors[index];
 };
 
+export const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+};
+
 export const getCategoryIcon = (catName: string, catType: "income" | "expense", prefs: any = {}) => {
   if (prefs[catName]?.iconName) return prefs[catName].iconName;
   return CATEGORY_TO_ICON[catName] || (catType === "income" ? "TrendingUp" : "TrendingDown");

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
-import { ArrowLeft, Car, MapPin, Play, Square, Map, ChevronRight, Plus, Archive, Trash2, Clock, CheckCircle2, ArrowDownUp, X, Mic, MoreVertical, Download } from 'lucide-react';
+import { ArrowLeft, Car, MapPin, Play, Square, Map as LucideMap, ChevronRight, Plus, Archive, Trash2, Clock, CheckCircle2, ArrowDownUp, X, Mic, MoreVertical, Download } from 'lucide-react';
 import { format, differenceInMinutes, differenceInHours } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
@@ -288,8 +288,8 @@ export function TripsView() {
       alert("Browser Anda tidak mendukung input suara. Gunakan Chrome atau Safari.");
       return;
     }
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    const SpeechRecognitionConstructor = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    const recognition = new (SpeechRecognitionConstructor as any)();
     recognition.lang = 'id-ID';
     
     setIsListening(true);
@@ -331,7 +331,7 @@ export function TripsView() {
         </button>
         <div>
           <h1 className="font-serif text-3xl font-black text-stone-900 flex items-center gap-2">
-            <Map className="w-6 h-6 text-teal-600" /> Summary Perjalanan
+            <LucideMap className="w-6 h-6 text-teal-600" /> Summary Perjalanan
           </h1>
           <p className="text-stone-500 text-xs font-bold uppercase tracking-widest mt-1">
             Riwayat log perjalanan antar kota & tempat.
@@ -510,7 +510,7 @@ export function TripsView() {
 
               {/* Stats Summary by Route */}
               {(() => {
-                const routeStats = new globalThis.Map();
+                const routeStats = new window.Map();
                 finishedTrips.forEach(trip => {
                   const r1 = `${trip.origin.city}-${trip.destination.city}`.toLowerCase();
                   const r2 = `${trip.destination.city}-${trip.origin.city}`.toLowerCase();
@@ -548,7 +548,7 @@ export function TripsView() {
               })()}
 
               {(() => {
-                const groupedTrips = new globalThis.Map<string, TripSummary[]>();
+                const groupedTrips = new window.Map<string, TripSummary[]>();
                 finishedTrips.forEach(trip => {
                   const key = `${trip.origin.city}|${trip.destination.city}`;
                   if (!groupedTrips.has(key)) {

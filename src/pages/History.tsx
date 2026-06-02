@@ -13,7 +13,10 @@ import {
   ListTodo,
   TrendingUp,
   Award,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  MapIcon,
+  MapPin,
+  Car
 } from 'lucide-react';
 import { useAppContext } from '../store';
 import { useAudio } from '../hooks/useAudio';

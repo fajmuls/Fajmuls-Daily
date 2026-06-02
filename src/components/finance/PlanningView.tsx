@@ -1,9 +1,9 @@
 import React from 'react';
 import { Target, TrendingUp, TrendingDown, PiggyBank, Plus, Trash2, Edit3, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { formatCurrency } from "../../lib/financeUtils"; // I should add this to utils or pass it
+import { GoalProgress } from '../GoalProgress';
+import { formatCurrency } from "../../lib/financeUtils";
 import { Budget, SavingGoal } from "../../types";
-import { ProgressChart } from "../ProgressChart";
 
 interface PlanningViewProps {
   budgets: Budget[];
@@ -12,13 +12,12 @@ interface PlanningViewProps {
   addBudget: (b: any) => void;
   deleteBudget: (id: string) => void;
   addSaving: (s: any) => void;
-  updateSaving: (id: string, s: any) => void;
+  updateSaving: (s: SavingGoal) => void;
   deleteSaving: (id: string) => void;
   showConfirm: (msg: string, onConfirm: () => void) => void;
   playClick: () => void;
   playSuccess: () => void;
   playError: () => void;
-  formatCurrencyFn: (amount: number) => string;
 }
 
 export function PlanningView({
@@ -30,8 +29,7 @@ export function PlanningView({
   deleteSaving,
   showConfirm,
   playClick,
-  playError,
-  formatCurrencyFn
+  playError
 }: PlanningViewProps) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
@@ -121,7 +119,7 @@ export function PlanningView({
                  </div>
                  <div className="flex gap-1">
                    <button 
-                    onClick={() => { playClick(); /* update balance logic */ }}
+                    onClick={() => { updateSaving(goal); playClick(); }}
                     className="p-2 hover:bg-stone-100 text-stone-400 rounded-xl transition-all"
                    >
                      <Plus className="w-4 h-4" />
@@ -136,14 +134,14 @@ export function PlanningView({
                </div>
                
                <h4 className="font-bold text-stone-900 text-lg mb-1">{goal.name}</h4>
-               <p className="text-[10px] uppercase font-black tracking-widest text-stone-400 mb-6">Deadline: {goal.deadline}</p>
+               <p className="text-[10px] uppercase font-black tracking-widest text-stone-400 mb-6">Deadline: {goal.deadline || '-'}</p>
                
                <div className="mb-6">
-                 <ProgressChart 
-                    current={goal.current} 
-                    total={goal.target} 
-                    label={formatCurrencyFn(goal.current)} 
-                    subLabel={`dari ${formatCurrencyFn(goal.target)}`}
+                 <GoalProgress 
+                    current={goal.currentAmount} 
+                    total={goal.targetAmount} 
+                    label={formatCurrency(goal.currentAmount)} 
+                    subLabel={`dari ${formatCurrency(goal.targetAmount)}`}
                     color="#4f46e5"
                  />
                </div>

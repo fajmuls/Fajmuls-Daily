@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, NotebookPen, FileText, CalendarRange, Star, Mic, LogOut, Search, X, Command, User as UserIcon, Plus, ArrowRight, Settings, Volume2, VolumeX, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Wallet, NotebookPen, FileText, CalendarRange, Star, Mic, LogOut, Search, X, Command, User as UserIcon, Plus, ArrowRight, Settings, Volume2, VolumeX, Moon, Sun, Navigation as LucideNavigation } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
 import { useVoiceCommand } from '../hooks/useVoiceCommand';
 import { useAuth } from './AuthWrapper';
@@ -468,7 +468,7 @@ export function Layout({ children }: { children: ReactNode }) {
                <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                        <Navigation className="w-5 h-5 text-accent-orange animate-pulse" />
+                        <LucideNavigation className="w-5 h-5 text-accent-orange animate-pulse" />
                      </div>
                      <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Sedang Berjalan</p>

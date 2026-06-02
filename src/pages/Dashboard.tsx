@@ -1,7 +1,7 @@
 import { format, differenceInMinutes, differenceInHours, subDays } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAppContext } from '../store';
-import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X, TrendingUp, Map, Car, Square, Download, Navigation } from 'lucide-react';
+import { ArrowRight, Wallet, NotebookPen, FileImage, ShieldAlert, X, TrendingUp, Car, Square, Download, Navigation as LucideNavigation } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
