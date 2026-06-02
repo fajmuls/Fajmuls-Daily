@@ -5,20 +5,48 @@ import { collection, addDoc as addFirestoreDoc, getDocs, orderBy, query, deleteD
 import { db } from '../lib/firebase';
 import { useAppContext } from '../store';
 import { useAuth } from '../components/AuthWrapper';
-import { UploadCloud, FileImage, Loader2, X, Trash2 } from 'lucide-react';
+import { UploadCloud, FileImage, Loader2, X, Trash2, Wand2, FileText, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import Markdown from 'react-markdown';
 
 export function Docs() {
   const { setAlert, showConfirm } = useAppContext();
-  const { playSuccess, playError } = useAppContext() as any; 
+  const { playSuccess, playError, playClick } = useAppContext() as any; 
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [firebaseDocs, setFirebaseDocs] = useState<any[]>([]);
   
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleAIOCR = async () => {
+    if (!pendingFile) return;
+    setAnalyzing(true);
+    playClick?.();
+
+    try {
+      const base64String = await compressImage(pendingFile);
+      const response = await fetch('/api/ai/ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64String })
+      });
+      const data = await response.json();
+      if (data.text) {
+        setDescription(prev => prev ? `${prev}\n\n${data.text}` : data.text);
+        playSuccess?.();
+      }
+    } catch (e) {
+      console.error(e);
+      playError?.();
+      setAlert("Gagal menganalisis gambar.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const fetchDocs = async () => {
     if (!user) return;
@@ -167,12 +195,22 @@ export function Docs() {
              <img src={previewUrl} alt="Preview" className="max-h-full object-contain" />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-400 font-black mb-2">Deskripsi Keterangan <span className="text-stone-300 normal-case font-medium">(Opsional)</span></label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs uppercase tracking-widest text-stone-400 font-black">Deskripsi Keterangan <span className="text-stone-300 normal-case font-medium">(Opsional)</span></label>
+              <button 
+                onClick={handleAIOCR}
+                disabled={analyzing}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-indigo-200 disabled:opacity-50 shadow-sm"
+              >
+                {analyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                {analyzing ? 'Menganalisis...' : 'Analisis AI'}
+              </button>
+            </div>
             <textarea 
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="w-full bg-stone-50 border-2 border-stone-200 focus:border-indigo-600 rounded-2xl px-5 py-4 outline-none font-medium text-stone-700 transition-colors resize-y min-h-[100px]"
-              placeholder="Tambahkan memori untuk foto ini..."
+              className="w-full bg-stone-50 border-2 border-stone-200 focus:border-indigo-600 rounded-2xl px-5 py-4 outline-none font-medium text-stone-700 transition-colors resize-y min-h-[120px]"
+              placeholder="Tambahkan memori atau biarkan AI menganalisis gambar ini..."
             />
           </div>
           <button 
@@ -232,9 +270,11 @@ export function Docs() {
                 </div>
                 <div className="px-2 pt-1 pb-2">
                   {doc.description ? (
-                    <p className="text-stone-800 text-sm font-bold leading-snug line-clamp-2">{doc.description}</p>
+                    <div className="text-stone-800 text-xs font-medium leading-relaxed prose prose-stone prose-xs line-clamp-4">
+                      <Markdown>{doc.description}</Markdown>
+                    </div>
                   ) : (
-                    <p className="text-stone-400 text-xs italic font-medium">Tanpa deskripsi</p>
+                    <p className="text-stone-400 text-[10px] italic font-medium">Tanpa deskripsi</p>
                   )}
                 </div>
               </div>

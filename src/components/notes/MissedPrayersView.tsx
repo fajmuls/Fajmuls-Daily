@@ -140,6 +140,30 @@ export function MissedPrayersView() {
               </p>
             </div>
           </div>
+          <button 
+            onClick={async () => {
+              playClick();
+              if ('Notification' in window && 'serviceWorker' in navigator) {
+                const p = await Notification.requestPermission();
+                if (p === 'granted') {
+                  localStorage.setItem('fajmus-prayer-alarms', 'enabled');
+                  playSuccess();
+                  navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification('Alarm Qadha Aktif', {
+                      body: 'Service worker akan membunyikan alarm sistem saat waktu shalat tiba.',
+                      icon: '/icon-192.png',
+                      vibrate: [200, 100, 200]
+                    } as any);
+                  });
+                }
+              } else {
+                alert('Notifikasi/Service Worker tidak didukung di browser ini.');
+              }
+            }}
+            className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs uppercase tracking-widest rounded-xl transition-colors border border-stone-200 shadow-sm"
+          >
+            Aktifkan Alarm Solat (SW)
+          </button>
         </header>
           
           <div className="mt-4 p-4 bg-indigo-50 rounded-2xl flex justify-between items-center text-indigo-900 border border-indigo-100">

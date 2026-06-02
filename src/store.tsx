@@ -10,7 +10,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './lib/firebase';
-import { Note, FinanceRecord, MissedPrayer, DailyDoc, SpecialNote, Budget, SavingGoal, TripSummary, TripTemplate } from './types';
+import { Note, FinanceRecord, MissedPrayer, DailyDoc, SpecialNote, Budget, SavingGoal, TripSummary, TripTemplate, RoutineActivity, RoutineCompletion } from './types';
 import { INITIAL_MISSED_PRAYERS, INITIAL_IG_NOTES } from './data';
 import { useAuth } from './components/AuthWrapper';
 
@@ -24,6 +24,8 @@ interface AppState {
   savings: SavingGoal[];
   trips: TripSummary[];
   tripTemplates: TripTemplate[];
+  activities: RoutineActivity[];
+  completions: RoutineCompletion[];
   loading: boolean;
   confirmDialog: { isOpen: boolean; message: string; onConfirm: () => void; isDestructive?: boolean; confirmText?: string } | null;
   alertMessage: string | null;
@@ -68,6 +70,9 @@ interface AppState {
   addDoc: (doc: DailyDoc) => void;
   addSpecial: (special: SpecialNote) => void;
   deleteSpecial: (id: string) => void;
+  addActivity: (act: RoutineActivity) => void;
+  deleteActivity: (id: string) => void;
+  toggleCompletion: (activityId: string, dateStr: string) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -81,6 +86,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [specials, setSpecials] = useState<SpecialNote[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [savings, setSavings] = useState<SavingGoal[]>([]);
+  const [activities, setActivities] = useState<RoutineActivity[]>([]);
+  const [completions, setCompletions] = useState<RoutineCompletion[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; message: string; onConfirm: () => void; isDestructive?: boolean; confirmText?: string } | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -145,6 +152,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     savings: false,
     trips: false,
     tripTemplates: false,
+    activities: false,
+    completions: false,
     mappings: false,
     categoryPrefs: false
   });
@@ -213,6 +222,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTripTemplates(snapshot.docs.map(d => d.data() as TripTemplate));
       setInitialLoaded(prev => ({ ...prev, tripTemplates: true }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/tripTemplates`));
+    
+    const unsubActivities = onSnapshot(collection(db, `${userPath}/activities`), (snapshot) => {
+      setActivities(snapshot.docs.map(d => d.data() as RoutineActivity));
+      setInitialLoaded(prev => ({ ...prev, activities: true }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/activities`));
+
+    const unsubCompletions = onSnapshot(collection(db, `${userPath}/completions`), (snapshot) => {
+      setCompletions(snapshot.docs.map(d => d.data() as RoutineCompletion));
+      setInitialLoaded(prev => ({ ...prev, completions: true }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, `${userPath}/completions`));
 
     const unsubMappings = onSnapshot(doc(db, `${userPath}/settings/financeMappings`), (snapshot) => {
       if (snapshot.exists()) {
@@ -251,6 +270,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubSavings();
       unsubTrips();
       unsubTripTemplates();
+      unsubActivities();
+      unsubCompletions();
       unsubMappings();
       unsubCategoryPrefs();
     };
@@ -258,7 +279,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Update loading state when all initial data is loaded
   useEffect(() => {
-    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials && initialLoaded.budgets && initialLoaded.savings && initialLoaded.trips && initialLoaded.tripTemplates && initialLoaded.mappings && initialLoaded.categoryPrefs) {
+    if (initialLoaded.notes && initialLoaded.finance && initialLoaded.prayers && initialLoaded.docs && initialLoaded.specials && initialLoaded.budgets && initialLoaded.savings && initialLoaded.trips && initialLoaded.tripTemplates && initialLoaded.activities && initialLoaded.completions && initialLoaded.mappings && initialLoaded.categoryPrefs) {
       setLoading(false);
     }
   }, [initialLoaded]);
@@ -574,6 +595,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/tripTemplates/${id}`); }
   };
 
+  const addActivity = async (act: RoutineActivity) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, `users/${user.uid}/activities`, act.id), act);
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/activities/${act.id}`); }
+  };
+
+  const deleteActivity = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, `users/${user.uid}/activities`, id));
+      // Also delete completions
+      const batch = writeBatch(db);
+      completions.filter(c => c.activityId === id).forEach(c => {
+         batch.delete(doc(db, `users/${user.uid}/completions`, c.id));
+      });
+      await batch.commit();
+    } catch (e) { handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/activities/${id}`); }
+  };
+
+  const toggleCompletion = async (activityId: string, dateStr: string) => {
+    if (!user) return;
+    const existing = completions.find(c => c.activityId === activityId && c.dateStr === dateStr);
+    try {
+      if (existing) {
+        await deleteDoc(doc(db, `users/${user.uid}/completions`, existing.id));
+      } else {
+        const id = (window as any).crypto.randomUUID ? (window as any).crypto.randomUUID() : Math.random().toString(36).substring(2);
+        await setDoc(doc(db, `users/${user.uid}/completions`, id), { id, activityId, dateStr });
+      }
+    } catch (e) { handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/completions`); }
+  };
+
   const updateFinanceMapping = async (group: string, categories: string[]) => {
     if (!user) return;
     const newMappings = { ...financeMappings, [group]: categories };
@@ -601,13 +655,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      user, notes, financeRecords, missedPrayers, docs, specials, budgets, savings, trips, tripTemplates, loading, 
+      user, notes, financeRecords, missedPrayers, docs, specials, budgets, savings, trips, tripTemplates, 
+      activities, completions,
+      loading, 
       confirmDialog, alertMessage, financeMappings, financeCategoryPrefs, hideAmounts, setHideAmounts: toggleHideAmounts,
       darkMode, setDarkMode: toggleDarkMode,
       soundEnabled, setSoundEnabled: toggleSoundEnabled,
       setAlert, showConfirm, closeConfirm, updateFinanceMapping, deleteFinanceMapping, updateCategoryPref,
       addNote, updateNote, deleteNote, addTrip, updateTrip, deleteTrip, addTripTemplate, deleteTripTemplate, addFinanceRecord, updateFinanceRecord, updateFinanceCategoryBulk, deleteFinanceCategoryBulk, addFinanceRecordsBulk, deleteFinanceRecord, togglePrayer, addMissedPrayer, deleteMissedPrayer, deleteAllMissedPrayers, addDoc, addSpecial, deleteSpecial,
-      addBudget, deleteBudget, addSaving, updateSaving, deleteSaving
+      addBudget, deleteBudget, addSaving, updateSaving, deleteSaving,
+      addActivity, deleteActivity, toggleCompletion
     }}>
       {children}
     </AppContext.Provider>

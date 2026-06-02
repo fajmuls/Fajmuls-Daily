@@ -32,77 +32,37 @@ interface RoutineCompletion {
   dateStr: string; // YYYY-MM-DD
 }
 
-export function Activities() {
+export function History() {
   const { playClick, playSuccess, playError } = useAudio();
-  const { showConfirm } = useAppContext();
+  const { showConfirm, activities, completions, addActivity, deleteActivity, toggleCompletion, trips } = useAppContext();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  // States for activities (could be moved to store if persistence is needed across sessions)
-  // For now, let's check if store has them. If not, we use local state or add to store.
-  // The user prompt implies "filling manual", so we need persistence.
-  // I'll check store.tsx later, but for now I'll use local state and mock it.
-  // Optimization: Use localStorage for now if store doesn't support it.
-  
-  const [activities, setActivities] = useState<RoutineActivity[]>(() => {
-    const saved = localStorage.getItem('fajmul_routine_activities');
-    return saved ? JSON.parse(saved) : [
-      { id: '1', name: 'Workout', createdAt: Date.now() },
-      { id: '2', name: 'Baca Buku', createdAt: Date.now() }
-    ];
-  });
-
-  const [completions, setCompletions] = useState<RoutineCompletion[]>(() => {
-    const saved = localStorage.getItem('fajmul_routine_completions');
-    return saved ? JSON.parse(saved) : [];
-  });
-
   const [newActivityName, setNewActivityName] = useState("");
+  const [activeTab, setActiveTab] = useState<'routine' | 'trips'>('routine');
 
-  const saveToLocal = (acts: RoutineActivity[], comps: RoutineCompletion[]) => {
-    localStorage.setItem('fajmul_routine_activities', JSON.stringify(acts));
-    localStorage.setItem('fajmul_routine_completions', JSON.stringify(comps));
-  };
+  const completedTrips = useMemo(() => trips.filter(t => t.status === 'completed'), [trips]);
 
   const handleAddActivity = () => {
     if (!newActivityName.trim()) return;
     playClick();
-    const newAct: RoutineActivity = {
+    addActivity({
       id: uuidv4(),
       name: newActivityName.trim(),
       createdAt: Date.now()
-    };
-    const updated = [...activities, newAct];
-    setActivities(updated);
-    saveToLocal(updated, completions);
+    });
     setNewActivityName("");
     playSuccess();
   };
 
   const handleDeleteActivity = (id: string) => {
     showConfirm("Yakin ingin menghapus kegiatan harian ini? Data penyelesaian juga akan terhapus.", () => {
-      playError();
-      const updated = activities.filter(a => a.id !== id);
-      const updatedComps = completions.filter(c => c.activityId !== id);
-      setActivities(updated);
-      setCompletions(updatedComps);
-      saveToLocal(updated, updatedComps);
+      deleteActivity(id);
     });
   };
 
-  const toggleCompletion = (activityId: string, date: Date) => {
+  const handleToggleCompletion = (activityId: string, date: Date) => {
     playClick();
     const dateStr = format(date, 'yyyy-MM-dd');
-    const existingIndex = completions.findIndex(c => c.activityId === activityId && c.dateStr === dateStr);
-    
-    let updatedComps: RoutineCompletion[];
-    if (existingIndex > -1) {
-      updatedComps = completions.filter((_, i) => i !== existingIndex);
-    } else {
-      updatedComps = [...completions, { id: uuidv4(), activityId, dateStr }];
-      playSuccess();
-    }
-    setCompletions(updatedComps);
-    saveToLocal(activities, updatedComps);
+    toggleCompletion(activityId, dateStr);
   };
 
   // Calendar Helpers
@@ -148,24 +108,37 @@ export function Activities() {
             <div className="p-3 bg-rose-600 rounded-2xl shadow-brutal border-2 border-stone-900">
                <CalendarRange className="w-6 h-6 text-white" />
             </div>
-            <h1 className="font-serif text-4xl font-bold text-stone-900 tracking-tight">Kegiatan Harian</h1>
+            <h1 className="font-serif text-4xl font-bold text-stone-900 tracking-tight">Riwayat & Aktivitas</h1>
           </div>
-          <p className="text-stone-500 font-medium">Lacak rutinitas dan kebiasaan harian Anda setiap bulan.</p>
+          <p className="text-stone-500 font-medium">Lacak rutinitas dan perjalanan Anda.</p>
         </div>
 
-        <div className="flex items-center justify-between w-full md:w-[400px] bg-paper p-2 rounded-2xl border-2 border-stone-900 shadow-brutal shrink-0">
-          <button onClick={() => { playClick(); setCurrentMonth(subMonths(currentMonth, 1)); }} className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="px-4 text-center min-w-[140px]">
-            <p className="text-[10px] font-black uppercase tracking-widest text-rose-600 leading-none mb-1">Periode Bulan</p>
-            <p className="font-bold text-lg text-stone-900 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</p>
-          </div>
-          <button onClick={() => { playClick(); setCurrentMonth(addMonths(currentMonth, 1)); }} className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
-            <ChevronRight className="w-5 h-5" />
-          </button>
+        <div className="flex bg-stone-100 p-1 rounded-2xl border-2 border-stone-900 shadow-brutal">
+          <button 
+            onClick={() => { setActiveTab('routine'); playClick(); }}
+            className={cn("px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", activeTab === 'routine' ? "bg-white text-stone-900 shadow-sm" : "text-stone-400")}
+          >Rutinitas</button>
+          <button 
+            onClick={() => { setActiveTab('trips'); playClick(); }}
+            className={cn("px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", activeTab === 'trips' ? "bg-white text-stone-900 shadow-sm" : "text-stone-400")}
+          >Perjalanan</button>
         </div>
       </header>
+
+      {activeTab === 'routine' ? (
+        <>
+          <div className="flex items-center justify-between bg-paper p-2 rounded-2xl border-2 border-stone-900 shadow-brutal mb-8">
+            <button onClick={() => { playClick(); setCurrentMonth(subMonths(currentMonth, 1)); }} className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="px-4 text-center min-w-[140px]">
+              <p className="text-[10px] font-black uppercase tracking-widest text-rose-600 leading-none mb-1">Periode Bulan</p>
+              <p className="font-bold text-lg text-stone-900 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</p>
+            </div>
+            <button onClick={() => { playClick(); setCurrentMonth(addMonths(currentMonth, 1)); }} className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
 
       {/* Activities Input */}
       <section className="bg-white p-6 rounded-[2.5rem] border-2 border-stone-900 shadow-brutal">
@@ -276,7 +249,7 @@ export function Activities() {
                       return (
                         <td key={dIdx} className="p-0.5 text-center border-r border-stone-50">
                           <button 
-                            onClick={() => toggleCompletion(act.id, day)}
+                            onClick={() => handleToggleCompletion(act.id, day)}
                             className={cn(
                               "w-3.5 h-3.5 rounded border border-stone-300 transition-all flex items-center justify-center mx-auto cursor-pointer",
                               isCompleted 
@@ -308,6 +281,66 @@ export function Activities() {
       <p className="text-center text-stone-400 text-sm italic font-medium">
         * Klik pada kotak untuk menandai kegiatan yang telah selesai. Data disimpan secara otomatis.
       </p>
+        </>
+      ) : (
+        <div className="space-y-6">
+          {completedTrips.length === 0 ? (
+            <div className="py-20 text-center bg-stone-50 rounded-[2.5rem] border-2 border-dashed border-stone-200">
+              <Car className="w-12 h-12 text-stone-200 mx-auto mb-4" />
+              <p className="text-stone-400 font-bold">Belum ada riwayat perjalanan.</p>
+            </div>
+          ) : (
+            completedTrips.map(trip => (
+              <div key={trip.id} className="bg-white border-2 border-stone-900 rounded-[2.5rem] p-6 shadow-brutal flex flex-col md:flex-row gap-6">
+                 <div className="md:w-1/3 space-y-4">
+                    <div className="flex items-center gap-2">
+                       <div className="w-8 h-8 bg-stone-900 text-white rounded-lg flex items-center justify-center">
+                          <Car className="w-4 h-4" />
+                       </div>
+                       <div>
+                          <p className="text-[8px] font-black uppercase tracking-widest text-stone-400">Kendaraan</p>
+                          <p className="text-xs font-bold text-stone-900">{trip.vehicle}</p>
+                       </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-stone-400" />
+                          <p className="text-xs font-medium text-stone-600 truncate">{trip.origin.detail || trip.origin.city}</p>
+                       </div>
+                       <div className="w-px h-4 bg-stone-200 ml-1.5" />
+                       <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-red-500" />
+                          <p className="text-xs font-medium text-stone-600 truncate">{trip.destination.detail || trip.destination.city}</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                       <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Tanggal</p>
+                       <p className="text-xs font-bold text-stone-900">{format(trip.startTime, 'd MMM yyyy')}</p>
+                    </div>
+                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                       <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Waktu</p>
+                       <p className="text-xs font-bold text-stone-900">{format(trip.startTime, 'HH:mm')} - {format(trip.endTime!, 'HH:mm')}</p>
+                    </div>
+                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                       <p className="text-[7px] font-black uppercase tracking-widest text-stone-400 mb-1">Total Biaya</p>
+                       <p className="text-xs font-bold text-stone-900">Rp {((trip.tollCost || 0) + (trip.fuelCost || 0)).toLocaleString('id-ID')}</p>
+                    </div>
+                 </div>
+                 
+                 <div className="flex items-center justify-center">
+                    <button className="p-3 bg-stone-50 hover:bg-stone-900 hover:text-white rounded-2xl border border-stone-100 transition-all">
+                       <MapIcon className="w-5 h-5" />
+                    </button>
+                 </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

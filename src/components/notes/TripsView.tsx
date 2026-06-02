@@ -34,6 +34,36 @@ export function TripsView() {
   const ongoingTrips = trips.filter(t => t.status === 'ongoing');
   const finishedTrips = trips.filter(t => t.status === 'completed');
 
+  const fetchLocationData = async () => {
+    if (!navigator.geolocation) return;
+    
+    setIsListening(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const response = await fetch(`/api/maps/reverse-geocoding?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.results.length > 0) {
+          // Extract city and sub-district (lokasi/kecamatan)
+          const components = data.results[0].address_components;
+          const cityComp = components.find((c: any) => c.types.includes('administrative_area_level_2') || c.types.includes('locality'));
+          const subDistrictComp = components.find((c: any) => c.types.includes('administrative_area_level_3') || c.types.includes('sublocality'));
+          
+          if (cityComp) setOriginCity(cityComp.long_name);
+          if (subDistrictComp) setOriginDetail(subDistrictComp.long_name);
+          playSuccess();
+        }
+      } catch (e) {
+        console.error("Geocoding failed", e);
+      } finally {
+        setIsListening(false);
+      }
+    }, () => {
+      setIsListening(false);
+      playError();
+    }, { enableHighAccuracy: true });
+  };
+
   const startTrip = () => {
     let finalOriginCity = originCity;
     if (newTripMode === 'tracking' && !originCity) {
@@ -113,7 +143,7 @@ export function TripsView() {
                 actions: [
                   { action: 'end-trip', title: 'Selesaikan' }
                 ]
-              });
+              } as any);
             });
           }
         });
@@ -662,14 +692,7 @@ export function TripsView() {
                 onClick={() => { 
                   playClick(); 
                   setNewTripMode('tracking');
-                  if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(() => {
-                      setOriginCity("Lokasi Saat Ini");
-                      setOriginDetail("");
-                    }, undefined, { enableHighAccuracy: true });
-                  } else {
-                    setOriginCity("Lokasi Otomatis");
-                  }
+                  fetchLocationData();
                 }}
                 className={cn("flex-1 py-2.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all", newTripMode === 'tracking' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
               >

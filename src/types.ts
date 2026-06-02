@@ -158,3 +158,15 @@ export interface TripTemplate {
   destination: TripLocation;
   vehicle: string;
 }
+
+export interface RoutineActivity {
+  id: string;
+  name: string;
+  createdAt: number;
+}
+
+export interface RoutineCompletion {
+  id: string;
+  activityId: string;
+  dateStr: string; // YYYY-MM-DD
+}

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { TripSummary } from '../../types';
-import { X, CheckCircle2, UploadCloud, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, CheckCircle2, UploadCloud, Loader2, Image as ImageIcon, MapPin } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAudio } from '../../hooks/useAudio';
 
@@ -32,10 +32,39 @@ export function EndTripModal({ trip, onClose, onEndTrip }: EndTripModalProps) {
   const [endDestCity, setEndDestCity] = useState('');
   const [endDestDetail, setEndDestDetail] = useState('');
 
+  const [analyzing, setAnalyzing] = useState(false);
+
+  const fetchCurrentLocation = async () => {
+    if (!navigator.geolocation) return;
+    setAnalyzing(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const response = await fetch(`/api/maps/reverse-geocoding?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+        const data = await response.json();
+        if (data.status === 'OK' && data.results.length > 0) {
+          const components = data.results[0].address_components;
+          const cityComp = components.find((c: any) => c.types.includes('administrative_area_level_2') || c.types.includes('locality'));
+          const subDistrictComp = components.find((c: any) => c.types.includes('administrative_area_level_3') || c.types.includes('sublocality'));
+          if (cityComp) setEndDestCity(cityComp.long_name);
+          if (subDistrictComp) setEndDestDetail(subDistrictComp.long_name);
+        }
+      } catch (e) {
+        console.error("Geocoding failed", e);
+      } finally {
+        setAnalyzing(false);
+      }
+    }, () => {
+      setAnalyzing(false);
+    }, { enableHighAccuracy: true });
+  };
+
   useEffect(() => {
     if (trip) {
       setEndDestCity(trip.destination.city === "Belum Ditentukan" ? "" : trip.destination.city);
       setEndDestDetail(trip.destination.detail || "");
+      if (trip.destination.city === "Belum Ditentukan") {
+        fetchCurrentLocation();
+      }
     }
   }, [trip]);
 
@@ -143,7 +172,17 @@ export function EndTripModal({ trip, onClose, onEndTrip }: EndTripModalProps) {
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Tujuan (Akhir) *</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Kota Tujuan (Akhir) *</label>
+                <button 
+                  onClick={fetchCurrentLocation}
+                  disabled={analyzing}
+                  className="text-[8px] font-black uppercase text-teal-600 hover:text-teal-800 transition-colors flex items-center gap-1"
+                >
+                  {analyzing ? <Loader2 className="w-2 h-2 animate-spin" /> : <MapPin className="w-2 h-2" />}
+                  {analyzing ? 'Mencari...' : 'Gunakan GPS'}
+                </button>
+              </div>
               <input type="text" value={endDestCity} onChange={e => setEndDestCity(e.target.value)} placeholder="Bandung" className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" />
             </div>
             <div className="space-y-2">

@@ -22,7 +22,7 @@ const desktopNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
   { icon: NotebookPen, label: 'Catatan', path: '/notes' },
-  { icon: CalendarRange, label: 'Kegiatan', path: '/activities' },
+  { icon: CalendarRange, label: 'Riwayat', path: '/history' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
 ];
 
@@ -30,7 +30,7 @@ const mobileNavItems = [
   { icon: LayoutDashboard, label: 'Beranda', path: '/' },
   { icon: Wallet, label: 'Keuangan', path: '/finance' },
   { icon: NotebookPen, label: 'Catatan', path: '/notes' },
-  { icon: CalendarRange, label: 'Kegiatan', path: '/activities' },
+  { icon: CalendarRange, label: 'Riwayat', path: '/history' },
   { icon: FileText, label: 'Dokumen', path: '/docs' },
 ];
 
@@ -46,78 +46,62 @@ export function Layout({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const { addFinanceRecord, addNote, darkMode, setDarkMode, soundEnabled, setSoundEnabled } = useAppContext();
+  const { addFinanceRecord, addNote, darkMode, setDarkMode, soundEnabled, setSoundEnabled, trips } = useAppContext();
+  const ongoingTrips = trips.filter(t => t.status === 'ongoing');
 
-  const handleVoiceCommand = (text: string) => {
+  const handleVoiceCommand = async (text: string) => {
     const lower = text.toLowerCase();
     console.log("Mendeteksi suara:", lower);
+    setVoiceHint("Memproses perintah...");
 
-    // 1. Parse Finance (Expense/Income)
-    // Example: "Tambah pengeluaran 50rb untuk kopi" or "Add expense 50k for coffee"
-    if (lower.includes('tambah pengeluaran') || lower.includes('add expense') || lower.includes('tambah pemasukan') || lower.includes('add income')) {
-      const isExpense = lower.includes('pengeluaran') || lower.includes('expense');
-      const match = lower.match(/(?:pengeluaran|expense|pemasukan|income)\s+(\d+[^\s]*)\s+(?:untuk|for)?\s*(.*)/);
-      
-      if (match) {
-        const amtStr = match[1];
-        const note = match[2] || 'Catatan suara';
-        const amount = parseAmount(amtStr);
-        
+    try {
+      const response = await fetch("/api/ai/intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text }),
+      });
+      const result = await response.json();
+
+      if (result.intent === "ADD_FINANCE" && result.data) {
+        const { amount, type, category, note, iconName } = result.data;
         if (amount > 0) {
           addFinanceRecord({
             id: uuidv4(),
             amount,
-            type: isExpense ? 'expense' : 'income',
-            category: 'Lainnya',
-            note: note.trim(),
+            type: type || 'expense',
+            category: category || 'Lainnya',
+            note: note || 'Catatan Suara',
             createdAt: Date.now(),
-            iconName: isExpense ? 'TrendingDown' : 'TrendingUp'
+            iconName: iconName || (type === 'income' ? 'TrendingUp' : 'TrendingDown')
           });
-          setVoiceHint(`Ditambah: ${isExpense ? 'Pengeluaran' : 'Pemasukan'} Rp ${amount.toLocaleString('id-ID')}`);
+          setVoiceHint(`Ditambah: ${type === 'expense' ? 'Pengeluaran' : 'Pemasukan'} Rp ${amount.toLocaleString('id-ID')}`);
           playSuccess();
-          return;
         }
-      }
-    }
-
-    // 2. Parse Notes/Tasks
-    // Example: "Tambah catatan beli susu" or "Add task buy milk"
-    if (lower.includes('tambah catatan') || lower.includes('add note') || lower.includes('tambah tugas') || lower.includes('add task')) {
-      const match = lower.match(/(?:catatan|note|tugas|task)\s+(.*)/);
-      if (match) {
-        const content = match[1];
+      } else if (result.intent === "ADD_NOTE" && result.data) {
+        const { title, content } = result.data;
         addNote({
           id: uuidv4(),
           type: 'normal',
-          title: 'Catatan Suara',
-          content: content.trim(),
+          title: title || 'Catatan Suara',
+          content: content || '',
           createdAt: Date.now(),
           updatedAt: Date.now()
         });
-        setVoiceHint(`Catatan ditambahkan: ${content}`);
+        setVoiceHint(`Catatan ditambahkan: ${title || 'Baru'}`);
         playSuccess();
-        return;
+      } else if (result.intent === "NAVIGATE" && result.data?.path) {
+        navigate(result.data.path);
+        setVoiceHint(`Pindah ke: ${result.data.path}`);
+        playSuccess();
+      } else {
+        // Fallback or Unknown
+        setVoiceHint("Perintah tidak dikenali.");
+        setTimeout(() => setVoiceHint(null), 2000);
       }
-    }
-    
-    if (lower.includes('keuangan') || lower.includes('uang')) {
-      navigate('/finance');
-      playSuccess();
-    } else if (lower.includes('ig') || lower.includes('instagram')) {
-      navigate('/notes/ig-list');
-      playSuccess();
-    } else if (lower.includes('spesial') || lower.includes('khusus')) {
-      navigate('/special');
-      playSuccess();
-    } else if (lower.includes('dokumen') || lower.includes('foto')) {
-      navigate('/docs');
-      playSuccess();
-    } else if (lower.includes('catatan') || lower.includes('tulis')) {
-      navigate('/notes'); // or notes list depending on intent
-      playSuccess();
-    } else if (lower.includes('beranda') || lower.includes('dashboard') || lower.includes('home')) {
-      navigate('/');
-      playSuccess();
+    } catch (e) {
+      console.error("AI Voice Error:", e);
+      setVoiceHint("Gagal memproses suara.");
+      setTimeout(() => setVoiceHint(null), 2000);
     }
   };
 
@@ -470,6 +454,34 @@ export function Layout({ children }: { children: ReactNode }) {
               </motion.div>
            </div>
         )}
+
+        {/* Active Trip Minimized Overlay */}
+        <AnimatePresence>
+          {ongoingTrips.length > 0 && (
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              onClick={() => { navigate('/'); playClick(); }}
+              className="fixed bottom-[85px] md:bottom-8 left-4 right-4 md:left-auto md:right-8 md:w-80 bg-stone-900 text-white p-4 rounded-3xl shadow-brutal border-2 border-stone-900 z-[45] cursor-pointer group hover:-translate-y-1 transition-all"
+            >
+               <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                        <Navigation className="w-5 h-5 text-accent-orange animate-pulse" />
+                     </div>
+                     <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Sedang Berjalan</p>
+                        <p className="font-bold text-xs truncate">Ke {ongoingTrips[0].destination.city}</p>
+                     </div>
+                  </div>
+                  <div className="bg-white/10 px-3 py-1.5 rounded-xl">
+                     <p className="text-[10px] font-mono font-black">{Math.floor((Date.now() - ongoingTrips[0].startTime) / 60000)}m</p>
+                  </div>
+               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Dynamic Content */}
         <div className="flex-1 overflow-y-auto w-full max-w-5xl mx-auto p-4 md:p-8 pb-32 md:pb-8">

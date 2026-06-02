@@ -12,6 +12,8 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 import { EndTripModal } from '../components/notes/EndTripModal';
 import { TripSummary } from '../types';
 import { MonthlyWrapped } from '../components/dashboard/MonthlyWrapped';
+import { TripTrackingMap } from '../components/dashboard/TripTrackingMap';
+import { APIProvider } from '@vis.gl/react-google-maps';
 
 // A simple simulated contribution calendar mapping days to boolean
 function generateHabitGrid(notes: any[]) {
@@ -202,65 +204,65 @@ export function Dashboard() {
         <div key={trip.id} className="bg-teal-50 border-2 border-teal-500 rounded-[2.5rem] overflow-hidden shadow-brutal animate-in slide-in-from-top-4 flex flex-col md:flex-row relative">
           <div className="p-6 md:w-1/2 flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-6">
+              <div className="flex items-center justify-between mb-8">
                 <span className="flex items-center gap-1.5 px-3 py-1 bg-teal-200 text-teal-900 text-[9px] font-black uppercase tracking-widest rounded-full">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-600"></span>
                   </span>
-                  Perjalanan Aktif
+                  Melacak Perjalanan
                 </span>
-                <span className="text-stone-500 text-[10px] font-bold uppercase tracking-widest">{formatDuration(trip.startTime)}</span>
+                <span className="text-teal-700 text-[10px] font-mono font-black bg-white/50 px-3 py-1 rounded-lg border border-teal-100">{formatDuration(trip.startTime)}</span>
               </div>
 
-              <div className="space-y-1 mb-6">
-                <p className="text-[10px] font-black uppercase tracking-widest text-teal-600/70">Asal &amp; Tujuan</p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-serif text-3xl font-black text-teal-950 leading-tight truncate">
-                      {trip.origin.city}
-                    </p>
+              <div className="space-y-6 mb-8">
+                <div className="flex flex-col gap-1">
+                   <p className="text-[8px] font-black uppercase tracking-widest text-teal-600/70">Waktu Mulai Perjalanan</p>
+                   <p className="text-xl font-bold text-teal-950">{format(trip.startTime, 'HH:mm - d MMM yyyy')}</p>
+                </div>
+
+                <div className="space-y-2 relative pl-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-teal-200 before:border-r-2 before:border-dotted before:border-teal-300">
+                  <div className="relative">
+                    <div className="absolute -left-[24.5px] top-1.5 w-4 h-4 rounded-full bg-white border-4 border-teal-500 z-10" />
+                    <p className="text-[8px] font-black uppercase tracking-widest text-teal-600/50">Asal</p>
+                    <p className="text-lg font-black text-teal-950 truncate">{trip.origin.city}</p>
+                    <p className="text-[10px] text-teal-600 font-medium truncate">{trip.origin.detail}</p>
                   </div>
-                  <div className="flex-1 flex items-center justify-center relative px-2">
-                    <div className="w-full h-1.5 bg-teal-200/50 rounded-full overflow-hidden relative">
-                      <div className="absolute inset-0 bg-teal-500 rounded-full animate-[slideRight_3s_ease-in-out_infinite]" style={{ width: '30%' }}></div>
-                    </div>
-                    <Navigation className="w-5 h-5 text-teal-700 absolute text-center animate-[slideRightIcon_3s_ease-in-out_infinite] rotate-90" />
-                  </div>
-                  <div className="flex-1 min-w-0 text-right">
-                    <p className="font-serif text-3xl font-black text-teal-950 leading-tight truncate">
-                      {trip.destination.city}
-                    </p>
+                  <div className="relative pt-4">
+                    <div className="absolute -left-[24.5px] top-5.5 w-4 h-4 rounded-full bg-teal-500 border-4 border-white z-10" />
+                    <p className="text-[8px] font-black uppercase tracking-widest text-teal-600/50">Tujuan</p>
+                    <p className="text-lg font-black text-teal-950 truncate">{trip.destination.city}</p>
+                    <p className="text-[10px] text-teal-600 font-medium truncate">{trip.destination.detail}</p>
                   </div>
                 </div>
-                <div className="text-sm font-medium text-teal-800 flex items-center gap-2 mt-4">
+                
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/40 border border-teal-200 rounded-xl text-teal-800 font-bold text-xs">
                   <Car className="w-4 h-4" /> {trip.vehicle}
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-4">
-              <Link to="/notes/trips" className="flex-1 text-center py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest bg-white border-2 border-teal-200 hover:border-teal-400 text-teal-800 transition-all">
-                Detail
+            <div className="flex gap-3">
+              <Link to="/notes/trips" className="flex-1 text-center py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-white border-2 border-teal-200 hover:border-teal-400 text-teal-800 transition-all">
+                Detail Transit
               </Link>
               <button 
                 onClick={() => endTrip(trip)}
-                className="flex-1 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest bg-teal-900 hover:bg-black text-white transition-all flex items-center justify-center gap-2 shadow-md"
+                className="flex-1 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-teal-900 hover:bg-black text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-200 active:translate-y-px"
               >
                 <Square className="w-4 h-4" /> Selesaikan
               </button>
             </div>
           </div>
           
-          <div className="md:w-1/2 h-48 md:h-auto min-h-[200px] border-t-2 md:border-t-0 md:border-l-2 border-teal-500 bg-stone-200">
-            <iframe 
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(`${trip.origin.city} to ${trip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
-              width="100%" 
-              height="100%" 
-              frameBorder="0" 
-              style={{ border: 0 }} 
-              allowFullScreen 
-            />
+          <div className="md:w-1/2 h-80 md:h-auto min-h-[350px] border-t-2 md:border-t-0 md:border-l-2 border-teal-500 bg-stone-100 overflow-hidden">
+             <APIProvider apiKey={process.env.GOOGLE_MAPS_PLATFORM_KEY || ''}>
+               <TripTrackingMap 
+                 origin={trip.origin} 
+                 destination={trip.destination} 
+                 ongoing={true} 
+               />
+             </APIProvider>
           </div>
         </div>
       ))}
