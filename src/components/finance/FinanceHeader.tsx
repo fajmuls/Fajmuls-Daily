@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, ListFilter, BarChart3, TrendingUp, Settings, Sparkles, Printer, Download, CheckCircle2, Eye, EyeOff, TrendingDown } from "lucide-react";
+import { Wallet, ListFilter, BarChart3, TrendingUp, Settings, Sparkles, Printer, Download, CheckCircle2, Eye, EyeOff, TrendingDown, Menu } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ActionMenu } from "../ActionMenu";
 
@@ -63,7 +63,7 @@ export function FinanceHeader({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-stone-100 p-1 rounded-2xl flex flex-wrap">
+          <div className="bg-stone-100 p-1 rounded-2xl hidden md:flex flex-wrap">
             {[
               { id: 'records', label: 'Pencatatan', icon: <ListFilter className="w-4 h-4" /> },
               { id: 'analysis', label: 'Analisis', icon: <BarChart3 className="w-4 h-4" /> },
@@ -85,22 +85,56 @@ export function FinanceHeader({
               </button>
             ))}
           </div>
+          
+          <div className="md:hidden flex items-center justify-between w-full">
+            <h2 className="font-bold text-stone-900 ml-2">
+              {[
+                { id: 'records', label: 'Pencatatan' },
+                { id: 'analysis', label: 'Analisis' },
+                { id: 'ai', label: 'AI Insight' },
+                { id: 'planning', label: 'Perencanaan' },
+                { id: 'settings', label: 'Kategori' },
+              ].find(t => t.id === activeTab)?.label}
+            </h2>
+            <ActionMenu
+              triggerIcon={<Menu className="w-5 h-5 text-stone-600" />}
+              items={[
+                { label: "Pencatatan", icon: <ListFilter className="w-4 h-4" />, onClick: () => { setActiveTab('records'); playClick(); } },
+                { label: "Analisis", icon: <BarChart3 className="w-4 h-4" />, onClick: () => { setActiveTab('analysis'); playClick(); } },
+                { label: "AI Insight", icon: <Sparkles className="w-4 h-4" />, onClick: () => { setActiveTab('ai'); playClick(); } },
+                { label: "Perencanaan", icon: <TrendingUp className="w-4 h-4" />, onClick: () => { setActiveTab('planning'); playClick(); } },
+                { label: "Kategori", icon: <Settings className="w-4 h-4" />, onClick: () => { setActiveTab('settings'); playClick(); } },
+                { label: "AI Input Finance", icon: <Sparkles className="w-4 h-4 text-indigo-500" />, onClick: () => setShowAIModal(true) },
+                { label: "Cetak Laporan", icon: <Printer className="w-4 h-4" />, onClick: () => { setShowPrintView(true); playClick(); } },
+                { label: "Ekspor Akun Workspace", icon: <Download className="w-4 h-4" />, onClick: () => setShowSyncModal(true) },
+                { label: "Load Data Histori", icon: <CheckCircle2 className="w-4 h-4" />, onClick: loadBulkData },
+                { 
+                  label: hideAmounts ? "Tampilkan Saldo" : "Sembunyi Saldo", 
+                  icon: hideAmounts ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />, 
+                  onClick: () => { setHideAmounts(!hideAmounts); playClick(); } 
+                },
+              ]}
+              triggerClassName="p-2 bg-stone-100 rounded-xl"
+            />
+          </div>
 
-          <ActionMenu
-            items={[
-              { label: "AI Input Finance", icon: <Sparkles className="w-4 h-4" />, onClick: () => setShowAIModal(true) },
-              { label: "Cetak Laporan", icon: <Printer className="w-4 h-4" />, onClick: () => { setShowPrintView(true); playClick(); } },
-              { label: "Ekspor Akun Workspace", icon: <Download className="w-4 h-4" />, onClick: () => setShowSyncModal(true) },
-              { label: "Load Data Histori", icon: <CheckCircle2 className="w-4 h-4" />, onClick: loadBulkData },
-              { 
-                label: hideAmounts ? "Tampilkan Saldo" : "Sembunyi Saldo", 
-                icon: hideAmounts ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />, 
-                onClick: () => { setHideAmounts(!hideAmounts); playClick(); } 
-              },
-            ]}
-            triggerClassName="p-1 px-3 h-10 bg-white border border-stone-200 rounded-xl shadow-sm text-stone-600 hover:bg-stone-50"
-            iconSize={1.5}
-          />
+          <div className="hidden md:block">
+            <ActionMenu
+              items={[
+                { label: "AI Input Finance", icon: <Sparkles className="w-4 h-4" />, onClick: () => setShowAIModal(true) },
+                { label: "Cetak Laporan", icon: <Printer className="w-4 h-4" />, onClick: () => { setShowPrintView(true); playClick(); } },
+                { label: "Ekspor Akun Workspace", icon: <Download className="w-4 h-4" />, onClick: () => setShowSyncModal(true) },
+                { label: "Load Data Histori", icon: <CheckCircle2 className="w-4 h-4" />, onClick: loadBulkData },
+                { 
+                  label: hideAmounts ? "Tampilkan Saldo" : "Sembunyi Saldo", 
+                  icon: hideAmounts ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />, 
+                  onClick: () => { setHideAmounts(!hideAmounts); playClick(); } 
+                },
+              ]}
+              triggerClassName="p-1 px-3 h-10 bg-white border border-stone-200 rounded-xl shadow-sm text-stone-600 hover:bg-stone-50"
+              iconSize={1.5}
+            />
+          </div>
         </div>
       </header>
 

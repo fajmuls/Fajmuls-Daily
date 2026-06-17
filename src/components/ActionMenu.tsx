@@ -18,6 +18,7 @@ interface ActionMenuProps {
   headerTitle?: string;
   position?: "bottom" | "top";
   iconSize?: number;
+  triggerIcon?: React.ReactNode;
 }
 
 export function ActionMenu({ 
@@ -26,7 +27,8 @@ export function ActionMenu({
   triggerClassName,
   headerTitle = "Opsi Halaman", 
   position: initialPropPosition,
-  iconSize = 5
+  iconSize = 5,
+  triggerIcon
 }: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [calculatedPosition, setCalculatedPosition] = useState<"bottom" | "top">(initialPropPosition || "bottom");
@@ -69,7 +71,7 @@ export function ActionMenu({
           triggerClassName
         )}
       >
-        <MoreVertical className={cn(`w-${iconSize} h-${iconSize}`)} style={{ width: iconSize * 4, height: iconSize * 4 }} />
+        {triggerIcon || <MoreVertical className={cn(`w-${iconSize} h-${iconSize}`)} style={{ width: iconSize * 4, height: iconSize * 4 }} />}
       </button>
 
       <AnimatePresence>

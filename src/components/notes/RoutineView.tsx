@@ -13,7 +13,9 @@ import {
   TrendingUp,
   Award,
   Calendar as CalendarIcon,
-  ArrowLeft
+  ArrowLeft,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../store';
@@ -27,6 +29,8 @@ export function RoutineView() {
   const { showConfirm, activities = [], completions = [], addActivity, deleteActivity, toggleCompletion } = useAppContext();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [newActivityName, setNewActivityName] = useState("");
+  const [showTable, setShowTable] = useState(true);
+  const [hiddenActivityIds, setHiddenActivityIds] = useState<string[]>([]);
 
   const handleAddActivity = () => {
     if (!newActivityName.trim()) return;
@@ -89,26 +93,38 @@ export function RoutineView() {
     });
   }, [activities, completions, currentMonth, daysInMonth]);
 
+  const toggleHideActivity = (id: string) => {
+    setHiddenActivityIds(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 px-2 max-w-7xl mx-auto">
       {/* Back & Title Header */}
       <header className="flex flex-col gap-4 border-b border-stone-200 pb-6">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => { playClick(); navigate('/notes'); }}
-            className="p-3 bg-white hover:bg-stone-50 text-stone-700 rounded-2xl border-2 border-stone-900 shadow-sm hover:scale-105 active:scale-95 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5 text-stone-900" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center">
-                <CalendarRange className="w-5 h-5 text-rose-600" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => { playClick(); navigate('/notes'); }}
+              className="p-3 bg-white hover:bg-stone-50 text-stone-700 rounded-2xl border-2 border-stone-900 shadow-sm hover:scale-105 active:scale-95 transition-all"
+            >
+              <ArrowLeft className="w-5 h-5 text-stone-900" />
+            </button>
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center">
+                  <CalendarRange className="w-5 h-5 text-rose-600" />
+                </div>
+                <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">Kegiatan Harian</h1>
               </div>
-              <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">Kegiatan Harian</h1>
+              <p className="text-stone-500 text-sm mt-0.5">Lacak rutinitas, kebiasaan, & komitmen ibadah harian Anda.</p>
             </div>
-            <p className="text-stone-500 text-sm mt-0.5">Lacak rutinitas, kebiasaan, & komitmen ibadah harian Anda.</p>
           </div>
+          <button 
+            onClick={() => { playClick(); setShowTable(!showTable); }} 
+            className="hidden md:flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+          >
+            {showTable ? "Sembunyikan Tabel" : "Tampilkan Tabel"}
+          </button>
         </div>
       </header>
 
@@ -153,25 +169,41 @@ export function RoutineView() {
       {/* Summary Stats Grid */}
       {activityStats.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {activityStats.map((stat: any) => (
-            <div key={stat.id} className="bg-white p-5 rounded-3xl border-2 border-stone-200 shadow-sm hover:border-stone-900 hover:shadow-brutal transition-all group">
-              <div className="flex justify-between items-start mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 group-hover:text-rose-600 transition-colors truncate max-w-[80%]">{stat.name}</span>
-                <TrendingUp className="w-4 h-4 text-stone-300 group-hover:text-rose-600 transition-colors" />
+          {activityStats.map((stat: any) => {
+            const isHidden = hiddenActivityIds.includes(stat.id);
+            return (
+              <div key={stat.id} className={cn(
+                "bg-white p-5 rounded-3xl border-2 border-stone-200 shadow-sm transition-all group relative",
+                isHidden ? "opacity-50 grayscale" : "hover:border-stone-900 hover:shadow-brutal"
+              )}>
+                <div className="flex justify-between items-start mb-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 group-hover:text-rose-600 transition-colors truncate max-w-[70%]">{stat.name}</span>
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => toggleHideActivity(stat.id)}
+                      className="p-1 hover:bg-stone-100 rounded-lg text-stone-300 hover:text-stone-900 transition-colors"
+                      title={isHidden ? "Tampilkan di tabel" : "Sembunyikan dari tabel"}
+                    >
+                      <Eye className={cn("w-3.5 h-3.5", isHidden && "hidden")} />
+                      <EyeOff className={cn("w-3.5 h-3.5", !isHidden && "hidden")} />
+                    </button>
+                    <TrendingUp className="w-3.5 h-3.5 text-stone-300 group-hover:text-rose-600 transition-colors" />
+                  </div>
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-2xl font-black text-stone-900">{stat.count}</span>
+                  <span className="text-stone-400 font-bold mb-1 text-xs">/ {stat.totalDays} hari</span>
+                </div>
+                <div className="mt-3 w-full bg-stone-100 h-2 rounded-full overflow-hidden border border-stone-200/50">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${stat.percentage}%` }}
+                    className="bg-rose-500 h-full rounded-full"
+                  />
+                </div>
               </div>
-              <div className="flex items-end gap-2">
-                <span className="text-2xl font-black text-stone-900">{stat.count}</span>
-                <span className="text-stone-400 font-bold mb-1 text-xs">/ {stat.totalDays} hari</span>
-              </div>
-              <div className="mt-3 w-full bg-stone-100 h-2 rounded-full overflow-hidden border border-stone-200/50">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${stat.percentage}%` }}
-                  className="bg-rose-500 h-full rounded-full"
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -181,86 +213,73 @@ export function RoutineView() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-stone-50 border-b-2 border-stone-900 text-stone-800">
-                <th className="p-4 text-left border-r-2 border-stone-900 min-w-[140px] text-xs font-black uppercase tracking-widest bg-stone-50" rowSpan={2}>
-                  <div className="flex items-center gap-1.5">
-                    <Award className="w-4 h-4 text-rose-500" />
-                    <span>Kegiatan</span>
-                  </div>
-                </th>
-                {weeks.map((week, wIdx) => (
-                  <th key={wIdx} className="px-2 py-2 text-center border-r-2 border-stone-200 bg-stone-100/40 text-[9px] font-black uppercase tracking-widest text-stone-400" colSpan={week.length}>
-                     MG {wIdx + 1}
-                  </th>
-                ))}
-                <th className="p-4 text-center min-w-[70px] bg-stone-950 text-white text-[9px] font-black uppercase tracking-widest" rowSpan={2}>
-                  Aksi
-                </th>
-              </tr>
-              <tr className="bg-white border-b-2 border-stone-900 text-stone-800">
-                {daysInMonth.map((day, dIdx) => (
-                  <th 
-                    key={dIdx} 
-                    className={cn(
-                      "p-1 text-center text-[10px] font-black border-r border-stone-100 min-w-[22px]",
-                      isSameDay(day, new Date()) ? "bg-stone-900 text-white border-none shrink-0" : ""
-                    )}
-                  >
-                    <div>{format(day, 'd')}</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {activities.length === 0 ? (
-                <tr>
-                  <td colSpan={daysInMonth.length + 2} className="p-12 text-center">
-                    <div className="flex flex-col items-center gap-2 text-stone-400">
-                      <CalendarIcon className="w-8 h-8 opacity-30 text-rose-300" />
-                      <p className="font-bold text-sm">Belum ada template kegiatan harian.</p>
-                      <p className="text-xs text-stone-400">Tulis kegiatan harian Anda (seperti shalat tepat waktu, olahraga, minum air, dsb) di kotak input atas.</p>
+                <th className="p-4 text-left border-r-2 border-stone-900 min-w-[140px] text-xs font-black uppercase tracking-widest bg-stone-50 sticky left-0 z-20" rowSpan={2}>
+                    <div className="flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-rose-500" />
+                      <span>Kegiatan</span>
                     </div>
-                  </td>
+                  </th>
+                  {weeks.map((week, wIdx) => (
+                    <th key={wIdx} className="px-2 py-2 text-center border-r-2 border-stone-200 bg-stone-100/40 text-[9px] font-black uppercase tracking-widest text-stone-400" colSpan={week.length}>
+                       MG {wIdx + 1}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                activities.map((act: any) => (
-                  <tr key={act.id} className="border-b border-stone-100 hover:bg-stone-50/50 transition-colors">
-                    <td className="p-3 border-r-2 border-stone-900 font-bold text-xs text-stone-800 bg-stone-50/40 truncate max-w-[150px]">
-                      {act.name}
-                    </td>
-                    {daysInMonth.map((day, dIdx) => {
-                      const dateStr = format(day, 'yyyy-MM-dd');
-                      const isCompleted = completions.some((c: any) => c.activityId === act.id && c.dateStr === dateStr);
-                      return (
-                        <td key={dIdx} className="p-1 text-center border-r border-stone-100">
-                          <button 
-                            onClick={() => handleToggleCompletion(act.id, day)}
-                            className={cn(
-                              "w-4 h-4 rounded border transition-all flex items-center justify-center mx-auto cursor-pointer focus:outline-none",
-                              isCompleted 
-                                ? "bg-stone-900 border-stone-900 text-white shadow-sm scale-110" 
-                                : "bg-white border-stone-300 hover:border-stone-600 hover:scale-105"
-                            )}
-                          >
-                             {isCompleted && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
-                          </button>
-                        </td>
-                      );
-                    })}
-                    <td className="p-2 text-center border-l border-stone-900">
-                      <button 
-                        onClick={() => handleDeleteActivity(act.id)}
-                        className="p-1 hover:bg-red-50 text-stone-300 hover:text-red-500 rounded-lg transition-all"
-                        title="Hapus kegiatan harian"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                <tr className="bg-white border-b-2 border-stone-900 text-stone-800">
+                  {daysInMonth.map((day, dIdx) => (
+                    <th 
+                      key={dIdx} 
+                      className={cn(
+                        "p-1 text-center text-[10px] font-black border-r border-stone-100 min-w-[22px]",
+                        isSameDay(day, new Date()) ? "bg-stone-900 text-white border-none shrink-0" : ""
+                      )}
+                    >
+                      <div>{format(day, 'd')}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {activities.filter((a: any) => !hiddenActivityIds.includes(a.id)).length === 0 ? (
+                  <tr>
+                    <td colSpan={daysInMonth.length + 1} className="p-12 text-center">
+                      <div className="flex flex-col items-center gap-2 text-stone-400">
+                        <CalendarIcon className="w-8 h-8 opacity-30 text-rose-300" />
+                        <p className="font-bold text-sm">Belum ada template kegiatan harian yang ditampilkan.</p>
+                      </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  activities.filter((a: any) => !hiddenActivityIds.includes(a.id)).map((act: any) => (
+                    <tr key={act.id} className="border-b border-stone-100 hover:bg-stone-50/50 transition-colors">
+                      <td className="p-3 border-r-2 border-stone-900 font-bold text-xs text-stone-800 bg-stone-50/40 truncate max-w-[150px] md:max-w-xs sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                        {act.name}
+                      </td>
+                      {daysInMonth.map((day, dIdx) => {
+                        const dateStr = format(day, 'yyyy-MM-dd');
+                        const isCompleted = completions.some((c: any) => c.activityId === act.id && c.dateStr === dateStr);
+                        return (
+                          <td key={dIdx} className="p-1 text-center border-r border-stone-100">
+                            <button 
+                              onClick={() => handleToggleCompletion(act.id, day)}
+                              className={cn(
+                                "w-4 h-4 rounded border transition-all flex items-center justify-center mx-auto cursor-pointer focus:outline-none",
+                                isCompleted 
+                                  ? "bg-stone-900 border-stone-900 text-white shadow-sm scale-110" 
+                                  : "bg-white border-stone-300 hover:border-stone-600 hover:scale-105"
+                              )}
+                            >
+                               {isCompleted && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
       </div>
 
       <p className="text-center text-stone-400 text-xs italic font-medium">

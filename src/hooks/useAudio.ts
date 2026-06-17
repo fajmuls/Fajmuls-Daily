@@ -4,7 +4,7 @@ import { useAppContext } from '../store';
 // Play simple frequency beeps using Web Audio API to avoid external asset dependencies
 let audioCtx: AudioContext | null = null;
 
-const createBeep = (frequency: number, type: OscillatorType, duration: number, vol = 0.1) => {
+export const createBeep = (frequency: number, type: OscillatorType, duration: number, vol = 0.1) => {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
@@ -45,5 +45,12 @@ export function useAudio() {
     setTimeout(() => createBeep(250, 'sawtooth', 0.3, 0.1), 150);
   }, [soundEnabled]);
 
-  return { playClick, playSuccess, playError };
+  const playStartup = useCallback(() => {
+    if (!soundEnabled) return;
+    createBeep(440, 'sine', 0.1, 0.05);
+    setTimeout(() => createBeep(554, 'sine', 0.1, 0.05), 100);
+    setTimeout(() => createBeep(659, 'sine', 0.3, 0.1), 200);
+  }, [soundEnabled]);
+
+  return { playClick, playSuccess, playError, playStartup };
 }

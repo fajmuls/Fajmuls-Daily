@@ -31,6 +31,35 @@ export function Dashboard() {
   const { isInstallable, installPWA } = usePWAInstall();
   const [tripToEnd, setTripToEnd] = useState<TripSummary | null>(null);
   const [showWrapped, setShowWrapped] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
+
+  const requestNotification = () => {
+    if (!("Notification" in window)) {
+      alert("Browser Anda tidak mendukung Web Notifications.");
+      return;
+    }
+    Notification.requestPermission().then((permission) => {
+      setNotificationPermission(permission);
+      if (permission === 'granted') {
+        new Notification("Notifikasi Aktif!", {
+          body: "Anda akan menerima notifikasi pintar dari aplikasi.",
+          icon: "/icon.png"
+        });
+      }
+    });
+  };
+
+  const sendTestNotification = () => {
+    if (Notification.permission === 'granted') {
+      new Notification("Pengingat Harian", {
+        body: "Jangan lupa untuk mencatat keuangan & jadwal Anda hari ini!",
+        icon: "/icon.png"
+      });
+      playSuccess();
+    } else {
+      requestNotification();
+    }
+  };
 
   const todayDate = format(new Date(), 'EEEE, d MMMM yyyy', { locale: id });
   const habitGrid = useMemo(() => generateHabitGrid(notes), [notes]);
@@ -126,14 +155,32 @@ export function Dashboard() {
           <div className="font-sans text-2xl font-black tracking-tight text-stone-900">Fajmuls<span className="text-stone-300">Daily</span></div>
         </div>
         
-        {isInstallable && (
+        <div className="flex items-center gap-2">
+          {notificationPermission !== 'granted' ? (
+            <button 
+              onClick={() => { playClick(); requestNotification(); }}
+              className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all"
+            >
+              Aktifkan Notifikasi
+            </button>
+          ) : (
+            <button 
+              onClick={sendTestNotification}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all"
+            >
+              Kirim Notifikasi
+            </button>
+          )}
+
+          {isInstallable && (
           <button 
             onClick={() => { playClick(); installPWA(); }}
             className="flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all"
           >
             <Download className="w-4 h-4" /> Install App
           </button>
-        )}
+          )}
+        </div>
       </div>
 
       {showGreeting && (

@@ -28,10 +28,11 @@ import { WorkspaceSyncModal } from '../WorkspaceSyncModal';
 import { useAudio } from '../../hooks/useAudio';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const NOTE_TYPES: { type: NoteType | 'prayer-list' | 'routine'; icon: any; label: string; color: string; bg: string; link: string; desc: string }[] = [
+const NOTE_TYPES: { type: NoteType | 'prayer-list' | 'routine' | 'trips'; icon: any; label: string; color: string; bg: string; link: string; desc: string }[] = [
   { type: 'normal', icon: FileText, label: 'Biasa / Umum', color: 'text-stone-700', bg: 'bg-stone-100', link: '/notes/normal-list', desc: 'Catatan umum, ide, draf teks & jurnal.' },
   { type: 'prayer-list', icon: Moon, label: 'Qadha Shalat', color: 'text-indigo-700', bg: 'bg-indigo-100', link: '/notes/prayers', desc: 'Daftar & status qadha shalat fardhu.' },
   { type: 'routine', icon: CalendarRange, label: 'Kegiatan Harian', color: 'text-rose-700', bg: 'bg-rose-100', link: '/notes/routine', desc: 'Lacak rutinitas harian, kebiasaan, & komitmen ibadah.' },
+  { type: 'trips', icon: Map, label: 'Summary Perjalanan', color: 'text-teal-700', bg: 'bg-teal-100', link: '/notes/trips', desc: 'Detail perjalanan antar kota & log bepergian.' },
   { type: 'ig', icon: Instagram, label: 'Catatan IG', color: 'text-pink-700', bg: 'bg-pink-100', link: '/notes/ig-list', desc: 'Ide takarir, lirik lagu, & post IG.' },
   { type: 'daily-goal', icon: CheckSquare, label: 'Daily Goals', color: 'text-blue-700', bg: 'bg-blue-100', link: '/notes/daily-goals', desc: 'Target pencapaian & resolusi harian.' },
   { type: 'personal', icon: Lock, label: 'Data Pribadi', color: 'text-emerald-700', bg: 'bg-emerald-100', link: '/notes/personal-list', desc: 'Data sensitif tersandi & rahasia.' },
@@ -118,9 +119,10 @@ export function NotesList() {
   };
 
   // Helper metrics
-  const getNoteCount = (type: NoteType | 'prayer-list' | 'routine') => {
+  const getNoteCount = (type: NoteType | 'prayer-list' | 'routine' | 'trips') => {
     if (type === 'prayer-list') return "..."; // Dynamically rendered inside respective list
     if (type === 'routine') return activities?.length || 0;
+    if (type === 'trips') return trips?.length || 0;
     return notes.filter(n => n.type === type).length;
   };
 

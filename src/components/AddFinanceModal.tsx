@@ -866,8 +866,8 @@ export function AddFinanceModal({
                        <div className="space-y-4">
                          <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 block">Pilih Ikon</label>
                          {ICON_GROUPS.map((gro) => (
-                           <div key={gro.name} className="space-y-2">
-                             <span className="text-[8px] font-black uppercase tracking-wider text-stone-400 border-b border-stone-100 pb-0.5 block">{gro.name}</span>
+                           <div key={gro.label} className="space-y-2">
+                             <span className="text-[8px] font-black uppercase tracking-wider text-stone-400 border-b border-stone-100 pb-0.5 block">{gro.label}</span>
                              <div className="grid grid-cols-6 gap-2">
                                {gro.icons.map((icoName) => {
                                  const IcoComp = (LucideIcons as any)[icoName];

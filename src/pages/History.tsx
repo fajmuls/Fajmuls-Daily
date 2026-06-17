@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getWeekOfMonth, getDay, addMonths, subMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import { 
   CalendarRange, 
   ChevronLeft, 
@@ -23,6 +24,7 @@ import { useAudio } from '../hooks/useAudio';
 import { cn } from '../lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 import { TripTrackingMap } from '../components/dashboard/TripTrackingMap';
+import { APIProvider } from '@vis.gl/react-google-maps';
 
 interface RoutineActivity {
   id: string;
@@ -37,6 +39,7 @@ interface RoutineCompletion {
 }
 
 export function History() {
+  const navigate = useNavigate();
   const { playClick, playSuccess, playError } = useAudio();
   const { showConfirm, activities, completions, addActivity, deleteActivity, toggleCompletion, trips } = useAppContext();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -118,6 +121,13 @@ export function History() {
           </div>
           <p className="text-stone-500 font-medium">Lacak rute, log BBM, tol, & histori detail perjalanan Anda.</p>
         </div>
+        <button 
+          onClick={() => { playClick(); navigate('/notes/trips'); }}
+          className="flex items-center gap-3 px-6 py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-brutal hover:-translate-y-1 active:translate-y-0 transition-all border-2 border-stone-900"
+        >
+          <Plus className="w-5 h-5" />
+          Mulai Perjalanan Baru
+        </button>
       </header>
 
       {activeTab === 'routine' ? (
@@ -342,18 +352,26 @@ export function History() {
                
                <AnimatePresence>
                  {expandedTripMap === trip.id && (
-                   <motion.div 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 400, opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden bg-stone-50 rounded-[2.5rem] border-2 border-stone-900 shadow-brutal"
-                   >
-                     <TripTrackingMap 
-                      origin={trip.origin} 
-                      destination={trip.destination} 
-                      ongoing={false} 
-                     />
-                   </motion.div>
+                   <div className="overflow-hidden bg-stone-50 rounded-[2.5rem] border-2 border-stone-900 shadow-brutal h-[400px]">
+                     {process.env.GOOGLE_MAPS_PLATFORM_KEY ? (
+                       <APIProvider apiKey={process.env.GOOGLE_MAPS_PLATFORM_KEY}>
+                         <TripTrackingMap 
+                          origin={trip.origin} 
+                          destination={trip.destination} 
+                          ongoing={false} 
+                         />
+                       </APIProvider>
+                     ) : (
+                       <iframe 
+                        width="100%" 
+                        height="100%" 
+                        frameBorder="0" 
+                        style={{ border: 0 }}
+                        src={`https://www.google.com/maps/embed/v1/directions?key=${process.env.GOOGLE_MAPS_PLATFORM_KEY || ''}&origin=${encodeURIComponent(trip.origin.detail || trip.origin.city)}&destination=${encodeURIComponent(trip.destination.detail || trip.destination.city)}&mode=driving`}
+                        allowFullScreen
+                       />
+                     )}
+                   </div>
                  )}
                </AnimatePresence>
               </div>

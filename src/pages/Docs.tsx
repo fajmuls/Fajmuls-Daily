@@ -21,6 +21,8 @@ export function Docs() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  
+  const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
 
   const handleAIOCR = async () => {
     if (!pendingFile) return;
@@ -242,7 +244,7 @@ export function Docs() {
         </div>
       )}
 
-      <div className="pt-8">
+      <div className="pt-8 mb-10">
         <h2 className="font-black uppercase tracking-widest text-xs text-stone-400 mb-6 flex items-center gap-2">
            <FileImage className="w-4 h-4" /> Galeri Tersimpan
         </h2>
@@ -251,24 +253,30 @@ export function Docs() {
              Belum ada foto yang diunggah.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+          <div className="columns-1 sm:columns-2 md:columns-3 gap-6 space-y-6">
             {firebaseDocs.map(doc => (
-              <div key={doc.id} className="group flex flex-col space-y-3 bg-white p-4 rounded-[2.5rem] border-2 border-stone-900 shadow-brutal hover:-translate-y-1 hover:shadow-brutal-active transition-all relative">
+              <div key={doc.id} className="break-inside-avoid group flex flex-col space-y-3 bg-white p-4 rounded-[2rem] border-2 border-stone-900 shadow-[4px_4px_0px_#1c1917] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#1c1917] transition-all relative">
                 <button 
-                  onClick={() => handleDelete(doc.id)}
-                  className="absolute -top-3 -right-3 z-10 w-10 h-10 flex items-center justify-center bg-white border-2 border-stone-900 text-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-brutal hover:rotate-12"
+                  onClick={(e) => { e.stopPropagation(); handleDelete(doc.id); }}
+                  className="absolute -top-3 -right-3 z-10 w-10 h-10 flex items-center justify-center bg-white border-2 border-stone-900 text-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-[2px_2px_0px_#1c1917] hover:rotate-12"
                   title="Hapus gambar"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <div className="relative aspect-square bg-stone-100 rounded-3xl overflow-hidden border-2 border-stone-200 group-hover:border-stone-400 transition-colors">
-                  <img src={doc.url} alt={doc.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div 
+                  className="relative bg-stone-100 rounded-[1.5rem] overflow-hidden border-2 border-stone-200 group-hover:border-stone-400 transition-colors cursor-pointer"
+                  onClick={() => setSelectedDoc(doc)}
+                >
+                  <img src={doc.url} alt={doc.name} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900 via-stone-900/40 to-transparent p-5 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 flex flex-col items-start justify-end">
                       <p className="text-white font-black text-xs uppercase tracking-widest">{format(doc.createdAt, 'd MMM yyyy', { locale: id })}</p>
                       <p className="text-stone-300 font-mono text-[10px] font-bold mt-1">{format(doc.createdAt, 'HH:mm', { locale: id })}</p>
                   </div>
                 </div>
-                <div className="px-2 pt-1 pb-2">
+                <div 
+                  className="px-2 pt-1 pb-2 cursor-pointer"
+                  onClick={() => setSelectedDoc(doc)}
+                >
                   {doc.description ? (
                     <div className="text-stone-800 text-xs font-medium leading-relaxed prose prose-stone prose-xs line-clamp-4">
                       <Markdown>{doc.description}</Markdown>
@@ -282,6 +290,50 @@ export function Docs() {
           </div>
         )}
       </div>
+
+      {/* Modal for viewing photo and description */}
+      {selectedDoc && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm" onClick={() => setSelectedDoc(null)} />
+          <div className="relative z-10 w-full max-w-5xl max-h-[90vh] flex flex-col md:flex-row bg-white rounded-[2rem] border-4 border-stone-900 shadow-brutal overflow-hidden mx-4 animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setSelectedDoc(null)} 
+              className="absolute top-4 right-4 z-20 p-2 bg-stone-100 hover:bg-stone-200 border-2 border-stone-900 rounded-full transition-colors drop-shadow-md"
+            >
+              <X className="w-5 h-5 text-stone-900" />
+            </button>
+            <div className="flex-1 bg-stone-100 flex items-center justify-center p-4">
+               <img src={selectedDoc.url} alt={selectedDoc.name} className="max-w-full max-h-[50vh] md:max-h-[85vh] object-contain rounded-xl shadow-lg border border-stone-200" />
+            </div>
+            <div className="w-full md:w-[400px] border-t-4 md:border-t-0 md:border-l-4 border-stone-900 p-8 flex flex-col bg-white overflow-y-auto max-h-[40vh] md:max-h-[90vh]">
+              <div>
+                <p className="text-[10px] font-black tracking-widest uppercase text-stone-400 mb-1">Diunggah Pada</p>
+                <p className="font-mono font-bold text-stone-900 mb-6">{format(selectedDoc.createdAt, 'EEEE, d MMMM yyyy HH:mm', { locale: id })}</p>
+                
+                <p className="text-[10px] font-black tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-2 mb-4">Deskripsi / Keterangan</p>
+                {selectedDoc.description ? (
+                  <div className="text-stone-800 text-sm font-medium leading-relaxed prose prose-stone text-pretty">
+                    <Markdown>{selectedDoc.description}</Markdown>
+                  </div>
+                ) : (
+                  <p className="text-stone-400 text-sm italic">Tidak ada keterangan yang ditambahkan pada dokumen ini.</p>
+                )}
+              </div>
+              <div className="mt-auto pt-8">
+                <button 
+                  onClick={() => {
+                    handleDelete(selectedDoc.id);
+                    setSelectedDoc(null);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl font-bold transition-colors uppercase tracking-widest text-xs border border-red-200"
+                >
+                  <Trash2 className="w-4 h-4" /> Hapus Berkas Ini
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -54,39 +54,46 @@ export const INITIAL_MISSED_PRAYERS: MissedPrayer[] = MISSED_PRAYERS_DATA.map(it
 
 export const ICON_GROUPS = [
   {
-    name: 'Dasar',
-    icons: ['Tag', 'Wallet', 'CreditCard', 'Coins', 'Banknote', 'Receipt', 'Calculator', 'PiggyBank', 'Shield', 'Key', 'Lock', 'TrendingUp', 'TrendingDown', 'Activity', 'BarChart3', 'PieChart', 'Percent', 'Gavel', 'Wallet2']
+    label: 'Dasar',
+    icons: ['Tag', 'Wallet', 'CreditCard', 'Coins', 'Banknote', 'Receipt', 'Calculator', 'PiggyBank', 'Shield', 'Key', 'Lock', 'TrendingUp', 'TrendingDown', 'Activity', 'BarChart3', 'PieChart', 'Percent', 'Gavel', 'Wallet']
   },
   {
-    name: 'Makanan & Jajan',
+    label: 'Makanan & Jajan',
     icons: ['Utensils', 'Coffee', 'Pizza', 'Sandwich', 'Beer', 'Wine', 'CupSoda', 'Apple', 'Carrot', 'Egg', 'IceCream', 'Popcorn', 'Cake', 'Cherry', 'Cookie', 'Beef', 'Soup', 'Grape', 'GlassWater']
   },
   {
-    name: 'Transportasi',
+    label: 'Transportasi',
     icons: ['Fuel', 'Car', 'Bus', 'Plane', 'Train', 'Bike', 'MapPin', 'Compass', 'Rocket', 'PlaneTakeoff', 'Anchor', 'Ship', 'Truck', 'CarTaxiFront', 'Milestone']
   },
   {
-    name: 'Belanja',
+    label: 'Belanja',
     icons: ['ShoppingBag', 'Tag', 'Gift', 'Ticket', 'Shirt', 'Watch', 'ShoppingBasket', 'Package', 'Sparkles', 'Trophy', 'Crown', 'Glasses', 'Gem', 'Umbrella', 'Suitcase']
   },
   {
-    name: 'Utilitas & Rumah',
+    label: 'Utilitas & Rumah',
     icons: ['Zap', 'Droplet', 'Wifi', 'Smartphone', 'Home', 'Tv', 'Mic', 'Printer', 'Laptop', 'Headphones', 'Speaker', 'Umbrella', 'Bed', 'Sofa', 'Bath', 'Lamp', 'Thermometer', 'Trash2', 'Warehouse', 'Key', 'Fan']
   },
   {
-    name: 'Peralatan & Hobby',
+    label: 'Peralatan & Hobby',
     icons: ['Wrench', 'Hammer', 'PenTool', 'Scissors', 'Palette', 'Camera', 'Film', 'Gamepad', 'Music', 'Piano', 'Drum', 'Mic2', 'Sword', 'Telescope', 'Microscope', 'Drill', 'Screwdriver', 'Plug2', 'Cpu']
   },
   {
-    name: 'Kesehatan & Perawatan',
+    label: 'Kesehatan & Perawatan',
     icons: ['Heart', 'Stethoscope', 'Pill', 'Activity', 'Thermometer', 'Hospital', 'Syringe', 'Baby', 'Dog', 'Cat', 'Fish', 'Bird', 'Bone', 'Footprints', 'ShowerHead', 'Sprout', 'Brain', 'Smile']
   },
   {
-    name: 'Hiburan & Edukasi',
+    label: 'Hiburan & Edukasi',
     icons: ['GraduationCap', 'Book', 'BookOpen', 'Library', 'Globe', 'Map', 'Languages', 'Dumbbell', 'Bicycle', 'Play', 'Video', 'CassetteTape', 'Clapperboard', 'Gamepad2', 'Headset']
   },
   {
-    name: 'Lainnya',
+    label: 'Lainnya',
     icons: ['User', 'Users', 'Star', 'Cloud', 'Sun', 'Moon', 'Bell', 'Flag', 'Smile', 'Box', 'Feather', 'Briefcase', 'Sprout', 'Bug', 'Ghost', 'Wind', 'Snowflake', 'Flame', 'Sparkly', 'Rainbow']
   }
+];
+
+export const COLORS = [
+  "#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16",
+  "#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9",
+  "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
+  "#ec4899", "#f43f5e", "#64748b", "#71717a", "#1c1917"
 ];

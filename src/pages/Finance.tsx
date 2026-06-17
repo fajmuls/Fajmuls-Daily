@@ -375,24 +375,42 @@ export function Finance() {
 
   const getCatEdit = (cat: string) => {
     if (categoryEdits[cat]) return categoryEdits[cat];
+    const isGroup = !!financeMappings[cat];
     const isIncome = financeRecords.some(r => r.category === cat && r.type === 'income');
+    const pref = financeCategoryPrefs[cat];
+    if (isGroup) {
+      return {
+        name: cat,
+        iconName: pref?.iconName || 'Folder',
+        color: pref?.color || '#78716c'
+      };
+    }
     return {
       name: cat,
-      iconName: getCategoryIcon(cat, isIncome ? 'income' : 'expense', financeCategoryPrefs),
-      color: getCategoryColor(cat, isIncome ? 'income' : 'expense', financeCategoryPrefs)
+      iconName: pref?.iconName || (isIncome ? 'TrendingUp' : 'Tag'),
+      color: pref?.color || (isIncome ? '#10b981' : '#ef4444')
     };
   };
 
   const renderCategoryItemUI = (cat: string, editObj: any) => {
     return (
       <div className="flex items-center gap-3">
-        <button
-          onClick={() => setPickingIconFor(pickingIconFor === cat ? null : cat)}
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
-          style={{ backgroundColor: editObj.color }}
-        >
-          {React.createElement((LucideIcons as any)[editObj.iconName] || Tag, { className: "w-5 h-5" })}
-        </button>
+        <div className="relative group/btn">
+          <button
+            onClick={() => setPickingIconFor(pickingIconFor === cat ? null : cat)}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+            style={{ backgroundColor: editObj.color }}
+          >
+            {React.createElement((LucideIcons as any)[editObj.iconName] || Tag, { className: "w-5 h-5" })}
+          </button>
+          <button
+            onClick={() => setPickingColorFor(pickingColorFor === cat ? null : cat)}
+            className="absolute -bottom-1 -right-1 w-4 h-4 bg-white border border-stone-200 rounded-full flex items-center justify-center opacity-0 group-hover/btn:opacity-100 transition-opacity"
+            title="Edit Warna"
+          >
+            <div className="w-2 h-2 rounded-full bg-stone-900" />
+          </button>
+        </div>
         <div className="flex-1 min-w-0">
           <input
             type="text"
@@ -425,21 +443,36 @@ export function Finance() {
             deleteFinanceRecord={deleteFinanceRecord} setEditingRecord={setEditingRecord}
             setShowAddModal={setShowAddModal} showConfirm={showConfirm} playError={playError}
             financeCategoryPrefs={financeCategoryPrefs} hideAmounts={hideAmounts}
+            filterCategory={filterCategory} setFilterCategory={setFilterCategory}
+            filterRange={filterRange} setFilterRange={setFilterRange}
+            allCategories={allCategories}
           />
         )}
 
         {activeTab === "analysis" && (
           <StatsView 
-            filteredRecords={filteredRecords} financeRecords={financeRecords}
-            financeCategoryPrefs={financeCategoryPrefs} chartMode={chartMode} setChartMode={setChartMode}
-            categoryToGroup={categoryToGroup} trendFilter={trendFilter} setTrendFilter={setTrendFilter}
-            selectedWeek={selectedWeek} setSelectedWeek={setSelectedWeek}
-            trendData={trendData} trendTotals={trendTotals}
-            incomeChartData={incomeChartData} expenseChartData={expenseChartData}
-            expenseData={expenseData} incomeData={incomeData}
-            handleChartClick={() => {}} activeExpenseIndex={activeExpenseIndex}
-            setActiveExpenseIndex={setActiveExpenseIndex} activeIncomeIndex={activeIncomeIndex}
+            filteredRecords={filteredRecords} 
+            financeRecords={financeRecords}
+            financeCategoryPrefs={financeCategoryPrefs} 
+            chartMode={chartMode} 
+            setChartMode={setChartMode}
+            categoryToGroup={categoryToGroup} 
+            trendFilter={trendFilter} 
+            setTrendFilter={setTrendFilter}
+            selectedWeek={selectedWeek} 
+            setSelectedWeek={setSelectedWeek}
+            trendData={trendData} 
+            trendTotals={trendTotals}
+            incomeChartData={incomeChartData} 
+            expenseChartData={expenseChartData}
+            expenseData={expenseData} 
+            incomeData={incomeData}
+            handleChartClick={() => {}} 
+            activeExpenseIndex={activeExpenseIndex}
+            setActiveExpenseIndex={setActiveExpenseIndex} 
+            activeIncomeIndex={activeIncomeIndex}
             setActiveIncomeIndex={setActiveIncomeIndex}
+            formatCurrency={formatCurrency}
           />
         )}
 

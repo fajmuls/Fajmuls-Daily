@@ -39,6 +39,8 @@ export function PlanningView({
   // Modal states
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [budgetCategory, setBudgetCategory] = useState("");
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategoryText, setCustomCategoryText] = useState("");
   const [budgetAmount, setBudgetAmount] = useState("");
 
   const [showAddSaving, setShowAddSaving] = useState(false);
@@ -52,19 +54,32 @@ export function PlanningView({
 
   const commonCategories = ["Makan", "Transportasi", "Pribadi", "Kebutuhan", "Hiburan", "Investasi", "Tagihan", "Lainnya"];
 
+  const dynamicCategories = React.useMemo(() => {
+    const list = new Set(commonCategories);
+    financeRecords.forEach((r: any) => {
+      if (r.category && r.category.trim()) {
+        list.add(r.category.trim());
+      }
+    });
+    return Array.from(list).sort();
+  }, [financeRecords]);
+
   const handleCreateBudget = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalCategory = isCustomCategory ? customCategoryText.trim() : budgetCategory;
     const amount = parseFloat(budgetAmount);
-    if (!budgetCategory || isNaN(amount) || amount <= 0) return;
+    if (!finalCategory || isNaN(amount) || amount <= 0) return;
 
     playClick();
     addBudget({
       id: uuidv4(),
-      category: budgetCategory,
+      category: finalCategory,
       amount: amount
     });
 
     setBudgetCategory("");
+    setCustomCategoryText("");
+    setIsCustomCategory(false);
     setBudgetAmount("");
     setShowAddBudget(false);
     playSuccess();
@@ -286,16 +301,37 @@ export function PlanningView({
               </div>
               <form onSubmit={handleCreateBudget} className="space-y-4">
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-wider text-stone-400 block mb-1">Pilih Kategori</label>
-                  <select 
-                    value={budgetCategory} 
-                    onChange={e => setBudgetCategory(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none font-bold text-xs"
-                    required
-                  >
-                    <option value="">-- Silakan Pilih Kategori --</option>
-                    {commonCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-stone-400">Pilih Kategori</label>
+                    <button 
+                      type="button" 
+                      onClick={() => { playClick(); setIsCustomCategory(!isCustomCategory); }}
+                      className="text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:underline"
+                    >
+                      {isCustomCategory ? "Pilih dari Daftar" : "Tulis Kustom"}
+                    </button>
+                  </div>
+                  
+                  {isCustomCategory ? (
+                    <input 
+                      type="text"
+                      value={customCategoryText}
+                      onChange={e => setCustomCategoryText(e.target.value)}
+                      placeholder="Masukkan nama kategori kustom..."
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none font-bold text-xs"
+                      required
+                    />
+                  ) : (
+                    <select 
+                      value={budgetCategory} 
+                      onChange={e => setBudgetCategory(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none font-bold text-xs"
+                      required
+                    >
+                      <option value="">-- Silakan Pilih Kategori --</option>
+                      {dynamicCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                  )}
                 </div>
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-wider text-stone-400 block mb-1">Target Limit Anggaran (IDR)</label>
