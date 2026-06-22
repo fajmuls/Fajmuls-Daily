@@ -710,7 +710,7 @@ export function AddFinanceModal({
                            return (
                              <div key={groupName} className="space-y-3">
                                <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold border-b border-stone-100 pb-1">{groupName}</label>
-                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 md:gap-3">
                                   {catArray.map((cat, i) => {
                                      const iconName = getCategoryIcon(cat as string, type, financeCategoryPrefs);
                                      const IconComp = iconName ? (LucideIcons as any)[iconName] : Tag;
@@ -728,12 +728,12 @@ export function AddFinanceModal({
                                              playClick(); 
                                            }}
                                            className={cn(
-                                             "aspect-square p-2 border rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer",
-                                             isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg scale-105" : "bg-white border-stone-200 hover:border-stone-400 text-stone-700"
+                                             "aspect-square p-1.5 border rounded-xl md:rounded-2xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm cursor-pointer",
+                                             isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg scale-105" : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
                                            )}
                                          >
-                                            <IconComp className="w-6 h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat as string, type, financeCategoryPrefs) }} />
-                                            <span className={cn("text-[9px] font-extrabold uppercase tracking-wider truncate w-full text-center mt-1 px-1", isSelected ? "text-stone-200" : "text-stone-500")}>
+                                            <IconComp className="w-5 h-5 md:w-6 md:h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat as string, type, financeCategoryPrefs) }} />
+                                            <span className={cn("text-[8px] md:text-[9px] font-extrabold uppercase tracking-wider truncate w-full text-center mt-1 px-1", isSelected ? "text-stone-200" : "text-stone-500")}>
                                               {cat}
                                             </span>
                                          </button>
@@ -747,7 +747,7 @@ export function AddFinanceModal({
                          {filteredUnmapped.length > 0 && (
                            <div className="space-y-3">
                              <label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold border-b border-stone-100 pb-1">Tanpa Grup</label>
-                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 md:gap-3">
                                 {filteredUnmapped.map((catAny, i) => {
                                    const cat = catAny as string;
                                    const iconName = getCategoryIcon(cat, type, financeCategoryPrefs);
@@ -766,12 +766,12 @@ export function AddFinanceModal({
                                            playClick(); 
                                          }}
                                          className={cn(
-                                           "aspect-square p-2 border rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer",
-                                           isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg scale-105" : "bg-white border-stone-200 hover:border-stone-400 text-stone-700"
+                                           "aspect-square p-1.5 border rounded-xl md:rounded-2xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm cursor-pointer",
+                                           isSelected ? "bg-stone-900 border-stone-900 text-white shadow-lg scale-105" : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
                                          )}
                                        >
-                                          <IconComp className="w-6 h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat as string, type, financeCategoryPrefs) }} />
-                                          <span className={cn("text-[9px] font-extrabold uppercase tracking-wider truncate w-full text-center mt-1 px-1", isSelected ? "text-stone-200" : "text-stone-500")}>
+                                          <IconComp className="w-5 h-5 md:w-6 md:h-6" style={{ color: isSelected ? 'white' : getCategoryColor(cat as string, type, financeCategoryPrefs) }} />
+                                          <span className={cn("text-[8px] md:text-[9px] font-extrabold uppercase tracking-wider truncate w-full text-center mt-1 px-1", isSelected ? "text-stone-200" : "text-stone-500")}>
                                             {cat}
                                           </span>
                                        </button>

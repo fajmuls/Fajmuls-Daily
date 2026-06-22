@@ -444,7 +444,7 @@ export function Finance() {
                   const currentPref = financeCategoryPrefs[cat];
                   if (currentPref) {
                     updateCategoryPref(cleanNew, currentPref);
-                    // deleteFinanceCategoryBulk(cat); // This normally deletes pref
+                    deleteFinanceCategoryBulk(cat);
                   }
                   playSuccess();
                 }

@@ -62,6 +62,9 @@ export function FinanceSettings({
   renderCategoryItemUI
 }: FinanceSettingsProps) {
 
+  const existingGroups = Object.keys(financeMappings).sort();
+  const [showAddGroup, setShowAddGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
   const [showAddCat, setShowAddCat] = useState(false);
   const [newCatName, setNewCatName] = useState("");
 
