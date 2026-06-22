@@ -1,7 +1,7 @@
 {
   "name": "Fajmul's Daily",
   "short_name": "Fajmul's",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
@@ -10,14 +10,14 @@
       "name": "Keuangan Baru",
       "short_name": "Keuangan",
       "description": "Buka modul keuangan",
-      "url": "/finance",
+      "url": "./#/finance",
       "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Catatan Baru",
       "short_name": "Catatan",
       "description": "Buka modul catatan",
-      "url": "/notes",
+      "url": "./#/notes",
       "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     }
   ],

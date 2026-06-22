@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fajmuls-daily-v2';
+const CACHE_NAME = 'fajmuls-daily-v3';
 const ASSETS = [
   '/',
   '/index.html',

@@ -175,7 +175,7 @@ export function FinanceSettings({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
              {allCategories.map(cat => (
                <div key={cat} className="p-4 border border-stone-100 rounded-2xl hover:border-stone-200 transition-all shadow-sm">
-                  {renderCategoryItemUI(cat, getCatEdit(cat, false))}
+                  {renderCategoryItemUI(cat, getCatEdit(cat))}
                </div>
              ))}
           </div>
@@ -329,7 +329,7 @@ export function FinanceSettings({
                              onClick={() => {
                                const obj = pickingIconFor;
                                if (obj) {
-                                 const current = getCatEdit(obj, false);
+                                 const current = getCatEdit(obj);
                                  setCategoryEdits((p: any) => ({ ...p, [obj]: { ...current, iconName } }));
                                  updateCategoryPref(obj, { iconName, color: current.color });
                                }
@@ -366,7 +366,7 @@ export function FinanceSettings({
                      onClick={() => {
                        const obj = pickingColorFor;
                        if (obj) {
-                         const current = getCatEdit(obj, false);
+                         const current = getCatEdit(obj);
                          const newVal = { ...current, color };
                          setCategoryEdits((p: any) => ({ ...p, [obj]: newVal }));
                          updateCategoryPref(obj, { iconName: current.iconName, color });

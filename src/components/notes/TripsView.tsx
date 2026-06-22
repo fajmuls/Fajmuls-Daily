@@ -30,7 +30,7 @@ export function TripsView() {
   const [manualEndTime, setManualEndTime] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
 
   const ongoingTrips = trips.filter(t => t.status === 'ongoing');
-  const finishedTrips = trips.filter(t => t.status === 'completed');
+  const finishedTrips = trips.filter(t => t.status === 'completed').sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
   const fetchLocationData = async () => {
     if (!navigator.geolocation) return;
@@ -634,7 +634,7 @@ export function TripsView() {
                   
                   <div className="w-full h-64 border-t border-stone-200 bg-stone-100">
                     <iframe 
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(`${firstTrip.origin.city} to ${firstTrip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
+                      src={`https://maps.google.com/maps?f=d&saddr=${encodeURIComponent(firstTrip.origin.city)}&daddr=${encodeURIComponent(firstTrip.destination.city)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
                       width="100%" 
                       height="100%" 
                       frameBorder="0" 

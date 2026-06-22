@@ -164,7 +164,7 @@ export function StatsView(props: any) {
             {expenseChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <PieAny activeIndex={activeExpenseIndex} activeShape={renderActiveShape} data={expenseChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} dataKey="value" onMouseEnter={((_: any, index: number) => setActiveExpenseIndex(index))} onMouseLeave={() => setActiveExpenseIndex(-1)} onClick={(data: any) => handleChartClick(data, "expense")}>
+                  <PieAny activeIndex={activeCategory && activeChart === 'expense' ? expenseChartData.findIndex((d: any) => d.name === activeCategory) : activeExpenseIndex} activeShape={renderActiveShape} data={expenseChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} dataKey="value" onMouseEnter={((_: any, index: number) => setActiveExpenseIndex(index))} onMouseLeave={() => setActiveExpenseIndex(-1)} onClick={(data: any) => handleChartClick(data, "expense")}>
                     {expenseChartData.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, "expense", financeCategoryPrefs)} />
                     ))}
@@ -193,7 +193,7 @@ export function StatsView(props: any) {
             {incomeChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <PieAny activeIndex={activeIncomeIndex} activeShape={renderActiveShape} data={incomeChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} dataKey="value" onMouseEnter={((_: any, index: number) => setActiveIncomeIndex(index))} onMouseLeave={() => setActiveIncomeIndex(-1)} onClick={(data: any) => handleChartClick(data, "income")}>
+                  <PieAny activeIndex={activeCategory && activeChart === 'income' ? incomeChartData.findIndex((d: any) => d.name === activeCategory) : activeIncomeIndex} activeShape={renderActiveShape} data={incomeChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} dataKey="value" onMouseEnter={((_: any, index: number) => setActiveIncomeIndex(index))} onMouseLeave={() => setActiveIncomeIndex(-1)} onClick={(data: any) => handleChartClick(data, "income")}>
                     {incomeChartData.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, "income", financeCategoryPrefs)} />
                     ))}

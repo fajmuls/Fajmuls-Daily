@@ -303,7 +303,7 @@ export function Dashboard() {
           
           <div className="md:w-1/2 h-80 md:h-auto min-h-[350px] border-t-2 md:border-t-0 md:border-l-2 border-teal-500 bg-stone-100 overflow-hidden relative">
                <iframe 
-                 src={`https://maps.google.com/maps?q=${encodeURIComponent(`${trip.origin.city} to ${trip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
+                 src={`https://maps.google.com/maps?f=d&saddr=${encodeURIComponent(trip.origin.city)}&daddr=${encodeURIComponent(trip.destination.city)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
                  width="100%" 
                  height="100%" 
                  frameBorder="0" 

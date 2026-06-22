@@ -5,9 +5,12 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAppContext } from '../../store';
 import { IGNote } from '../../types';
-import { ArrowLeft, Trash2, Save, History, Palette, ChevronDown, User, Edit3, Calendar } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, History, Palette, ChevronDown, User, Edit3, Calendar, FileDown } from 'lucide-react';
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { useRef } from 'react';
 
 import { COLORS } from '../../data';
 
@@ -18,6 +21,36 @@ export function IGNoteView() {
   const { playSuccess, playClick, playError } = useAudio();
 
   const existingNote = notes.find(n => n.id === id && n.type === 'ig') as IGNote | undefined;
+
+  const pdfRef = useRef<HTMLDivElement>(null);
+
+  const handleExportPDF = async () => {
+    if (!pdfRef.current) return;
+    playClick();
+    
+    try {
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`Catatan_${owner || 'ID'}_${format(new Date(), 'yyyyMMdd')}.pdf`);
+      setAlert("Berhasil mengekspor bentuk PDF!");
+      playSuccess();
+    } catch(e) {
+      playError();
+      setAlert("Gagal mengekspor PDF!");
+    }
+  };
 
   const [owner, setOwner] = useState('');
   const [songTitle, setSongTitle] = useState('');
@@ -131,9 +164,14 @@ export function IGNoteView() {
         </button>
         <div className="flex gap-2">
           {existingNote && (
-            <button onClick={handleExportText} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors" title="Export Teks">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleExportText} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors" title="Salin Teks">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+              <button onClick={handleExportPDF} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors" title="Download PDF">
+                <FileDown className="w-5 h-5" />
+              </button>
+            </div>
           )}
           {existingNote && (existingNote.history?.length || 0) > 0 && (
             <button onClick={() => setShowHistory(!showHistory)} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors" title="Riwayat Edit">
@@ -151,7 +189,7 @@ export function IGNoteView() {
         </div>
       </div>
 
-      <div className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-6 relative overflow-hidden">
+      <div ref={pdfRef} className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-6 relative overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative group z-20">
             <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2 flex justify-between">
