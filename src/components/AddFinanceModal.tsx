@@ -225,11 +225,11 @@ export function AddFinanceModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative bg-paper w-full max-w-lg max-h-[95vh] rounded-[2.5rem] shadow-2xl border border-stone-200 flex flex-col disable-scrollbars overflow-hidden mt-auto sm:mt-0"
+            className="relative bg-paper w-full max-w-lg max-h-[95vh] rounded-[2rem] md:rounded-[2.5rem] shadow-2xl border border-stone-200 flex flex-col disable-scrollbars overflow-hidden mt-auto sm:my-auto"
           >
              {/* Modal Header */}
-             <div className="p-6 md:p-8 flex items-center justify-between border-b border-stone-100 bg-stone-50/50 shrink-0">
-               <h3 className="font-serif text-2xl font-bold text-stone-900">
+             <div className="p-4 md:p-8 flex items-center justify-between border-b border-stone-100 bg-stone-50/50 shrink-0">
+               <h3 className="font-serif text-xl md:text-2xl font-bold text-stone-900 leading-tight">
                  {initialRecord ? "Ubah Catatan" : "Tambah Catatan"}
                </h3>
                <div className="flex items-center gap-2">
@@ -243,11 +243,11 @@ export function AddFinanceModal({
                  <button 
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isScanning}
-                  className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-indigo-200 disabled:opacity-50"
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all border border-indigo-200 disabled:opacity-50"
                   title="Scan Struk dengan AI"
                  >
                    {isScanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
-                   {isScanning ? "Scanning..." : "Scan Struk"}
+                   <span className="hidden sm:inline">{isScanning ? "Scanning..." : "Scan Struk"}</span>
                  </button>
                  <button onClick={() => setShowAddModalWrapper(false)} className="p-2 hover:bg-white rounded-xl transition-all shadow-sm">
                    <X className="w-5 h-5 text-stone-500" />
@@ -256,7 +256,7 @@ export function AddFinanceModal({
              </div>
              
              {/* Modal Form Content */}
-              <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+              <div className="p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar flex-1 space-y-3.5 md:space-y-6">
                 {/* Aligned compact Date and Transaction Type Layer */}
                                   <div className="flex flex-row items-center justify-between gap-2 p-1.5 bg-stone-50 border border-stone-200 rounded-2xl shadow-sm">
                    {/* Left: Compact Date trigger */}
@@ -267,9 +267,9 @@ export function AddFinanceModal({
                      className="flex items-center gap-2 cursor-pointer hover:bg-stone-200/50 p-2 rounded-xl transition-all select-none border border-stone-200/60 bg-white shadow-sm shrink-0 h-9"
                    >
                      <Calendar className="w-3.5 h-3.5 text-stone-600" />
-                     <div className="flex flex-col text-left justify-start leading-none">
-                       <span className="text-[7.5px] font-black uppercase text-stone-400 tracking-wider">Tanggal</span>
-                       <span className="text-[11px] font-black text-stone-900 mt-0.5 whitespace-nowrap">
+                     <div className="flex flex-col text-left justify-start leading-none pointer-events-none">
+                       <span className="text-[7px] md:text-[7.5px] font-black uppercase text-stone-400 tracking-wider">Tanggal</span>
+                       <span className="text-[10px] md:text-[11px] font-black text-stone-900 mt-0.5 whitespace-nowrap">
                          {format(addRecordDate, 'd MMM yyyy', { locale: id })}
                        </span>
                      </div>
@@ -285,7 +285,7 @@ export function AddFinanceModal({
                          playClickSurgically(); 
                        }}
                        className={cn(
-                         "px-2.5 rounded-lg flex items-center gap-1 transition-all text-[9.5px] font-black uppercase tracking-wider h-8",
+                         "px-2 md:px-2.5 rounded-lg flex items-center gap-1 transition-all text-[9px] md:text-[9.5px] font-black uppercase tracking-wider h-8",
                          type === "expense" 
                            ? "bg-rose-600 text-white shadow-sm border border-rose-700 font-black h-8" 
                            : "text-stone-500 hover:text-stone-800 font-bold h-8"
@@ -306,7 +306,7 @@ export function AddFinanceModal({
                          playClickSurgically(); 
                        }}
                        className={cn(
-                         "px-2.5 rounded-lg flex items-center gap-1 transition-all text-[9.5px] font-black uppercase tracking-wider h-8",
+                         "px-2 md:px-2.5 rounded-lg flex items-center gap-1 transition-all text-[9px] md:text-[9.5px] font-black uppercase tracking-wider h-8",
                          type === "income" 
                            ? "bg-emerald-600 text-white shadow-sm border border-emerald-700 font-black h-8" 
                            : "text-stone-500 hover:text-stone-800 font-bold h-8"
@@ -334,7 +334,7 @@ export function AddFinanceModal({
                        <select 
                         value={recurringFreq}
                         onChange={(e: any) => setRecurringFreq(e.target.value)}
-                        className="bg-white border border-stone-200 rounded-lg text-[10px] font-black px-2 py-1 outline-none"
+                        className="bg-white border border-stone-200 rounded-lg text-[9px] md:text-[10px] font-black px-2 py-1 outline-none"
                        >
                          <option value="daily">Harian</option>
                          <option value="weekly">Mingguan</option>

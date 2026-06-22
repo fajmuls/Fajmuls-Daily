@@ -118,36 +118,36 @@ export function HistoryTable({
             .reduce((sum, r) => sum + r.amount, 0);
 
           return (
-            <div key={dateStr} className="bg-white border-2 border-stone-900 rounded-3xl overflow-hidden shadow-brutal">
+            <div key={dateStr} className="bg-white border-2 border-stone-900 rounded-2xl md:rounded-3xl overflow-hidden shadow-brutal">
               <button
                 onClick={() => toggleDateExpansion(group.date)}
-                className="w-full px-6 py-4 flex items-center justify-between bg-stone-50 border-b-2 border-stone-900"
+                className="w-full px-4 md:px-6 py-3 md:py-4 flex items-center justify-between bg-stone-50 border-b-2 border-stone-900"
               >
-                <div className="flex items-center gap-3 text-left">
-                  <div className="bg-white border-2 border-stone-900 p-2 rounded-xl">
-                     <Calendar className="w-4 h-4 text-stone-900" />
+                <div className="flex items-center gap-2 md:gap-3 text-left">
+                  <div className="bg-white border-2 border-stone-900 p-1.5 md:p-2 rounded-lg md:rounded-xl">
+                     <Calendar className="w-3.5 h-3.5 md:w-4 h-4 text-stone-900" />
                   </div>
                   <div>
-                    <h4 className="font-black text-xs md:text-sm uppercase tracking-tighter text-stone-900">
+                    <h4 className="font-black text-[10px] md:text-sm uppercase tracking-tighter text-stone-900 line-clamp-1">
                       {isSameDay(group.date, new Date()) ? "Hari Ini" : format(group.date, "EEEE, d MMM yyyy", { locale: id })}
                     </h4>
-                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{group.records.length} Transaksi</p>
+                    <p className="text-[8px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest">{group.records.length} Transaksi</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4 shrink-0">
                   <div className="flex flex-col items-end">
                     {dayTotalIncome > 0 && (
-                      <span className="font-mono font-black text-[10px] sm:text-xs text-green-600">
+                      <span className="font-mono font-black text-[9px] md:text-xs text-green-600">
                         +{formatCurrency(dayTotalIncome)}
                       </span>
                     )}
                     {dayTotalExpense > 0 && (
-                      <span className="font-mono font-black text-[10px] sm:text-xs text-red-500">
+                      <span className="font-mono font-black text-[9px] md:text-xs text-red-500">
                         -{formatCurrency(dayTotalExpense)}
                       </span>
                     )}
                   </div>
-                  <ChevronDown className={cn("w-5 h-5 text-stone-400 transition-transform", isExpanded && "rotate-180")} />
+                  <ChevronDown className={cn("w-4 h-4 md:w-5 md:h-5 text-stone-400 transition-transform", isExpanded && "rotate-180")} />
                 </div>
               </button>
 
@@ -167,31 +167,31 @@ export function HistoryTable({
                       const catColor = getCategoryColor(record.category, record.type, financeCategoryPrefs);
 
                       return (
-                        <div key={record.id} className="p-4 px-6 flex items-center gap-4 hover:bg-stone-50 transition-colors group">
+                        <div key={record.id} className="p-3 md:p-4 px-4 md:px-6 flex items-center gap-3 md:gap-4 hover:bg-stone-50 transition-colors group">
                           <div 
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm ring-2 ring-transparent group-hover:ring-stone-200 transition-all active:scale-90"
+                            className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-white shadow-sm ring-2 ring-transparent group-hover:ring-stone-200 transition-all active:scale-90 shrink-0"
                             style={{ backgroundColor: catColor }}
                           >
-                            <IconComp className="w-5 h-5" />
+                            <IconComp className="w-4 h-4 md:w-5 md:h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h5 className="font-bold text-sm text-stone-900 truncate">{record.category}</h5>
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                              <h5 className="font-bold text-[11px] md:text-sm text-stone-900 truncate">{record.category}</h5>
                               {record.parentCategory && (
-                                <span className="bg-stone-100 text-stone-400 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md">{record.parentCategory}</span>
+                                <span className="bg-stone-100 text-stone-400 text-[7px] md:text-[8px] font-black uppercase tracking-widest px-1 md:px-1.5 py-0.5 rounded-md truncate max-w-[50px] md:max-w-none">{record.parentCategory}</span>
                               )}
                             </div>
-                            <p className="text-stone-400 text-xs truncate font-medium">{record.note || "Tanpa catatan"}</p>
+                            <p className="text-stone-400 text-[10px] md:text-xs truncate font-medium">{record.note || "Tanpa catatan"}</p>
                           </div>
-                          <div className="text-right flex items-center gap-3">
+                          <div className="text-right flex items-center gap-2 md:gap-3 shrink-0">
                             <div className="flex flex-col items-end">
                               <p className={cn(
-                                "font-mono font-black text-sm tracking-tighter",
+                                "font-mono font-black text-[11px] md:text-sm tracking-tighter",
                                 record.type === 'income' ? "text-green-600" : "text-red-500"
                               )}>
                                 {record.type === 'income' ? '+' : '-'}{hideAmounts ? '••••' : formatCurrency(record.amount)}
                               </p>
-                              <span className="text-[9px] font-bold text-stone-300 uppercase tracking-widest">{format(record.createdAt, "HH:mm")}</span>
+                              <span className="text-[8px] md:text-[9px] font-bold text-stone-300 uppercase tracking-widest">{format(record.createdAt, "HH:mm")}</span>
                             </div>
                             
                             <ActionMenu 
@@ -211,8 +211,8 @@ export function HistoryTable({
                                    variant: "danger"
                                  }
                                ]}
-                               triggerClassName="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 p-0 text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                               iconSize={4}
+                               triggerClassName="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-stone-50 border border-stone-100 p-0 text-stone-400 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
+                               iconSize={3}
                             />
                           </div>
                         </div>

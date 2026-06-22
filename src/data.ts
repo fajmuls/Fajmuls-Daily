@@ -54,40 +54,36 @@ export const INITIAL_MISSED_PRAYERS: MissedPrayer[] = MISSED_PRAYERS_DATA.map(it
 
 export const ICON_GROUPS = [
   {
-    label: 'Dasar',
-    icons: ['Tag', 'Wallet', 'CreditCard', 'Coins', 'Banknote', 'Receipt', 'Calculator', 'PiggyBank', 'Shield', 'Key', 'Lock', 'TrendingUp', 'TrendingDown', 'Activity', 'BarChart3', 'PieChart', 'Percent', 'Gavel']
+    label: 'Finance & Core',
+    icons: ['Tag', 'Wallet', 'CreditCard', 'Coins', 'Banknote', 'Receipt', 'Calculator', 'PiggyBank', 'Shield', 'Key', 'Lock', 'TrendingUp', 'TrendingDown', 'Activity', 'BarChart3', 'PieChart', 'Percent', 'Gavel', 'Landmark', 'BadgeDollarSign', 'Briefcase', 'Building', 'Handshake', 'Strikethrough', 'Vault']
   },
   {
-    label: 'Makanan & Jajan',
-    icons: ['Utensils', 'Coffee', 'Pizza', 'Sandwich', 'Beer', 'Wine', 'CupSoda', 'Apple', 'Carrot', 'Egg', 'IceCream', 'Popcorn', 'Cake', 'Cherry', 'Cookie', 'Beef', 'Soup', 'Grape', 'GlassWater']
+    label: 'Food & Dining',
+    icons: ['Utensils', 'Coffee', 'Pizza', 'Sandwich', 'Beer', 'Wine', 'CupSoda', 'Apple', 'Carrot', 'Egg', 'IceCream', 'Popcorn', 'Cake', 'Cherry', 'Cookie', 'Beef', 'Soup', 'Grape', 'GlassWater', 'ChefHat', 'Store', 'Donut', 'Candy', 'Fish', 'Beef', 'Drumstick']
   },
   {
-    label: 'Transportasi',
-    icons: ['Fuel', 'Car', 'Bus', 'Plane', 'Train', 'Bike', 'MapPin', 'Compass', 'Rocket', 'PlaneTakeoff', 'Anchor', 'Ship', 'Truck', 'CarTaxiFront', 'Milestone']
+    label: 'Travel & Transport',
+    icons: ['Fuel', 'Car', 'Bus', 'Plane', 'Train', 'Bike', 'MapPin', 'Compass', 'Rocket', 'PlaneTakeoff', 'PlaneLanding', 'Anchor', 'Ship', 'Truck', 'CarTaxiFront', 'Milestone', 'Navigation', 'Map', 'Globe', 'Mountain', 'Palmtree', 'Tent', 'MountainSnow', 'Subway']
   },
   {
-    label: 'Belanja',
-    icons: ['ShoppingBag', 'Tag', 'Gift', 'Ticket', 'Shirt', 'Watch', 'ShoppingBasket', 'Package', 'Sparkles', 'Trophy', 'Crown', 'Glasses', 'Gem', 'Umbrella', 'Suitcase']
+    label: 'Shopping & Lifestyle',
+    icons: ['ShoppingBag', 'ShoppingBasket', 'ShoppingCart', 'Gift', 'Ticket', 'Shirt', 'Watch', 'Gem', 'Glasses', 'Sparkles', 'Trophy', 'Crown', 'Baby', 'Suitcase', 'Languages', 'User', 'Users', 'HeartHandshake', 'Diamond', 'Palette']
   },
   {
-    label: 'Utilitas & Rumah',
-    icons: ['Zap', 'Droplet', 'Wifi', 'Smartphone', 'Home', 'Tv', 'Mic', 'Printer', 'Laptop', 'Headphones', 'Speaker', 'Umbrella', 'Bed', 'Sofa', 'Bath', 'Lamp', 'Thermometer', 'Trash2', 'Warehouse', 'Key', 'Fan']
+    label: 'Home & Utilities',
+    icons: ['Home', 'Zap', 'Droplet', 'Wifi', 'Smartphone', 'Tv', 'Mic', 'Printer', 'Laptop', 'Headphones', 'Speaker', 'Umbrella', 'Bed', 'Sofa', 'Bath', 'Lamp', 'Thermometer', 'Trash2', 'Warehouse', 'Fan', 'DoorOpen', 'Refrigerator', 'WashingMachine', 'Heater']
   },
   {
-    label: 'Peralatan & Hobby',
-    icons: ['Wrench', 'Hammer', 'PenTool', 'Scissors', 'Palette', 'Camera', 'Film', 'Gamepad', 'Music', 'Piano', 'Drum', 'Mic2', 'Sword', 'Telescope', 'Microscope', 'Drill', 'Screwdriver', 'Plug2', 'Cpu']
+    label: 'Office & Hobby',
+    icons: ['Pen', 'Pencil', 'PenTool', 'Eraser', 'Highlighter', 'StickyNote', 'FileText', 'FileJson', 'FolderOpen', 'Archive', 'Wrench', 'Hammer', 'Scissors', 'Camera', 'Film', 'Gamepad', 'Gamepad2', 'Music', 'Piano', 'Drum', 'Mic2', 'Sword', 'Telescope', 'Microscope', 'Drill', 'Screwdriver', 'Plug2', 'Cpu', 'Keyboard', 'Mouse']
   },
   {
-    label: 'Kesehatan & Perawatan',
-    icons: ['Heart', 'Stethoscope', 'Pill', 'Activity', 'Thermometer', 'Hospital', 'Syringe', 'Baby', 'Dog', 'Cat', 'Fish', 'Bird', 'Bone', 'Footprints', 'ShowerHead', 'Sprout', 'Brain', 'Smile']
+    label: 'Health & Nature',
+    icons: ['Heart', 'Stethoscope', 'Pill', 'Activity', 'Hospital', 'Syringe', 'Sprout', 'Brain', 'Smile', 'Footprints', 'Cloud', 'Sun', 'Moon', 'Wind', 'Snowflake', 'Flame', 'Rainbow', 'TreeDeciduous', 'Leaf', 'Flower', 'Bug', 'Cat', 'Dog', 'Bird', 'Fish', 'Stethoscope', 'Ambulance']
   },
   {
-    label: 'Hiburan & Edukasi',
-    icons: ['GraduationCap', 'Book', 'BookOpen', 'Library', 'Globe', 'Map', 'Languages', 'Dumbbell', 'Bicycle', 'Play', 'Video', 'CassetteTape', 'Clapperboard', 'Gamepad2', 'Headset']
-  },
-  {
-    label: 'Lainnya',
-    icons: ['User', 'Users', 'Star', 'Cloud', 'Sun', 'Moon', 'Bell', 'Flag', 'Smile', 'Box', 'Feather', 'Briefcase', 'Sprout', 'Bug', 'Ghost', 'Wind', 'Snowflake', 'Flame', 'Sparkly', 'Rainbow']
+    label: 'Education & Media',
+    icons: ['GraduationCap', 'Book', 'BookOpen', 'Library', 'Dumbbell', 'Bicycle', 'Play', 'Video', 'CassetteTape', 'Clapperboard', 'Headset', 'Radio', 'Bell', 'Newspaper', 'Mic', 'Table']
   }
 ];
 

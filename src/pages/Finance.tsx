@@ -21,6 +21,9 @@ import {
   ArrowRight,
   TrendingDown,
   TrendingUp,
+  Edit3,
+  Trash2,
+  Palette
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { cn } from "../lib/utils";
@@ -154,12 +157,17 @@ export function Finance() {
 
   const allCategories = useMemo(() => {
     const set = new Set<string>();
+    // 1. Records
     financeRecords.forEach((r) => set.add(r.category));
+    // 2. Path Mappings
     Object.values(financeMappings).forEach(cats => {
       (cats as string[]).forEach(cat => set.add(cat));
     });
+    // 3. Prefs (ensure even unused categories with prefs show up if they exist)
+    Object.keys(financeCategoryPrefs).forEach(cat => set.add(cat));
+    
     return Array.from(set).sort();
-  }, [financeRecords, financeMappings]);
+  }, [financeRecords, financeMappings, financeCategoryPrefs]);
 
   const unmappedCategories = useMemo(() => {
     return allCategories.filter((cat) => !categoryToGroup[cat]);
@@ -397,25 +405,68 @@ export function Finance() {
 
   const renderCategoryItemUI = (cat: string, editObj: any) => {
     return (
-      <div className="flex items-center gap-3">
-        <div className="relative group/btn">
+      <div className="flex items-center gap-2 md:gap-3 group/item">
+        <div className="relative shrink-0">
           <button
             onClick={() => setPickingIconFor(pickingIconFor === cat ? null : cat)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+            className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-white shadow-sm transition-transform active:scale-95"
             style={{ backgroundColor: editObj.color }}
           >
             {React.createElement((LucideIcons as any)[editObj.iconName] || Tag, { className: "w-5 h-5" })}
           </button>
           <button
             onClick={() => setPickingColorFor(pickingColorFor === cat ? null : cat)}
-            className="absolute -bottom-1 -right-1 w-4 h-4 bg-white border border-stone-200 rounded-full flex items-center justify-center opacity-0 group-hover/btn:opacity-100 transition-opacity"
+            className="absolute -bottom-1 -right-1 w-5 h-5 bg-white border-2 border-stone-900 rounded-full flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity shadow-sm hover:scale-110 active:scale-90"
             title="Edit Warna"
           >
-            <div className="w-2 h-2 rounded-full bg-stone-900" />
+            <Palette className="w-2.5 h-2.5 text-stone-900" />
           </button>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="w-full bg-transparent font-bold text-stone-900 outline-none text-xs break-words whitespace-normal">{editObj.name}</p>
+        <div className="flex-1 min-w-0 pr-8 relative">
+          <p className="font-black text-stone-900 text-[10px] md:text-xs uppercase tracking-wider truncate px-1">
+            {editObj.name}
+          </p>
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 opacity-0 group-hover/item:opacity-100 transition-opacity">
+            <button 
+              onClick={() => {
+                const newName = prompt("Edit Nama Kategori:", cat);
+                if (newName && newName.trim() && newName.trim() !== cat) {
+                  const cleanNew = newName.trim();
+                  // 1. Update Mapping
+                  const group = categoryToGroup[cat];
+                  if (group) {
+                    const others = financeMappings[group].filter(c => c !== cat);
+                    updateFinanceMapping(group, [...others, cleanNew]);
+                  }
+                  // 2. Update Records (Bulk)
+                  updateFinanceCategoryBulk(cat, cleanNew);
+                  // 3. Move Prefs
+                  const currentPref = financeCategoryPrefs[cat];
+                  if (currentPref) {
+                    updateCategoryPref(cleanNew, currentPref);
+                    // deleteFinanceCategoryBulk(cat); // This normally deletes pref
+                  }
+                  playSuccess();
+                }
+              }}
+              className="p-1.5 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-stone-900 transition-colors"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </button>
+            <button 
+              onClick={() => showConfirm(`Hapus kategori "${cat}"? Catatan yang ada akan tetap tersimpan tapi tanpa kategori ini.`, () => {
+                const group = categoryToGroup[cat];
+                if (group) {
+                  updateFinanceMapping(group, financeMappings[group].filter(c => c !== cat));
+                }
+                deleteFinanceCategoryBulk(cat);
+                playError();
+              })}
+              className="p-1.5 hover:bg-rose-50 rounded-lg text-stone-400 hover:text-rose-500 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     );

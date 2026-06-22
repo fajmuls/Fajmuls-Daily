@@ -62,9 +62,20 @@ export function FinanceSettings({
   renderCategoryItemUI
 }: FinanceSettingsProps) {
 
-  const existingGroups = Object.keys(financeMappings).sort();
-  const [showAddGroup, setShowAddGroup] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
+  const [showAddCat, setShowAddCat] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+
+  const handleAddCat = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = newCatName.trim();
+    if (!val) return;
+    if (!financeCategoryPrefs[val]) {
+      updateCategoryPref(val, { iconName: 'Tag', color: '#a8a29e' });
+      playSuccess();
+    }
+    setNewCatName("");
+    setShowAddCat(false);
+  };
 
   const handleAddGroup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,23 +174,36 @@ export function FinanceSettings({
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between px-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 gap-4">
           <div>
             <h3 className="font-serif text-2xl font-bold text-stone-900">Semua Kategori</h3>
             <p className="text-stone-500 text-sm">Sesuaikan nama, ikon, dan warna latar.</p>
           </div>
-          <Tag className="w-8 h-8 text-stone-900 opacity-10" />
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => { playClick(); setShowAddCat(true); }}
+              className="flex items-center gap-2 bg-stone-900 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-black uppercase tracking-widest text-[9px] md:text-[10px] hover:bg-stone-800 transition-all shadow-lg active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5 md:w-4 h-4" /> Kategori Baru
+            </button>
+            <Tag className="w-8 h-8 text-stone-900 opacity-10 hidden sm:block" />
+          </div>
         </div>
 
-        <div className="bg-white border-2 border-stone-900 rounded-[2.5rem] p-6 shadow-brutal overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white border-2 border-stone-900 rounded-[1.5rem] md:rounded-[2.5rem] p-3 md:p-8 shadow-brutal overflow-hidden">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-6">
              {allCategories.map((cat, idx) => (
-               <div key={`cat-${cat}-${idx}`} className="p-4 border border-stone-100 rounded-2xl hover:border-stone-200 transition-all shadow-sm">
+               <div key={`cat-${cat}-${idx}`} className="p-2 md:p-4 border border-stone-100 rounded-xl md:rounded-2xl hover:border-stone-200 transition-all shadow-sm">
                   {renderCategoryItemUI(cat, getCatEdit(cat))}
                </div>
              ))}
+             {allCategories.length === 0 && (
+               <div className="col-span-full py-12 text-center">
+                 <Tag className="w-12 h-12 text-stone-200 mx-auto mb-4" />
+                 <p className="text-stone-400 font-bold italic">Belum ada kategori ditemukan</p>
+               </div>
+             )}
           </div>
-          
         </div>
       </section>
 
@@ -188,7 +212,7 @@ export function FinanceSettings({
         {showAddGroup && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddGroup(false)} className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] border-2 border-stone-900 p-6 md:p-8 shrink-0 max-w-sm w-full relative z-10 shadow-2xl">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] border-[3px] border-stone-900 p-6 md:p-8 shrink-0 max-w-sm w-full relative z-10 shadow-brutal">
               <div className="flex items-center justify-between mb-6">
                 <h4 className="font-serif text-xl font-bold text-stone-900">Grup Baru</h4>
                 <button onClick={() => setShowAddGroup(false)} className="p-1 hover:bg-stone-100 rounded-lg"><X className="w-5 h-5 text-stone-400" /></button>
@@ -201,13 +225,42 @@ export function FinanceSettings({
                     value={newGroupName} 
                     onChange={e => setNewGroupName(e.target.value)} 
                     placeholder="Contoh: Kebutuhan Rumah"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none font-bold text-xs"
+                    className="w-full bg-stone-50 border-2 border-stone-100 focus:border-stone-900 rounded-xl px-4 py-3 outline-none font-bold text-xs transition-colors"
                     required 
                     autoFocus
                   />
                 </div>
-                <button type="submit" className="w-full py-3 bg-stone-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-stone-800 transition-colors">
+                <button type="submit" className="w-full py-3 bg-stone-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-stone-800 transition-colors shadow-lg active:scale-95">
                   Buat Grup
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {showAddCat && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddCat(false)} className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] border-[3px] border-stone-900 p-6 md:p-8 shrink-0 max-w-sm w-full relative z-10 shadow-brutal">
+              <div className="flex items-center justify-between mb-6">
+                <h4 className="font-serif text-xl font-bold text-stone-900">Kategori Baru</h4>
+                <button onClick={() => setShowAddCat(false)} className="p-1 hover:bg-stone-100 rounded-lg"><X className="w-5 h-5 text-stone-400" /></button>
+              </div>
+              <form onSubmit={handleAddCat} className="space-y-4">
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-wider text-stone-400 block mb-1">Nama Kategori</label>
+                  <input 
+                    type="text" 
+                    value={newCatName} 
+                    onChange={e => setNewCatName(e.target.value)} 
+                    placeholder="Contoh: Kopi, Bensin, dll"
+                    className="w-full bg-stone-50 border-2 border-stone-100 focus:border-stone-900 rounded-xl px-4 py-3 outline-none font-bold text-xs transition-colors"
+                    required 
+                    autoFocus
+                  />
+                </div>
+                <button type="submit" className="w-full py-3 bg-stone-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-stone-800 transition-colors shadow-lg active:scale-95">
+                  Tambah Kategori
                 </button>
               </form>
             </motion.div>
@@ -294,21 +347,37 @@ export function FinanceSettings({
         
         {/* Icon Picker Modal */}
         {pickingIconFor && (
-          <div className="fixed inset-0 z-[75] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[75] flex items-center justify-center p-2 sm:p-4">
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPickingIconFor(null)} className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm" />
-             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2.5rem] border-2 border-stone-900 p-6 md:p-8 shrink-0 max-w-2xl w-full relative z-10 shadow-brutal max-h-[85vh] flex flex-col">
-               <div className="flex items-center justify-between mb-6 shrink-0">
-                 <h3 className="font-serif text-2xl font-bold text-stone-900">Pilih Ikon Baru</h3>
-                 <button onClick={() => setPickingIconFor(null)} className="p-2 hover:bg-stone-100 rounded-xl transition-colors"><X className="w-5 h-5 text-stone-500" /></button>
+             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] md:rounded-[2.5rem] border-2 border-stone-900 p-4 md:p-8 shrink-0 max-w-2xl w-full relative z-10 shadow-brutal max-h-[90vh] flex flex-col pt-12">
+               <div className="flex items-center justify-between mb-6 shrink-0 pt-2 px-2">
+                 <div>
+                   <h3 className="font-serif text-2xl md:text-3xl font-bold text-stone-900 leading-tight">Pilih Ikon</h3>
+                   <div className="flex items-center gap-3 mt-4 p-2.5 bg-stone-50 border border-stone-100 rounded-2xl">
+                     <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-white shadow-md active:scale-95 transition-transform" style={{ backgroundColor: (categoryEdits[pickingIconFor] || financeCategoryPrefs[pickingIconFor] || { color: '#a8a29e' }).color }}>
+                        {React.createElement((LucideIcons as any)[(categoryEdits[pickingIconFor] || financeCategoryPrefs[pickingIconFor] || {}).iconName] || LucideIcons.HelpCircle, { className: "w-5 h-5 md:w-6 md:h-6" })}
+                     </div>
+                     <div className="min-w-0">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Preview</p>
+                       <p className="font-bold text-stone-900 text-xs md:text-sm truncate max-w-[120px] md:max-w-none">{pickingIconFor}</p>
+                     </div>
+                   </div>
+                 </div>
+                 <button onClick={() => setPickingIconFor(null)} className="w-10 h-10 md:w-12 md:h-12 border-2 border-stone-100 hover:border-stone-900 rounded-xl flex items-center justify-center transition-all bg-white"><X className="w-5 h-5 md:w-6 md:h-6 text-stone-500" /></button>
                </div>
-               <div className="overflow-y-auto space-y-8 pr-2">
+               
+               <div className="overflow-y-auto space-y-8 pr-2 custom-scrollbar pb-8 px-2">
                  {ICON_GROUPS.map((group, idx) => (
-                   <div key={idx}>
-                     <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">{group.label}</p>
-                     <div className="flex gap-2 flex-wrap">
+                   <div key={idx} className="space-y-3">
+                     <div className="sticky top-0 bg-white py-1.5 z-10 flex items-center gap-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 whitespace-nowrap">{group.label}</p>
+                        <div className="h-px flex-1 bg-stone-100" />
+                     </div>
+                     <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-9 gap-1.5 md:gap-2">
                        {group.icons.map((iconName, iconIdx) => {
                          const IconComp = (LucideIcons as any)[iconName];
                          if (!IconComp) return null;
+                         const isSelected = (categoryEdits[pickingIconFor] || financeCategoryPrefs[pickingIconFor] || {}).iconName === iconName;
                          return (
                            <button
                              key={`${iconName}-${iconIdx}`}
@@ -322,9 +391,15 @@ export function FinanceSettings({
                                setPickingIconFor(null);
                                playSuccess();
                              }}
-                             className="p-3 bg-stone-50 hover:bg-stone-200 border border-stone-200 rounded-xl transition-colors text-stone-600 hover:text-stone-900"
+                             className={cn(
+                               "aspect-square flex items-center justify-center border-2 rounded-[0.75rem] transition-all group relative",
+                               isSelected 
+                                ? "bg-stone-900 border-stone-900 text-white shadow-md scale-105" 
+                                : "bg-stone-50/50 border-stone-100 hover:border-stone-400 text-stone-400 hover:text-stone-900"
+                             )}
+                             title={iconName}
                            >
-                             <IconComp className="w-6 h-6" />
+                             <IconComp className={cn("w-4.5 h-4.5 md:w-5 md:h-5 transition-transform group-hover:scale-110", isSelected && "animate-pulse")} />
                            </button>
                          );
                        })}
@@ -340,30 +415,48 @@ export function FinanceSettings({
         {pickingColorFor && (
           <div className="fixed inset-0 z-[75] flex items-center justify-center p-4">
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPickingColorFor(null)} className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm" />
-             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] border-2 border-stone-900 p-6 md:p-8 shrink-0 max-w-sm w-full relative z-10 shadow-brutal flex flex-col">
-               <div className="flex items-center justify-between mb-6 shrink-0">
-                 <h3 className="font-serif text-xl font-bold text-stone-900">Pilih Warna</h3>
-                 <button onClick={() => setPickingColorFor(null)} className="p-2 hover:bg-stone-100 rounded-xl transition-colors"><X className="w-5 h-5 text-stone-500" /></button>
+             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] md:rounded-[2.5rem] border-[3px] border-stone-900 p-6 md:p-8 shrink-0 max-w-sm w-full relative z-10 shadow-brutal flex flex-col pt-10">
+               <div className="flex items-center justify-between mb-8 shrink-0">
+                 <div>
+                   <h3 className="font-serif text-2xl md:text-3xl font-bold text-stone-900">Pilih Warna</h3>
+                   <div className="flex items-center gap-3 mt-4 p-3 bg-stone-50 border border-stone-100 rounded-2xl overflow-hidden">
+                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-xl transition-colors duration-300" style={{ backgroundColor: (categoryEdits[pickingColorFor] || financeCategoryPrefs[pickingColorFor] || { color: '#a8a29e' }).color }}>
+                        {React.createElement((LucideIcons as any)[(categoryEdits[pickingColorFor] || financeCategoryPrefs[pickingColorFor] || {}).iconName] || LucideIcons.Palette, { className: "w-6 h-6" })}
+                     </div>
+                     <div className="min-w-0">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-0.5">Preview</p>
+                       <p className="font-bold text-stone-900 text-sm truncate">{pickingColorFor}</p>
+                     </div>
+                   </div>
+                 </div>
+                 <button onClick={() => setPickingColorFor(null)} className="w-10 h-10 border border-stone-200 hover:border-stone-900 rounded-xl flex items-center justify-center transition-all bg-white"><X className="w-5 h-5 text-stone-600" /></button>
                </div>
-               <div className="flex flex-wrap gap-3">
-                 {COLORS.map(color => (
-                   <button
-                     key={color}
-                     onClick={() => {
-                       const obj = pickingColorFor;
-                       if (obj) {
-                         const current = getCatEdit(obj);
-                         const newVal = { ...current, color };
-                         setCategoryEdits((p: any) => ({ ...p, [obj]: newVal }));
-                         updateCategoryPref(obj, { iconName: current.iconName, color });
-                       }
-                       setPickingColorFor(null);
-                       playSuccess();
-                     }}
-                     className="w-12 h-12 rounded-xl transition-transform hover:scale-110 active:scale-95 shadow-sm border border-black/10"
-                     style={{ backgroundColor: color }}
-                   />
-                 ))}
+               
+               <div className="grid grid-cols-5 gap-2 md:gap-3 pb-4">
+                 {COLORS.map(color => {
+                   const isSelected = (categoryEdits[pickingColorFor] || financeCategoryPrefs[pickingColorFor] || { color: '' }).color === color;
+                   return (
+                    <button
+                      key={color}
+                      onClick={() => {
+                        const obj = pickingColorFor;
+                        if (obj) {
+                          const current = getCatEdit(obj);
+                          const newVal = { ...current, color };
+                          setCategoryEdits((p: any) => ({ ...p, [obj]: newVal }));
+                          updateCategoryPref(obj, { iconName: current.iconName, color });
+                        }
+                        setPickingColorFor(null);
+                        playSuccess();
+                      }}
+                      className={cn(
+                        "aspect-square rounded-xl transition-all hover:scale-110 active:scale-95 shadow-sm border-[3px]",
+                        isSelected ? "border-stone-900 ring-2 ring-stone-900 ring-offset-2" : "border-transparent"
+                      )}
+                      style={{ backgroundColor: color }}
+                    />
+                   );
+                 })}
                </div>
              </motion.div>
           </div>
