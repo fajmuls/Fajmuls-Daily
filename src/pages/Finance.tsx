@@ -155,8 +155,11 @@ export function Finance() {
   const allCategories = useMemo(() => {
     const set = new Set<string>();
     financeRecords.forEach((r) => set.add(r.category));
+    Object.values(financeMappings).forEach(cats => {
+      (cats as string[]).forEach(cat => set.add(cat));
+    });
     return Array.from(set).sort();
-  }, [financeRecords]);
+  }, [financeRecords, financeMappings]);
 
   const unmappedCategories = useMemo(() => {
     return allCategories.filter((cat) => !categoryToGroup[cat]);
@@ -412,12 +415,7 @@ export function Finance() {
           </button>
         </div>
         <div className="flex-1 min-w-0">
-          <input
-            type="text"
-            value={editObj.name}
-            onChange={(e) => setCategoryEdits(p => ({ ...p, [cat]: { ...editObj, name: e.target.value } }))}
-            className="w-full bg-transparent font-bold text-stone-900 outline-none text-xs"
-          />
+          <p className="w-full bg-transparent font-bold text-stone-900 outline-none text-xs break-words whitespace-normal">{editObj.name}</p>
         </div>
       </div>
     );

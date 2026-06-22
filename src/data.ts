@@ -55,7 +55,7 @@ export const INITIAL_MISSED_PRAYERS: MissedPrayer[] = MISSED_PRAYERS_DATA.map(it
 export const ICON_GROUPS = [
   {
     label: 'Dasar',
-    icons: ['Tag', 'Wallet', 'CreditCard', 'Coins', 'Banknote', 'Receipt', 'Calculator', 'PiggyBank', 'Shield', 'Key', 'Lock', 'TrendingUp', 'TrendingDown', 'Activity', 'BarChart3', 'PieChart', 'Percent', 'Gavel', 'Wallet']
+    icons: ['Tag', 'Wallet', 'CreditCard', 'Coins', 'Banknote', 'Receipt', 'Calculator', 'PiggyBank', 'Shield', 'Key', 'Lock', 'TrendingUp', 'TrendingDown', 'Activity', 'BarChart3', 'PieChart', 'Percent', 'Gavel']
   },
   {
     label: 'Makanan & Jajan',

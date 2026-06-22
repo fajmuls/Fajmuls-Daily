@@ -95,7 +95,7 @@ export function HistoryTable({
                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none"
                      >
                        <option value="All">Semua Kategori</option>
-                       {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                       {allCategories.map((cat, idx) => <option key={`${cat}-${idx}`} value={cat}>{cat}</option>)}
                      </select>
                    </div>
                  </div>

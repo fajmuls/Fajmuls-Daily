@@ -30,7 +30,7 @@ interface FinanceSettingsProps {
   financeCategoryPrefs: any;
   updateCategoryPref: (cat: string, pref: any) => void;
   deleteFinanceCategoryBulk: (cat: string) => void;
-  getCatEdit: (cat: string, isIncome: boolean) => any;
+  getCatEdit: (cat: string) => any;
   renderCategoryItemUI: (cat: string, editObj: any) => React.ReactNode;
 }
 
@@ -133,11 +133,11 @@ export function FinanceSettings({
                 />
               </div>
               <div className="flex flex-wrap gap-2">
-                {financeMappings[group].map(cat => {
+                {financeMappings[group].map((cat, idx) => {
                    const pref = financeCategoryPrefs[cat] || {};
                    const IconComp = (LucideIcons as any)[pref.iconName] || LucideIcons.Tag;
                    return (
-                    <div key={cat} className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-50 border border-stone-200 rounded-lg group/cat transition-all hover:bg-stone-100">
+                    <div key={`${cat}-${idx}`} className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-50 border border-stone-200 rounded-lg group/cat transition-all hover:bg-stone-100">
                       <div className="w-4 h-4 rounded flex items-center justify-center text-white shrink-0" style={{ backgroundColor: pref.color || '#a8a29e' }}>
                         <IconComp className="w-2.5 h-2.5" />
                       </div>
@@ -173,27 +173,13 @@ export function FinanceSettings({
 
         <div className="bg-white border-2 border-stone-900 rounded-[2.5rem] p-6 shadow-brutal overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-             {allCategories.map(cat => (
-               <div key={cat} className="p-4 border border-stone-100 rounded-2xl hover:border-stone-200 transition-all shadow-sm">
+             {allCategories.map((cat, idx) => (
+               <div key={`cat-${cat}-${idx}`} className="p-4 border border-stone-100 rounded-2xl hover:border-stone-200 transition-all shadow-sm">
                   {renderCategoryItemUI(cat, getCatEdit(cat))}
                </div>
              ))}
           </div>
           
-          <div className="mt-8 flex justify-end">
-            <button 
-              onClick={() => {
-                Object.entries(categoryEdits).forEach(([name, edit]: [string, any]) => {
-                  updateCategoryPref(name, { iconName: edit.iconName, color: edit.color });
-                });
-                setCategoryEdits({});
-                playSuccess();
-              }}
-              className="flex items-center gap-2 bg-stone-900 text-white px-8 py-3 rounded-2xl font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
-            >
-              <Save className="w-4 h-4" /> Simpan Semua Perubahan
-            </button>
-          </div>
         </div>
       </section>
 
@@ -273,11 +259,11 @@ export function FinanceSettings({
               </div>
 
               <div className="overflow-y-auto pr-2 space-y-3 custom-scrollbar flex-1">
-                {allCategories.map(cat => {
+                {allCategories.map((cat, idx) => {
                   const isMember = financeMappings[managedGroup]?.includes(cat);
                   const currentGroup = categoryToGroup[cat];
                   return (
-                    <div key={cat} className={cn("flex items-center justify-between p-4 border-2 rounded-2xl transition-all shadow-sm", isMember ? "border-stone-900 bg-stone-50" : "border-stone-100 bg-white hover:border-stone-300")}>
+                    <div key={`manage-${cat}-${idx}`} className={cn("flex items-center justify-between p-4 border-2 rounded-2xl transition-all shadow-sm", isMember ? "border-stone-900 bg-stone-50" : "border-stone-100 bg-white hover:border-stone-300")}>
                       <div className="flex items-center gap-3">
                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: financeCategoryPrefs[cat]?.color || '#a8a29e' }}>
                            {React.createElement((LucideIcons as any)[financeCategoryPrefs[cat]?.iconName] || LucideIcons.Tag, { className: "w-5 h-5" })}
@@ -320,12 +306,12 @@ export function FinanceSettings({
                    <div key={idx}>
                      <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">{group.label}</p>
                      <div className="flex gap-2 flex-wrap">
-                       {group.icons.map(iconName => {
+                       {group.icons.map((iconName, iconIdx) => {
                          const IconComp = (LucideIcons as any)[iconName];
                          if (!IconComp) return null;
                          return (
                            <button
-                             key={iconName}
+                             key={`${iconName}-${iconIdx}`}
                              onClick={() => {
                                const obj = pickingIconFor;
                                if (obj) {
