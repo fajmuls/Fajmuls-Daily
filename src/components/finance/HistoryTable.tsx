@@ -53,8 +53,15 @@ export function HistoryTable({
         <h3 className="font-serif text-xl font-bold text-stone-900">Riwayat Transaksi</h3>
         <div className="flex gap-2 relative">
            <button 
+             onClick={() => setShowAddModal(true)}
+             className="bg-stone-900 border-2 border-stone-900 text-white px-4 py-2 rounded-xl flex flex-row items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest shadow-brutal hover:bg-white hover:text-stone-900 transition-all active:scale-95"
+           >
+             <LucideIcons.Plus className="w-4 h-4" /> <span>Tambah</span>
+           </button>
+           
+           <button 
              onClick={() => setShowFilter(!showFilter)}
-             className={cn("p-2 rounded-xl transition-colors", showFilter || filterCategory !== 'All' || filterRange !== 'all' ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}
+             className={cn("p-2 rounded-xl transition-colors border-2", showFilter || filterCategory !== 'All' || filterRange !== 'all' ? 'bg-stone-900 text-white border-stone-900 shadow-brutal' : 'bg-white text-stone-900 border-stone-900 hover:bg-stone-50 shadow-brutal active:scale-95')}
            >
              <Filter className="w-4 h-4" />
            </button>

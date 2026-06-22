@@ -9,16 +9,7 @@ import { ArrowLeft, Trash2, Save, History, Palette, ChevronDown, User, Edit3, Ca
 import { useAudio } from '../../hooks/useAudio';
 import { cn } from '../../lib/utils';
 
-const BG_COLORS = [
-  '#171412', // dark
-  '#3b82f6', // blue
-  '#ef4444', // red
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#64748b', // slate
-];
+import { COLORS } from '../../data';
 
 export function IGNoteView() {
   const { id } = useParams();
@@ -119,6 +110,19 @@ export function IGNoteView() {
     }
   };
 
+  const handleExportText = () => {
+    if (!existingNote) return;
+    const contentText = content.trim() ? content.trim() : "rip";
+    const dateStr = format(customDate, 'dd MMMM yyyy, HH:mm', { locale: idLocale });
+    let text = `${owner || "Tanpa Nama"} - ${songTitle || "Tanpa Judul"} - ${dateStr}\n\n`;
+    text += contentText;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(text);
+    setAlert("Berhasil menyalin catatan ke clipboard dalam format teks!");
+    playSuccess();
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
@@ -126,6 +130,11 @@ export function IGNoteView() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex gap-2">
+          {existingNote && (
+            <button onClick={handleExportText} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors" title="Export Teks">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </button>
+          )}
           {existingNote && (existingNote.history?.length || 0) > 0 && (
             <button onClick={() => setShowHistory(!showHistory)} className="p-3 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 transition-colors" title="Riwayat Edit">
               <History className="w-5 h-5" />
@@ -144,54 +153,58 @@ export function IGNoteView() {
 
       <div className="bg-paper rounded-3xl p-6 border border-stone-200 shadow-sm space-y-6 relative overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative group">
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Pemilik IG</label>
+          <div className="relative group z-20">
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2 flex justify-between">
+               <span>Nama / ID Pemilik</span> 
+            </label>
             <div className="relative">
+               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">@</div>
                <input
                  type="text"
                  value={owner}
                  onFocus={() => setShowOwnerDropdown(true)}
                  onChange={(e) => { setOwner(e.target.value); setShowOwnerDropdown(true); }}
-                 placeholder="Cth. Xiaomi"
-                 className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 font-medium pr-10"
+                 placeholder="username atau nama..."
+                 className="w-full bg-stone-50 rounded-xl pl-8 pr-10 py-3 outline-none focus:ring-2 focus:ring-purple-500 font-bold text-stone-900 border border-stone-200 hover:border-stone-300 transition-colors"
                />
-               <button onClick={() => setShowOwnerDropdown(!showOwnerDropdown)} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-stone-300">
+               <button onClick={() => setShowOwnerDropdown(!showOwnerDropdown)} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-stone-300 hover:text-stone-600 transition-colors rounded-lg">
                   <ChevronDown className={cn("w-4 h-4 transition-transform", showOwnerDropdown ? "rotate-180" : "")} />
                </button>
             </div>
 
             {showOwnerDropdown && (
-               <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-xl shadow-xl z-30 p-2 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+               <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-stone-200 rounded-2xl shadow-xl z-50 p-2 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2">
                   {ownerTemplates.filter(o => o.toLowerCase().includes(owner.toLowerCase())).map((o, i) => (
                      <button 
                         key={i}
                         type="button"
                         onClick={() => { setOwner(o); setShowOwnerDropdown(false); playClick(); }}
-                        className="w-full text-left px-3 py-2 hover:bg-stone-50 rounded-lg text-sm font-medium text-stone-700 transition-colors"
+                        className="w-full text-left px-4 py-2.5 hover:bg-stone-50 rounded-xl text-sm font-bold text-stone-700 transition-colors flex items-center gap-2"
                      >
-                        {o}
+                        <User className="w-4 h-4 text-stone-400" /> {o}
                      </button>
                   ))}
+                  {ownerTemplates.length === 0 && <p className="text-xs text-stone-400 p-2 text-center">Belum ada ID tersimpan</p>}
                </div>
             )}
             
-            {existingNote && owner !== existingNote.owner && (
+            {existingNote && owner !== existingNote.owner && owner.trim() !== '' && (
                <button 
                   onClick={handleBulkRename}
-                  className="mt-2 flex items-center gap-1 text-[10px] text-pink-600 font-bold uppercase tracking-wider hover:underline"
+                  className="mt-2 flex items-center gap-1.5 text-[10px] text-purple-600 bg-purple-50 px-2.5 py-1.5 rounded-lg border border-purple-100 font-bold uppercase tracking-wider hover:bg-purple-100 transition-colors"
                >
-                  <Edit3 className="w-3 h-3"/> Ubah Semua Pemilik Liburan "{existingNote.owner}"
+                  <Edit3 className="w-3 h-3"/> Ubah Semua "{existingNote.owner}" jadi "{owner}"
                </button>
             )}
           </div>
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Judul Lagu</label>
+          <div className="z-10">
+            <label className="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Judul Catatan / Lagu</label>
             <input
               type="text"
               value={songTitle}
               onChange={(e) => setSongTitle(e.target.value)}
-              placeholder="Cth. Die With A Smile"
-              className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500 font-medium"
+              placeholder="Contoh: Die With A Smile"
+              className="w-full bg-stone-50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 font-bold text-stone-900 border border-stone-200 hover:border-stone-300 transition-colors"
             />
           </div>
         </div>
@@ -209,11 +222,11 @@ export function IGNoteView() {
           
           {showColors && (
             <div className="flex flex-wrap gap-2 mb-4 animate-in fade-in">
-               {BG_COLORS.map(c => (
+               {COLORS.map(c => (
                  <button
                    key={c}
                    onClick={() => { setBgColor(c); setShowColors(false); }}
-                   className={cn("w-8 h-8 rounded-full border-2 transition-transform hover:scale-110", bgColor === c ? "border-stone-900" : "border-transparent")}
+                   className={cn("w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 shadow-sm", bgColor === c ? "border-stone-900 scale-110" : "border-stone-200 opacity-80 hover:opacity-100")}
                    style={{ backgroundColor: c }}
                  />
                ))}

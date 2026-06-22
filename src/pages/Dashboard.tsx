@@ -12,8 +12,6 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 import { EndTripModal } from '../components/notes/EndTripModal';
 import { TripSummary } from '../types';
 import { MonthlyWrapped } from '../components/dashboard/MonthlyWrapped';
-import { TripTrackingMap } from '../components/dashboard/TripTrackingMap';
-import { APIProvider } from '@vis.gl/react-google-maps';
 import { cn } from '../lib/utils';
 
 // A simple simulated contribution calendar mapping days to boolean
@@ -303,14 +301,16 @@ export function Dashboard() {
             </div>
           </div>
           
-          <div className="md:w-1/2 h-80 md:h-auto min-h-[350px] border-t-2 md:border-t-0 md:border-l-2 border-teal-500 bg-stone-100 overflow-hidden">
-             <APIProvider apiKey={process.env.GOOGLE_MAPS_PLATFORM_KEY || ''}>
-               <TripTrackingMap 
-                 origin={trip.origin} 
-                 destination={trip.destination} 
-                 ongoing={true} 
+          <div className="md:w-1/2 h-80 md:h-auto min-h-[350px] border-t-2 md:border-t-0 md:border-l-2 border-teal-500 bg-stone-100 overflow-hidden relative">
+               <iframe 
+                 src={`https://maps.google.com/maps?q=${encodeURIComponent(`${trip.origin.city} to ${trip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
+                 width="100%" 
+                 height="100%" 
+                 frameBorder="0" 
+                 style={{ border: 0 }} 
+                 allowFullScreen 
+                 title="Map"
                />
-             </APIProvider>
           </div>
         </div>
       ))}

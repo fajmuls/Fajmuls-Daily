@@ -232,35 +232,71 @@ export function FinanceSettings({
         {managedGroup && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setManagedGroup(null)} className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] border-2 border-stone-900 p-6 md:p-8 shrink-0 max-w-lg w-full relative z-10 shadow-2xl max-h-[80vh] flex flex-col">
-              <div className="flex items-center justify-between mb-4 shrink-0">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] border-[3px] border-stone-900 p-6 md:p-8 shrink-0 max-w-lg w-full relative z-10 shadow-brutal max-h-[85vh] flex flex-col pt-8">
+              <div className="flex items-center justify-between mb-6 shrink-0">
                 <div>
-                  <h4 className="font-serif text-xl font-bold text-stone-900">Kelola Anggota</h4>
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">Grup: {managedGroup}</p>
+                  <h4 className="font-serif text-2xl font-black text-stone-900">Kelola Anggota</h4>
+                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Grup Aktif: <span className="text-stone-700">{managedGroup}</span></p>
                 </div>
-                <button onClick={() => setManagedGroup(null)} className="p-1 hover:bg-stone-100 rounded-lg"><X className="w-5 h-5 text-stone-400" /></button>
+                <button onClick={() => setManagedGroup(null)} className="w-10 h-10 border-2 border-stone-200 hover:border-stone-900 hover:bg-stone-50 rounded-xl flex items-center justify-center transition-all shadow-sm"><X className="w-5 h-5 text-stone-600" /></button>
               </div>
               
-              <div className="overflow-y-auto pr-2 space-y-2">
+              <div className="mb-6">
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const val = (e.target as any).catName.value.trim();
+                  if (!val) return;
+                  if (financeMappings[managedGroup]?.includes(val)) return;
+                  
+                  // Add to mapping
+                  const currentGroup = Object.keys(financeMappings).find(g => financeMappings[g].includes(val));
+                  if (currentGroup) {
+                     updateFinanceMapping(currentGroup, financeMappings[currentGroup].filter((c: string) => c !== val));
+                  }
+                  const members = financeMappings[managedGroup] || [];
+                  updateFinanceMapping(managedGroup, [...members, val]);
+                  
+                  // Set default icon and color
+                  if (!financeCategoryPrefs[val]) {
+                    updateCategoryPref(val, {
+                      iconName: 'Tag',
+                      color: '#a8a29e'
+                    });
+                  }
+                  
+                  (e.target as any).catName.value = "";
+                  playSuccess();
+                }} className="flex gap-2">
+                  <input name="catName" type="text" placeholder="Catat Kategori Baru..." className="flex-1 bg-stone-50 border-2 border-stone-200 rounded-xl px-4 py-3 outline-none focus:border-stone-900 font-bold text-sm transition-colors" />
+                  <button type="submit" className="bg-stone-900 text-white px-5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-stone-800 transition-colors pointer-events-auto flex items-center justify-center shadow-lg"><Plus className="w-5 h-5" /></button>
+                </form>
+              </div>
+
+              <div className="overflow-y-auto pr-2 space-y-3 custom-scrollbar flex-1">
                 {allCategories.map(cat => {
                   const isMember = financeMappings[managedGroup]?.includes(cat);
                   const currentGroup = categoryToGroup[cat];
                   return (
-                    <div key={cat} className="flex items-center justify-between py-2 border-b border-stone-100">
-                      <div>
-                        <p className="font-bold text-sm text-stone-900">{cat}</p>
-                        {currentGroup && currentGroup !== managedGroup && (
-                          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">Saat ini: {currentGroup}</p>
-                        )}
+                    <div key={cat} className={cn("flex items-center justify-between p-4 border-2 rounded-2xl transition-all shadow-sm", isMember ? "border-stone-900 bg-stone-50" : "border-stone-100 bg-white hover:border-stone-300")}>
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: financeCategoryPrefs[cat]?.color || '#a8a29e' }}>
+                           {React.createElement((LucideIcons as any)[financeCategoryPrefs[cat]?.iconName] || LucideIcons.Tag, { className: "w-5 h-5" })}
+                         </div>
+                         <div>
+                           <p className="font-bold text-base text-stone-900">{cat}</p>
+                           {currentGroup && currentGroup !== managedGroup && (
+                             <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mt-0.5">Saat ini: {currentGroup}</p>
+                           )}
+                         </div>
                       </div>
                        <button
                          onClick={() => { playClick(); handleToggleMember(cat); }}
                          className={cn(
-                           "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                           isMember ? "bg-red-100 text-red-600 hover:bg-red-200" : "bg-stone-900 text-white hover:scale-105"
+                           "min-w-24 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                           isMember ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-600 hover:text-white" : "bg-white border-stone-900 text-stone-900 hover:bg-stone-900 hover:text-white shadow-[0_4px_0_0_rgba(28,25,23,1)] active:shadow-none active:translate-y-1"
                          )}
                        >
-                         {isMember ? "Hapus" : "Tambah"}
+                         {isMember ? "Keluarkan" : "Masukkan"}
                        </button>
                     </div>
                   );
@@ -295,6 +331,7 @@ export function FinanceSettings({
                                if (obj) {
                                  const current = getCatEdit(obj, false);
                                  setCategoryEdits((p: any) => ({ ...p, [obj]: { ...current, iconName } }));
+                                 updateCategoryPref(obj, { iconName, color: current.color });
                                }
                                setPickingIconFor(null);
                                playSuccess();
@@ -332,6 +369,7 @@ export function FinanceSettings({
                          const current = getCatEdit(obj, false);
                          const newVal = { ...current, color };
                          setCategoryEdits((p: any) => ({ ...p, [obj]: newVal }));
+                         updateCategoryPref(obj, { iconName: current.iconName, color });
                        }
                        setPickingColorFor(null);
                        playSuccess();

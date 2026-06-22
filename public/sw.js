@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fajmuls-daily-v1';
+const CACHE_NAME = 'fajmuls-daily-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -27,9 +27,18 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Network First, fallback to cache for robust PWA updates
   e.respondWith(
-    caches.match(e.request).then((res) => {
-      return res || fetch(e.request);
+    fetch(e.request).then((networkResponse) => {
+      return caches.open(CACHE_NAME).then((cache) => {
+        // Only cache valid GET requests to http/https
+        if (e.request.method === 'GET' && e.request.url.startsWith('http')) {
+          cache.put(e.request, networkResponse.clone());
+        }
+        return networkResponse;
+      });
+    }).catch(() => {
+      return caches.match(e.request);
     })
   );
 });

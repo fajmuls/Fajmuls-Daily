@@ -1,5 +1,5 @@
 {
-  "name": "Fajmuls Daily",
+  "name": "Fajmul's Daily",
   "description": "A daily record-keeping app with voice control for financial records, custom notes, missing prayers tracker, Instagram notes archive, personal data, and workouts. Installable PWA for mobile.",
   "requestFramePermissions": [
     "microphone",

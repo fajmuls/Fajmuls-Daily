@@ -36,10 +36,9 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             initial={{ scale: 0.8, opacity: 0, rotate: -30 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ type: 'spring', damping: 15, stiffness: 100, delay: 0.2 }}
-            className="w-24 h-24 bg-stone-900 rounded-3xl flex items-center justify-center shadow-2xl mb-8 relative"
+            className="w-24 h-24 mb-6 relative flex items-center justify-center"
           >
-             <Hexagon className="w-12 h-12 text-white absolute" strokeWidth={2} />
-             <Hexagon className="w-8 h-8 text-white absolute rotate-90" strokeWidth={3} />
+             <img src="https://files.catbox.moe/c1ebqe.png" alt="Logo" className="w-full h-full object-contain drop-shadow-2xl" />
           </motion.div>
           
           <div className="text-center overflow-hidden">
@@ -49,7 +48,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
               transition={{ delay: 0.6, duration: 0.4 }}
               className="font-serif text-3xl font-black text-stone-900 tracking-tight"
             >
-               Jurnal Harmoni
+               Fajmul's Daily
             </motion.h1>
             <motion.p
               initial={{ y: 20, opacity: 0 }}

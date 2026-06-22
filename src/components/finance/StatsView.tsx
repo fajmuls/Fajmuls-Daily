@@ -5,31 +5,12 @@ import * as LucideIcons from "lucide-react";
 
 const PieAny = Pie as any;
 
-const CustomTooltip = ({ active, payload, financeCategoryPrefs, type }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    const IconName = getCategoryIcon(data.name, type, financeCategoryPrefs) || 'Tag';
-    const IconComp = (LucideIcons as any)[IconName] || LucideIcons.Tag;
-    
-    return (
-      <div className="bg-stone-900 text-white p-3 rounded-2xl shadow-xl border border-stone-700 min-w-[120px] max-w-[250px] z-50">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-lg bg-stone-800 flex items-center justify-center shrink-0" style={{ backgroundColor: getCategoryColor(data.name, type, financeCategoryPrefs) }}>
-             <IconComp className="w-3 h-3 text-white" />
-          </div>
-          <p className="font-bold text-xs truncate break-all">{data.name}</p>
-        </div>
-        <p className={`font-mono text-sm font-black ${type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(data.value)}</p>
-      </div>
-    );
-  }
-  return null;
-};
-
 export function StatsView(props: any) {
   const { financeRecords, financeCategoryPrefs } = props;
   const [activeExpenseIndex, setActiveExpenseIndex] = useState(-1);
   const [activeIncomeIndex, setActiveIncomeIndex] = useState(-1);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeChart, setActiveChart] = useState<'expense' | 'income'>('expense');
 
   const expenseRecords = financeRecords.filter((r: any) => r.type === "expense");
   const incomeRecords = financeRecords.filter((r: any) => r.type === "income");
@@ -50,15 +31,84 @@ export function StatsView(props: any) {
     return Object.entries(grouped).map(([name, value]) => ({ name, value })).sort((a: any, b: any) => (b.value as number) - (a.value as number));
   }, [incomeRecords]);
 
-  const handleChartClick = (data: any, type: string) => {};
+  const handleChartClick = (data: any, type: 'expense' | 'income') => {
+    setActiveCategory(prev => prev === data.name ? null : data.name);
+    setActiveChart(type);
+    if (type === 'expense') {
+      setActiveExpenseIndex(expenseChartData.findIndex((d: any) => d.name === data.name));
+    } else {
+      setActiveIncomeIndex(incomeChartData.findIndex((d: any) => d.name === data.name));
+    }
+  };
 
   const renderActiveShape = (props: any) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
     return (
       <g>
         <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-        <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 12} outerRadius={outerRadius + 15} fill={fill} />
+        <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 10} outerRadius={outerRadius + 14} fill={fill} />
       </g>
+    );
+  };
+
+  const CustomTooltip = ({ active, payload, financeCategoryPrefs, type }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      const IconName = getCategoryIcon(data.name, type, financeCategoryPrefs) || 'Tag';
+      const IconComp = (LucideIcons as any)[IconName] || LucideIcons.Tag;
+      
+      return (
+        <div className="bg-stone-900 text-white p-4 rounded-2xl shadow-xl border border-stone-700 min-w-[150px] max-w-[300px] z-[100] break-words whitespace-normal relative pointer-events-none">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center shrink-0 shadow-inner" style={{ backgroundColor: getCategoryColor(data.name, type, financeCategoryPrefs) }}>
+               <IconComp className="w-4 h-4 text-white" />
+            </div>
+            <p className="font-bold text-xs leading-snug">{data.name}</p>
+          </div>
+          <p className={`font-mono text-sm font-black ${type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(data.value)}</p>
+          <div className="mt-2 text-[9px] uppercase tracking-widest text-stone-400 border-t border-stone-700 pt-2 font-bold">
+            Klik untuk detail
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderDetailedList = () => {
+    if (!activeCategory) return null;
+    const records = (activeChart === 'expense' ? expenseRecords : incomeRecords).filter((r: any) => r.category === activeCategory);
+    
+    return (
+      <div className="mt-8 pt-6 border-t border-stone-200 w-full animate-in fade-in slide-in-from-top-4">
+        <h5 className="font-serif text-lg font-bold text-stone-900 mb-4 flex items-center gap-2">
+          Detail Transaksi: <span className="text-stone-500 font-sans font-black tracking-tight">{activeCategory}</span>
+        </h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+          {records.map((r: any, idx: number) => {
+            const IconName = getCategoryIcon(r.category, r.type, financeCategoryPrefs) || 'Tag';
+            const IconComp = (LucideIcons as any)[IconName] || LucideIcons.Tag;
+            return (
+              <div key={idx} className="bg-stone-50 border border-stone-100 p-4 rounded-2xl flex items-center gap-4 hover:border-stone-900 transition-colors">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: getCategoryColor(r.category, r.type, financeCategoryPrefs) }}>
+                  <IconComp className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-stone-900 text-xs truncate break-words whitespace-normal">{r.note || r.category}</p>
+                  <p className="font-mono text-[9px] text-stone-400 font-bold tracking-wider mt-0.5">
+                    {new Date(r.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className={`font-mono text-xs font-black ${r.type === 'income' ? 'text-emerald-600' : 'text-rose-500'}`}>
+                    {formatCurrency(r.amount)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     );
   };
 
@@ -119,7 +169,7 @@ export function StatsView(props: any) {
                       <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, "expense", financeCategoryPrefs)} />
                     ))}
                   </PieAny>
-                  <Tooltip content={<CustomTooltip financeCategoryPrefs={financeCategoryPrefs} type="expense" />} />
+                  <Tooltip content={<CustomTooltip financeCategoryPrefs={financeCategoryPrefs} type="expense" />} isAnimationActive={false} cursor={{fill: 'transparent'}} wrapperStyle={{ outline: 'none', zIndex: 100 }} allowEscapeViewBox={{x: true, y: true}} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -130,6 +180,7 @@ export function StatsView(props: any) {
             {renderCategoryListVertical(expenseChartData, 'expense')}
           </div>
         </div>
+        {activeChart === 'expense' && renderDetailedList()}
       </section>
 
       <section className="bg-white p-6 rounded-[2.5rem] border-2 border-stone-900 shadow-brutal w-full mx-auto max-w-6xl">
@@ -147,7 +198,7 @@ export function StatsView(props: any) {
                       <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, "income", financeCategoryPrefs)} />
                     ))}
                   </PieAny>
-                  <Tooltip content={<CustomTooltip financeCategoryPrefs={financeCategoryPrefs} type="income" />} />
+                  <Tooltip content={<CustomTooltip financeCategoryPrefs={financeCategoryPrefs} type="income" />} isAnimationActive={false} cursor={{fill: 'transparent'}} wrapperStyle={{ outline: 'none', zIndex: 100 }} allowEscapeViewBox={{x: true, y: true}} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -158,6 +209,7 @@ export function StatsView(props: any) {
             {renderCategoryListVertical(incomeChartData, 'income')}
           </div>
         </div>
+        {activeChart === 'income' && renderDetailedList()}
       </section>
     </div>
   );

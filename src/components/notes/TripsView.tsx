@@ -13,8 +13,6 @@ export function TripsView() {
   const navigate = useNavigate();
   const { playClick, playSuccess, playError } = useAudio();
   const { trips, tripTemplates, addTrip, updateTrip, deleteTrip, addTripTemplate, deleteTripTemplate, showConfirm, addFinanceRecord } = useAppContext();
-
-  const [activeTab, setActiveTab] = useState<'ongoing' | 'history'>('ongoing');
   
   // New Trip modal state
   const [showNewModal, setShowNewModal] = useState(false);
@@ -116,7 +114,6 @@ export function TripsView() {
       } as TripSummary);
       playSuccess();
       setShowNewModal(false);
-      setActiveTab('history');
     } else {
       const newTrip = {
         id: Date.now().toString(),
@@ -151,7 +148,6 @@ export function TripsView() {
 
       playSuccess();
       setShowNewModal(false);
-      setActiveTab('ongoing');
     }
     
     // reset form
@@ -339,105 +335,90 @@ export function TripsView() {
         </div>
       </header>
 
-      <div className="flex gap-2 p-1 bg-stone-100 rounded-2xl w-fit">
-        <button
-          onClick={() => { playClick(); setActiveTab('ongoing'); }}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", activeTab === 'ongoing' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
-        >
-          Sedang Berjalan
-        </button>
-        <button
-          onClick={() => { playClick(); setActiveTab('history'); }}
-          className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", activeTab === 'history' ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-900")}
-        >
-          Riwayat
-        </button>
-      </div>
-
-      {activeTab === 'ongoing' ? (
-        <div className="space-y-6">
-          <button 
-            onClick={() => { playClick(); setShowNewModal(true); }}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-teal-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-teal-700 transition-all shadow-md active:scale-95"
-          >
-            <Plus className="w-5 h-5" /> Mulai Perjalanan Baru
-          </button>
+      <div className="space-y-12">
+        {/* On-Going Trips Section */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black text-stone-900 border-l-4 border-teal-500 pl-3">Sedang Berjalan</h2>
+            <button 
+              onClick={() => { playClick(); setShowNewModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-xl font-bold text-xs hover:bg-teal-700 transition-all shadow-md active:scale-95"
+            >
+              <Plus className="w-4 h-4" /> Perjalanan Baru
+            </button>
+          </div>
 
           {ongoingTrips.length === 0 ? (
-            <div className="p-12 border-2 border-dashed border-stone-200 rounded-3xl text-center flex flex-col items-center gap-4 bg-stone-50/50">
-              <div className="p-4 bg-stone-100 rounded-full text-stone-400">
-                <Car className="w-8 h-8" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-stone-500 uppercase tracking-widest">Belum ada perjalanan aktif</p>
-                <p className="text-xs text-stone-400 mt-2">Mulai perjalanan untuk mencatat waktu tempuh.</p>
-              </div>
+            <div className="p-8 border border-dashed border-stone-200 rounded-2xl text-center flex flex-col items-center gap-2 bg-stone-50/50">
+              <Car className="w-6 h-6 text-stone-300" />
+              <p className="text-xs text-stone-400 font-bold uppercase tracking-widest">Tidak ada perjalanan aktif</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {ongoingTrips.map(trip => (
-                <div key={trip.id} className="bg-white border-2 border-teal-600 p-6 rounded-3xl shadow-brutal animate-in zoom-in-95">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1.5 px-3 py-1 bg-teal-100 text-teal-800 text-[9px] font-black uppercase tracking-widest rounded-full">
-                        <span className="relative flex h-2 w-2">
+                <div key={trip.id} className="bg-white border-2 border-teal-500 p-5 rounded-2xl shadow-brutal animate-in zoom-in-95 group">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex flex-col">
+                      <span className="flex w-fit items-center gap-1.5 px-2 py-1 bg-teal-100 text-teal-800 text-[9px] font-black uppercase tracking-widest rounded-lg mb-1">
+                        <span className="relative flex h-1.5 w-1.5">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
                         </span>
-                        Sedang Jalan
+                        Aktif
                       </span>
-                    </div>
-                    <div className="text-stone-400 text-xs font-mono font-bold">
-                      {format(trip.startTime, 'HH:mm')}
-                    </div>
-                  </div>
-
-                  <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-stone-200">
-                    <div className="relative">
-                      <div className="absolute -left-[29px] top-1 w-4 h-4 bg-white border-2 border-stone-300 rounded-full z-10" />
-                      <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mb-1">Dari</p>
-                      <p className="font-serif text-2xl font-black leading-none text-stone-900">{trip.origin.city}</p>
-                      {trip.origin.detail && <p className="text-sm text-stone-500 font-medium">{trip.origin.detail}</p>}
-                    </div>
-                    <div className="relative">
-                      <div className="absolute -left-[29px] top-1 w-4 h-4 bg-white border-2 border-teal-500 rounded-full z-10" />
-                      <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mb-1">Tujuan</p>
-                      <p className="font-serif text-2xl font-black leading-none text-stone-900">{trip.destination.city}</p>
-                      {trip.destination.detail && <p className="text-sm text-stone-500 font-medium">{trip.destination.detail}</p>}
-                    </div>
-                  </div>
-
-                  <div className="w-full h-40 md:h-48 rounded-xl overflow-hidden mt-6 border border-stone-200 bg-stone-100">
-                    <iframe 
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(`${trip.origin.city} to ${trip.destination.city}`)}&t=&z=10&ie=UTF8&iwloc=&output=embed`}
-                      width="100%" 
-                      height="100%" 
-                      frameBorder="0" 
-                      style={{ border: 0 }} 
-                      allowFullScreen 
-                    />
-                  </div>
-
-                  <div className="mt-6 flex items-center justify-between border-t border-stone-100 pt-6">
-                    <div className="flex items-center gap-2 text-stone-500 font-medium text-sm">
-                      <Car className="w-5 h-5" /> {trip.vehicle}
+                      <span className="text-stone-400 text-[10px] font-mono font-bold tracking-tight">
+                        Sejak {format(trip.startTime, 'HH:mm')}
+                      </span>
                     </div>
                     <button 
                       onClick={() => endTrip(trip)}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-stone-800 transition-colors shadow-md"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-stone-800 transition-colors shadow-md"
                     >
                       <Square className="w-3.5 h-3.5" /> Selesaikan
                     </button>
+                  </div>
+
+                  <div className="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-stone-100">
+                    <div className="relative">
+                      <div className="absolute -left-[29px] top-1 w-4 h-4 bg-white border-2 border-stone-300 rounded-full z-10" />
+                      <p className="font-bold text-stone-900 leading-tight">{trip.origin.city}</p>
+                      {trip.origin.detail && <p className="text-[10px] text-stone-500 font-medium">{trip.origin.detail}</p>}
+                    </div>
+                    <div className="relative">
+                      <div className="absolute -left-[29px] top-1 w-4 h-4 bg-white border-2 border-teal-500 rounded-full z-10" />
+                      <p className="font-bold text-stone-900 leading-tight">{trip.destination.city}</p>
+                      {trip.destination.detail && <p className="text-[10px] text-stone-500 font-medium">{trip.destination.detail}</p>}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-stone-100 flex items-center justify-between">
+                     <div className="flex items-center gap-1.5 text-stone-500 font-medium text-[10px]">
+                        <Car className="w-4 h-4" /> {trip.vehicle}
+                     </div>
+                     <button onClick={() => showConfirm("Batalkan?", () => deleteTrip(trip.id))} className="text-red-500 text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Batalkan</button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      ) : (
-        <div className="space-y-6">
+        </section>
+
+        {/* History / Summary Section */}
+        <section className="space-y-6 pt-4 border-t border-stone-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black text-stone-900 border-l-4 border-stone-300 pl-3">Riwayat & Ringkasan</h2>
+            {finishedTrips.length > 0 && (
+               <button
+                 onClick={exportTripsToCSV}
+                 className="flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-lg transition-colors font-bold text-[10px] uppercase tracking-widest"
+               >
+                 <Download className="w-3.5 h-3.5" /> CSV
+               </button>
+            )}
+          </div>
+          
           {finishedTrips.length === 0 ? (
-            <div className="p-12 border-2 border-dashed border-stone-200 rounded-3xl text-center text-stone-400 font-bold uppercase tracking-widest text-xs">
+            <div className="p-8 border border-dashed border-stone-200 rounded-2xl text-center text-stone-400 font-bold uppercase tracking-widest text-[10px]">
               Belum ada riwayat perjalanan.
             </div>
           ) : (
@@ -667,8 +648,8 @@ export function TripsView() {
               })()}
             </div>
           )}
-        </div>
-      )}
+        </section>
+      </div>
 
       {showNewModal && (
         <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex justify-center items-start pt-[10vh] md:items-center md:pt-0 p-4">
